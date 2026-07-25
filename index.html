@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.9.1 — il GPS restituisce il nome della località, non solo le coordinate
+  VENTAGLIO v3.10.0 — località preferite
   File  : ventaglio-v3.html
-  Build : 2026-07-26 19:05 CEST
+  Build : 2026-07-26 20:35 CEST
   Autore: Dr. Maurizio Monaco
   Dati  : Open-Meteo (CC BY 4.0) · ERA5/ERA5-Land © Copernicus
   Deploy: file statico singolo — doppio clic, Vercel, o
@@ -58,7 +58,21 @@
   .res span{display:block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--nebbia);margin-top:2px}
   .res-empty{background:var(--scafo);border:1px solid var(--linea);border-radius:var(--r);
     padding:12px 15px;font-size:13px;color:var(--nebbia)}
-  #recenti{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:24px}
+  .chip-riga{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
+  #recenti{margin-bottom:24px}
+  .chip-eti{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--nebbia);opacity:.65;margin-right:2px}
+  .chip.pref{border-color:rgba(226,163,60,.5);color:var(--schiuma)}
+  .chip.pref:hover{border-color:var(--ottone)}
+  .chip.pref .st{color:var(--ottone);margin-right:6px;font-size:12px;line-height:1}
+  .titolo-riga{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .titolo-riga h1{margin:0;flex:1;min-width:0;word-break:break-word}
+  .stella{flex:0 0 auto;width:42px;height:42px;border-radius:50%;cursor:pointer;
+    background:transparent;border:1px solid var(--linea);color:var(--nebbia);
+    font-size:19px;line-height:1;transition:.15s}
+  .stella:hover{border-color:var(--ottone);color:var(--ottone)}
+  .stella.piena{background:rgba(226,163,60,.16);border-color:var(--ottone);color:var(--ottone)}
+  .stella:focus-visible{outline:2px solid var(--verderame);outline-offset:2px}
   .chip{background:transparent;border:1px solid var(--linea);border-radius:99px;color:var(--nebbia);
     cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;padding:6px 13px}
   .chip:hover{border-color:var(--verderame);color:var(--schiuma)}
@@ -265,6 +279,28 @@
          padding-top:max(14px,env(safe-area-inset-top))}
   }
 
+  /* ---------- schermata iniziale ---------- */
+  .benvenuto{display:none}
+  body.senza-luogo .benvenuto{display:block;padding:14px 0 8px}
+  body.senza-luogo .full,
+  body.senza-luogo .viste-app,
+  body.senza-luogo .widget,
+  body.senza-luogo .titolo-riga,
+  body.senza-luogo .coord{display:none!important}
+  .bv-titolo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(28px,8vw,42px);line-height:1;letter-spacing:-.02em;
+    color:var(--schiuma);margin:0 0 14px}
+  .bv-testo{font-size:14px;line-height:1.68;color:var(--nebbia);margin:0 0 22px;max-width:52ch}
+  .bv-azioni{display:flex;gap:10px;flex-wrap:wrap}
+  .bv-primario,.bv-secondario{font-family:"IBM Plex Mono",monospace;font-size:12px;
+    letter-spacing:.06em;border-radius:99px;padding:12px 20px;cursor:pointer;transition:.15s}
+  .bv-primario{background:var(--verderame);color:var(--abisso);border:0;font-weight:600}
+  .bv-primario:hover{filter:brightness(1.08)}
+  .bv-secondario{background:transparent;color:var(--nebbia);border:1px solid var(--linea)}
+  .bv-secondario:hover{border-color:var(--verderame);color:var(--schiuma)}
+  .bv-nota{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--nebbia);
+    opacity:.7;margin:18px 0 0}
+
   /* ---------- pulsante informazioni ---------- */
   .fab{position:fixed;right:18px;z-index:60;width:58px;height:58px;border-radius:50%;
     border:0;cursor:pointer;overflow:hidden;
@@ -380,9 +416,24 @@
     <button id="gps" title="Usa la mia posizione" aria-label="Usa la mia posizione">&#9678;</button>
   </div>
   <div id="results"></div>
-  <div id="recenti"></div>
+  <div id="preferiti" class="chip-riga"></div>
+  <div id="recenti" class="chip-riga"></div>
 
-  <h1 id="locName">&hellip;</h1>
+  <section class="benvenuto" id="benvenuto">
+    <h1 class="bv-titolo">Da dove cominciamo?</h1>
+    <p class="bv-testo">Nessuna localit&agrave; &egrave; preimpostata: scegli tu il punto da cui partire. Ogni previsione viene calcolata su quelle coordinate esatte, e la calibrazione resta legata a quel luogo.</p>
+    <div class="bv-azioni">
+      <button id="bvCerca" class="bv-primario">Cerca una localit&agrave;</button>
+      <button id="bvGps" class="bv-secondario">Usa la mia posizione</button>
+    </div>
+    <p class="bv-nota">La scelta viene ricordata: al prossimo avvio l&apos;app riparte da qui.</p>
+  </section>
+
+  <div class="titolo-riga">
+    <h1 id="locName">&hellip;</h1>
+    <button id="stella" class="stella" aria-pressed="false"
+            aria-label="Salva fra le preferite" title="Salva fra le preferite">&#9733;</button>
+  </div>
   <p class="coord" id="locMeta"></p>
   <p class="firma">un software del <b>Dr. Maurizio Monaco</b></p>
 
@@ -533,7 +584,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.9.1 &middot; build 2026-07-26<br>
+    v3.10.0 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -666,6 +717,50 @@ async function quotaDaCoordinate(lat,lon){
   }catch(e){ return null; }
 }
 
+/* ---------- localit\u00E0 preferite ---------- */
+let PREFERITI=[];
+const chiaveLuogo = l => l.latitude.toFixed(3)+","+l.longitude.toFixed(3);
+
+async function caricaPreferiti(){
+  try{ PREFERITI=JSON.parse(await store.get("ventaglio3:preferiti")||"[]"); }
+  catch(e){ PREFERITI=[]; }
+  renderPreferiti();
+}
+function ePreferita(){
+  return !!S.loc && PREFERITI.some(x=>chiaveLuogo(x)===chiaveLuogo(S.loc));
+}
+async function togglePreferita(){
+  if(!S.loc) return;
+  const k=chiaveLuogo(S.loc);
+  if(PREFERITI.some(x=>chiaveLuogo(x)===k)){
+    PREFERITI=PREFERITI.filter(x=>chiaveLuogo(x)!==k);
+  }else{
+    PREFERITI.unshift(Object.assign({}, S.loc));
+    PREFERITI=PREFERITI.slice(0,12);
+  }
+  await store.set("ventaglio3:preferiti", JSON.stringify(PREFERITI));
+  renderPreferiti(); aggiornaStella();
+  try{ renderRecenti(JSON.parse(await store.get("ventaglio3:recenti")||"[]")); }catch(e){}
+}
+function aggiornaStella(){
+  const b=$("stella"); if(!b) return;
+  const on=ePreferita();
+  b.setAttribute("aria-pressed", String(on));
+  b.classList.toggle("piena", on);
+  b.title = on ? "Togli dalle preferite" : "Salva fra le preferite";
+  b.setAttribute("aria-label", b.title);
+}
+function renderPreferiti(){
+  const box=$("preferiti"); if(!box) return;
+  if(!PREFERITI.length){ box.innerHTML=""; return; }
+  box.innerHTML='<span class="chip-eti">Preferite</span>'
+    + PREFERITI.map((x,i)=>'<button class="chip pref" data-i="'+i+'">'
+        +'<span class="st">\u2605</span>'+esc(x.name)+'</button>').join("");
+  box.querySelectorAll(".chip.pref").forEach(b=>{
+    b.onclick=()=>carica(PREFERITI[+b.dataset.i]).then(salvaRecente);
+  });
+}
+
 async function salvaRecente(){
   let rec=[]; try{ rec=JSON.parse(await store.get("ventaglio3:recenti")||"[]"); }catch(e){}
   rec=rec.filter(x=>x.name!==S.loc.name); rec.unshift(S.loc); rec=rec.slice(0,6);
@@ -674,9 +769,12 @@ async function salvaRecente(){
   renderRecenti(rec);
 }
 function renderRecenti(rec){
-  if(!rec||!rec.length){ $("recenti").innerHTML=""; return; }
-  $("recenti").innerHTML=rec.map((x,i)=>'<button class="chip" data-i="'+i+'">'+esc(x.name)+'</button>').join("");
-  document.querySelectorAll("#recenti .chip").forEach(b=>b.onclick=()=>carica(rec[+b.dataset.i]));
+  const box=$("recenti");
+  const vis=(rec||[]).filter(x=>!PREFERITI.some(p=>chiaveLuogo(p)===chiaveLuogo(x)));
+  if(!vis.length){ box.innerHTML=""; return; }
+  box.innerHTML='<span class="chip-eti">Recenti</span>'
+    + vis.map((x,i)=>'<button class="chip" data-i="'+i+'">'+esc(x.name)+'</button>').join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>carica(vis[+b.dataset.i]));
 }
 
 /* ---------- estrazione dei membri ---------- */
@@ -687,6 +785,7 @@ function membri(hourly, base){
 
 /* ---------- caricamento ensemble ---------- */
 async function carica(loc){
+  mostraBenvenuto(false);
   S.loc=loc; S.ens={}; S.giorni=[]; S.diag=[]; S.cal=null; S.ora=null; invalidaOre();
   S.tz = loc.timezone || "auto";
   $("locName").textContent=loc.name;
@@ -922,11 +1021,16 @@ function renderBlocco(){
 }
 /* Ogni riquadro si disegna per conto suo: se uno cade gli altri restano in piedi
    e il guasto finisce nella Diagnostica invece di congelare la pagina. */
+function mostraBenvenuto(attivo){
+  document.body.classList.toggle("senza-luogo", !!attivo);
+}
+
 function renderTutto(){
   const passi=[["cielo",renderCielo],["blocco",renderBlocco],["giorni",renderGiorni],
                ["verdetto",renderVerdetto],["grafico",renderGrafico],
                ["viste",()=>setVar(VAR)],["striscia",renderStriscia],
-               ["orario",renderOraria],["calibrazione",renderCal],["compatta",renderWidget]];
+               ["orario",renderOraria],["calibrazione",renderCal],["compatta",renderWidget],
+               ["stella",aggiornaStella]];
   for(const [nome,fn] of passi){
     try{ fn(); }
     catch(e){ S.diag.push({n:"Riquadro "+nome, ok:false, msg:String(e.message||e)});
@@ -1038,6 +1142,9 @@ $("gps").onclick=()=>{
 $("calBtn").onclick=calibra;
 ["bande","scenari","fili"].forEach(k=>$("v_"+k).onclick=()=>setVista(k));
 $("t_reale").onclick=()=>setVar("T");
+$("bvCerca").onclick=()=>{ $("q").focus(); $("q").scrollIntoView({block:"center",behavior:"smooth"}); };
+$("bvGps").onclick=()=>$("gps").click();
+$("stella").onclick=togglePreferita;
 ["completa","essenziale","oggi","prossime"].forEach(k=>{
   const el=$("w_"+k); if(el) el.onclick=()=>setCompatta(k==="completa"?null:k);
 });
@@ -1062,13 +1169,19 @@ window.addEventListener("error", e=>segnalaGuasto(e.error||e.message));
 window.addEventListener("unhandledrejection", e=>segnalaGuasto(e.reason));
 
 (async function(){
+  await caricaPreferiti();
   try{ renderRecenti(JSON.parse(await store.get("ventaglio3:recenti")||"[]")); }catch(e){}
   let last=null; try{ last=JSON.parse(await store.get("ventaglio3:ultima")||"null"); }catch(e){}
   const salvata = await store.get("ventaglio3:vista");
-  await carica(last||{name:"Gaeta",latitude:41.2107,longitude:13.5714,
-                      admin1:"Lazio",country:"Italia",elevation:2,timezone:"Europe/Rome"});
-  // lanciata come app installata: si apre sulla vista compatta scelta
-  await setCompatta(salvata || (inApp() ? "oggi" : null));
+  if(last){
+    await carica(last);
+    // lanciata come app installata: si apre sulla vista compatta scelta
+    await setCompatta(salvata || (inApp() ? "oggi" : null));
+  }else{
+    // primo avvio: nessuna localit\u00E0 imposta, la sceglie chi usa l'app
+    mostraBenvenuto(true);
+    await setCompatta(null);
+  }
   aggiornaInstalla();
   registraOffline();
 })();
