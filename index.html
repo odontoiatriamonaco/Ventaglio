@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.8.1 — crediti
+  VENTAGLIO v3.9.1 — il GPS restituisce il nome della località, non solo le coordinate
   File  : ventaglio-v3.html
-  Build : 2026-07-26 17:15 CEST
+  Build : 2026-07-26 19:05 CEST
   Autore: Dr. Maurizio Monaco
   Dati  : Open-Meteo (CC BY 4.0) · ERA5/ERA5-Land © Copernicus
   Deploy: file statico singolo — doppio clic, Vercel, o
@@ -264,6 +264,59 @@
          padding-right:max(12px,env(safe-area-inset-right));
          padding-top:max(14px,env(safe-area-inset-top))}
   }
+
+  /* ---------- pulsante informazioni ---------- */
+  .fab{position:fixed;right:18px;z-index:60;width:58px;height:58px;border-radius:50%;
+    border:0;cursor:pointer;overflow:hidden;
+    bottom:calc(18px + env(safe-area-inset-bottom,0px));
+    font-family:"Bricolage Grotesque",serif;font-weight:800;font-size:27px;color:#fff;
+    text-shadow:0 1px 2px rgba(0,0,0,.45);line-height:1;
+    background:linear-gradient(180deg,#6FB6F5 0%,#3A88DC 46%,#1E62AC 100%);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.6),
+               inset 0 -4px 8px rgba(0,0,0,.34),
+               0 6px 0 #114F8C,
+               0 12px 24px rgba(0,0,0,.5);
+    transition:transform .09s ease, box-shadow .09s ease}
+  .fab::before{content:"";position:absolute;inset:4px 6px auto 6px;height:38%;
+    border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,0));
+    pointer-events:none}
+  .fab:hover{filter:brightness(1.06)}
+  .fab:active{transform:translateY(5px);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.45),
+               inset 0 -2px 5px rgba(0,0,0,.35),
+               0 1px 0 #0F4F8E, 0 4px 12px rgba(0,0,0,.5)}
+  .fab:focus-visible{outline:3px solid var(--verderame);outline-offset:3px}
+
+  .modale{position:fixed;inset:0;z-index:70;display:none;
+    background:rgba(4,12,18,.78);backdrop-filter:blur(4px);
+    padding:20px 14px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .modale.aperto{display:block;animation:comparsa .22s ease}
+  @keyframes comparsa{from{opacity:0}to{opacity:1}}
+  .modale-carta{position:relative;max-width:680px;margin:24px auto 40px;
+    background:var(--scafo);border:1px solid var(--linea);border-radius:20px;
+    padding:26px 24px 24px;box-shadow:0 30px 70px rgba(0,0,0,.6)}
+  .modale-titolo{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(25px,7vw,34px);line-height:1.02;letter-spacing:-.02em;
+    color:var(--schiuma);margin:0 0 22px;text-transform:none}
+  .chiudi{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;
+    background:var(--scafo-alto);border:1px solid var(--linea);color:var(--nebbia);
+    font-size:22px;line-height:1;cursor:pointer}
+  .chiudi:hover{border-color:var(--verderame);color:var(--schiuma)}
+  .voce{padding:15px 0;border-top:1px solid rgba(34,72,90,.55)}
+  .voce h3{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--verderame);margin:0 0 8px}
+  .voce p{margin:0;font-size:13.5px;line-height:1.68;color:var(--nebbia)}
+  .voce p b{color:var(--schiuma);font-weight:600}
+  .voce.onesta{margin-top:8px;border-top:1px solid var(--ottone);
+    background:rgba(226,163,60,.07);border-radius:0 0 12px 12px;padding:16px 15px}
+  .voce.onesta h3{color:var(--ottone)}
+  .modale-firma{margin:22px 0 0;text-align:center;font-family:"IBM Plex Mono",monospace;
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--nebbia);opacity:.75}
+  .modale-firma b{color:var(--verderame);font-weight:600}
+  @media (max-width:560px){
+    .fab{width:52px;height:52px;font-size:24px;right:14px}
+    .modale-carta{padding:22px 18px 20px;border-radius:16px;margin:12px auto 32px}
+  }
   #comfort{font-size:13px;color:var(--nebbia);line-height:1.65;margin:18px 0 0;
     padding:13px 15px;background:rgba(226,163,60,.09);border-left:3px solid var(--ottone);
     border-radius:0 10px 10px 0}
@@ -412,7 +465,7 @@
 
   <section class="card full">
     <h2>Limiti dichiarati</h2>
-    <p class="note">La verit&agrave; di riferimento &egrave; ERA5-Land: una <strong>rianalisi</strong>, non una stazione. Affidabile sulla temperatura, mediocre sulla precipitazione &mdash; per questo la correzione di bias si applica solo alla temperatura e le probabilit&agrave; di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave; verificata. La calibrazione usa i deterministici archiviati come proxy della dispersione fra le simulazioni, perch&eacute; l'archivio delle simulazioni non &egrave; gratuito. Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore meno.</p>
+    <p class="note">La verit&agrave; di riferimento &egrave; ERA5-Land: una <strong>rianalisi</strong>, non una stazione. Affidabile sulla temperatura, mediocre sulla precipitazione &mdash; per questo la correzione di bias si applica solo alla temperatura e le probabilit&agrave; di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave; verificata. Quando usi il pulsante della posizione, le coordinate vengono inviate a un servizio di geocodifica inversa (BigDataCloud, in alternativa OpenStreetMap) al solo scopo di ricavare il nome del comune. La calibrazione usa i deterministici archiviati come proxy della dispersione fra le simulazioni, perch&eacute; l'archivio delle simulazioni non &egrave; gratuito. Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore meno.</p>
   </section>
 
   <section class="card full">
@@ -426,14 +479,64 @@
   <section class="card full">
     <h2>Diagnostica</h2>
     <div class="diag" id="diag">in attesa&hellip;</div>
+
+  <button id="fabInfo" class="fab" aria-label="Perch&eacute; questa app &egrave; diversa">i</button>
+
+  <div id="infoModale" class="modale" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="infoTitolo">
+    <div class="modale-carta">
+      <button id="chiudiInfo" class="chiudi" aria-label="Chiudi">&times;</button>
+      <p class="eyebrow" style="margin-bottom:6px">Ventaglio</p>
+      <h2 id="infoTitolo" class="modale-titolo">Perch&eacute; &egrave; diverso</h2>
+
+      <div class="voce">
+        <h3>Le probabilit&agrave; sono conteggi, non stime</h3>
+        <p>Le app comuni mostrano una previsione sola e una percentuale che nessuno spiega. Qui ogni numero nasce da <b>143 simulazioni reali</b> di quattro centri meteorologici &mdash; ECMWF, NOAA, DWD, Environment Canada. Quando leggi &laquo;47 su 100&raquo; significa che quarantasette di quelle simulazioni bagnano davvero.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Si calibra su dove sei</h3>
+        <p>Novanta giorni di previsioni archiviate confrontate con la rianalisi, <b>su quel punto preciso</b>. Ne esce di quanto il consenso sbaglia sistematicamente l&igrave;, e quel numero viene sottratto invece che ignorato. Quale modello sia il migliore cambia da luogo a luogo, e qui viene misurato, non supposto.</p>
+      </div>
+
+      <div class="voce">
+        <h3>L&apos;intervallo ha una copertura verificata</h3>
+        <p>Le simulazioni tendono a stare troppo vicine fra loro: dichiarano una precisione che non hanno. L&apos;app misura di quanto si sono sbagliate in passato proprio qui e allarga l&apos;intervallo di conseguenza, fino a una copertura reale dell&apos;80%. Quel &plusmn; ha un significato controllato.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Controlla che il modello guardi il posto giusto</h3>
+        <p>Se la cella di un modello cade duecento metri pi&ugrave; in alto, sta descrivendo un altro luogo: escursione termica sbagliata, brezza di mare assente. L&apos;app se ne accorge, lo esclude e te lo scrive. &Egrave; un errore che nessuna app consumer segnala, e che gonfia silenziosamente l&apos;incertezza.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Mostra i futuri invece di mediarli</h3>
+        <p>Quando le simulazioni si dividono &mdash; met&agrave; anticiclone, met&agrave; temporale &mdash; la media descrive un pomeriggio che non accadr&agrave; in nessuno dei due casi. L&apos;app riconosce la biforcazione e mostra i due rami con la loro quota, perch&eacute; l&igrave; la domanda giusta non &egrave; quanti gradi far&agrave;, ma quale dei due succede.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Parla italiano</h3>
+        <p>Niente gergo: conteggi su cento invece di percentuali astratte, e una frase che spiega perch&eacute; ventotto gradi se ne fanno sentire trentatr&eacute;. Il punto di rugiada &egrave; in chiaro, perch&eacute; dell&apos;afa dice pi&ugrave; dell&apos;umidit&agrave; relativa.</p>
+      </div>
+
+      <div class="voce onesta">
+        <h3>E cosa non &egrave;</h3>
+        <p>La capacit&agrave; previsionale &egrave; quella dei centri meteorologici mondiali: gli stessi dati che stanno sotto tutte le altre app. Nessun modello proprietario, nessuna scorciatoia. La differenza sta in come l&apos;incertezza viene trattata, calibrata e mostrata &mdash; non in una previsione che sa cose che gli altri non sanno. Dentro l&apos;app c&apos;&egrave; una scheda che dichiara i limiti, e va letta.</p>
+      </div>
+
+      <p class="modale-firma">un software del <b>Dr. Maurizio Monaco</b></p>
+    </div>
+  </div>
+</div>
+
+
   </section>
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.8.1 &middot; build 2026-07-26<br>
+    v3.9.1 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
-</div>
+
 <script>
 /* ============================================================
    VENTAGLIO — previsione probabilistica calibrata sul posto
@@ -534,6 +637,35 @@ async function cerca(q){
     });
   }catch(e){ $("results").innerHTML='<div class="res-empty">Ricerca non riuscita: '+esc(e.message)+'</div>'; }
 }
+/* Open-Meteo fa geocoding solo in avanti (nome -> coordinate).
+   Per il percorso inverso serve un altro servizio: due tentativi in
+   cascata, e se falliscono entrambi si resta sulle coordinate. */
+async function nomeDaCoordinate(lat,lon){
+  try{
+    const j=await jget("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="
+      +lat+"&longitude="+lon+"&localityLanguage=it");
+    const n=j.city||j.locality||j.principalSubdivision;
+    if(n) return {name:n, admin1:j.principalSubdivision||"", country:j.countryName||"", via:"BigDataCloud"};
+  }catch(e){}
+  try{
+    const j=await jget("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12"
+      +"&lat="+lat+"&lon="+lon+"&accept-language=it");
+    const a=j.address||{};
+    const n=a.city||a.town||a.village||a.municipality||a.county;
+    if(n) return {name:n, admin1:a.state||"", country:a.country||"", via:"OpenStreetMap"};
+  }catch(e){}
+  return null;
+}
+
+/* la quota serve al controllo di rappresentativit\u00E0: dal GPS non arriva
+   affidabile, quindi la si chiede al modello digitale del terreno */
+async function quotaDaCoordinate(lat,lon){
+  try{
+    const j=await jget("https://api.open-meteo.com/v1/elevation?latitude="+lat+"&longitude="+lon);
+    return Array.isArray(j.elevation)?j.elevation[0]:null;
+  }catch(e){ return null; }
+}
+
 async function salvaRecente(){
   let rec=[]; try{ rec=JSON.parse(await store.get("ventaglio3:recenti")||"[]"); }catch(e){}
   rec=rec.filter(x=>x.name!==S.loc.name); rec.unshift(S.loc); rec=rec.slice(0,6);
@@ -874,13 +1006,34 @@ $("q").addEventListener("keydown",e=>{
   if(e.key==="Escape"){ $("q").value=""; $("results").innerHTML=""; }
 });
 $("gps").onclick=()=>{
-  if(!navigator.geolocation){ $("results").innerHTML='<div class="res-empty">Geolocalizzazione non disponibile.</div>'; return; }
+  if(!navigator.geolocation){
+    $("results").innerHTML='<div class="res-empty">Il browser non offre la geolocalizzazione.</div>'; return;
+  }
   $("results").innerHTML='<div class="res-empty">Cerco la posizione\u2026</div>';
-  navigator.geolocation.getCurrentPosition(p=>{ $("results").innerHTML="";
-    carica({name:"Posizione attuale",latitude:+p.coords.latitude.toFixed(4),
-            longitude:+p.coords.longitude.toFixed(4),country:"",timezone:"auto"}); },
-    ()=>{ $("results").innerHTML='<div class="res-empty">Posizione negata o non disponibile.</div>'; },
-    {timeout:10000});
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const lat=+p.coords.latitude.toFixed(4), lon=+p.coords.longitude.toFixed(4);
+    $("results").innerHTML='<div class="res-empty">Individuo la localit\u00E0\u2026</div>';
+    const [luogo, quota] = await Promise.all([nomeDaCoordinate(lat,lon), quotaDaCoordinate(lat,lon)]);
+    $("results").innerHTML="";
+    await carica({
+      name: luogo ? luogo.name : "Posizione attuale",
+      latitude:lat, longitude:lon,
+      admin1: luogo ? luogo.admin1 : "",
+      country: luogo ? luogo.country : "",
+      elevation: quota, timezone:"auto"
+    });
+    S.diag.push(luogo
+      ? {n:"Localit\u00E0 dalle coordinate", ok:true, msg:luogo.name+" via "+luogo.via
+          +(quota!=null?" \u00B7 quota "+Math.round(quota)+" m":"")}
+      : {n:"Localit\u00E0 dalle coordinate", ok:false, msg:"nessun servizio ha risposto, resto sulle coordinate"});
+    try{ renderDiag(); }catch(e){}
+    await salvaRecente();
+  }, err=>{
+    const m = err.code===1 ? "Permesso negato. Concedi l'accesso alla posizione nelle impostazioni del sito."
+            : err.code===2 ? "Posizione non determinabile in questo momento."
+            : "Tempo scaduto nel rilevare la posizione. Riprova all'aperto o con il GPS attivo.";
+    $("results").innerHTML='<div class="res-empty">'+m+'</div>';
+  }, {timeout:12000, enableHighAccuracy:false, maximumAge:120000});
 };
 $("calBtn").onclick=calibra;
 ["bande","scenari","fili"].forEach(k=>$("v_"+k).onclick=()=>setVista(k));
@@ -1642,6 +1795,35 @@ function renderWidget(){
 
   $("widget").innerHTML=html;
 }
+
+/* ============================================================
+   v3.9.0 — PANNELLO INFORMATIVO
+   Build: 2026-07-26 18:20 CEST
+   Il testo dice cosa l'app fa di diverso, con affermazioni tutte
+   verificabili dentro l'app stessa, e chiude dichiarando cosa NON
+   e': la capacita' previsionale e' quella dei centri meteorologici.
+   Rivendicare di piu' sarebbe smentibile da chiunque sappia leggere
+   un bollettino, e le promesse fragili si ritorcono contro.
+   ============================================================ */
+
+function apriInfo(){
+  $("infoModale").classList.add("aperto");
+  $("infoModale").setAttribute("aria-hidden","false");
+  document.body.style.overflow="hidden";
+  $("chiudiInfo").focus();
+}
+function chiudiInfo(){
+  $("infoModale").classList.remove("aperto");
+  $("infoModale").setAttribute("aria-hidden","true");
+  document.body.style.overflow="";
+  $("fabInfo").focus();
+}
+$("fabInfo").onclick=apriInfo;
+$("chiudiInfo").onclick=chiudiInfo;
+$("infoModale").addEventListener("click", e=>{ if(e.target===$("infoModale")) chiudiInfo(); });
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && $("infoModale").classList.contains("aperto")) chiudiInfo();
+});
 </script>
 </body>
 </html>
