@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.26.0 — ogni numero con la sua spiegazione
+  VENTAGLIO v3.27.0 — si tara anche pioggia e raffiche
   File  : ventaglio-v3.html
-  Build : 2026-07-27 19:05 CEST
+  Build : 2026-07-27 20:10 CEST
+  v3.27.0: la taratura non riguarda piu' la sola temperatura. Pioggia e
+           raffiche si correggono per RAPPORTO invece che per differenza,
+           e sui totali del periodo invece che giorno per giorno. ERA5 e
+           ERA5-Land sono rianalisi globali, quindi vale ovunque nel
+           mondo, non solo in Italia. I fattori si applicano da due sole
+           funzioni: verdetto, striscia e pagella non possono divergere.
   v3.26.0: BUG — la riga 'errore medio dopo la correzione' mostrava il
            valore di PRIMA (mae invece della media di absC), gonfiandolo
            di circa il doppio. Aggiunto maeC. Le soglie del giudizio
@@ -889,7 +895,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.26.0 &middot; build 2026-07-27<br>
+    v3.27.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1267,6 +1273,11 @@ const GLIFI = {
             +'<path class="g-vento v2" d="M2.6 14.4h13.8a3.3 3.3 0 1 1-3.3 3.3"/>')
 };
 
+/* v3.27.0 — i fattori si applicano attraverso queste due funzioni, cosi'
+   verdetto, striscia, grafico e archivio della pagella non possono divergere. */
+function fattoreP(){ return (S.cal && S.cal.fP) ? S.cal.fP : 1; }
+function fattoreW(){ return (S.cal && S.cal.fW) ? S.cal.fW : 1; }
+
 function renderVerdetto(){
   const g=G(), N=g.tmax.length;
   const oltreCal = S.dayIdx > ORIZZONTE_CAL;
@@ -1286,13 +1297,14 @@ function renderVerdetto(){
     fonte="distanza grezza fra le simulazioni, non ancora calibrata";
   }
 
-  const p = s => Math.round(100*g.psum.filter(x=>x>=s).length/g.psum.length);
+  const kP = fattoreP();   // v3.27.0
+  const p = s => Math.round(100*g.psum.filter(x=>x*kP>=s).length/g.psum.length);
   const p02=p(0.2), p1=p(1), p5=p(5), p15=p(15);
   // v3.12.0 — raffiche: probabilita' vere, contate sulle simulazioni
-  const R = g.raff||[];
+  const R = (g.raff||[]).map(x=>x*fattoreW());   // v3.27.0
   const pRaff = s => R.length ? Math.round(100*R.filter(x=>x>=s).length/R.length) : null;
   const raffMed = R.length ? quantile(R,.5) : null;
-  const mediana=quantile(g.psum,.5), q90=quantile(g.psum,.9);
+  const mediana=quantile(g.psum,.5)*kP, q90=quantile(g.psum,.9)*kP;   // v3.27.0
   const cls=v=>v>60?"coral":v>30?"amber":"teal";
 
   // percepita: mediana fra le simulazioni se disponibile, altrimenti modello singolo
@@ -1469,6 +1481,10 @@ function renderCal(){
     + riga("Di quanto sbaglia in media, dopo la correzione",
            "circa "+(c.maeC!=null?c.maeC:c.a).toFixed(1)+" \u00B0C")
     + riga("Su quanti giorni ha imparato", c.n+" giorni")
+    + (c.fP ? riga("Pioggia prevista, corretta di",
+        (c.fP>=1?"+":"\u2212")+Math.round(Math.abs(c.fP-1)*100)+"%") : "")
+    + (c.fW ? riga("Raffiche previste, corrette di",
+        (c.fW>=1?"+":"\u2212")+Math.round(Math.abs(c.fW-1)*100)+"%") : "")
     + '</div>'
     + '<p class="note" style="margin-top:14px">In pratica: se leggi <b>28 &plusmn; '
       + tipico.toFixed(1)+'</b>, vuol dire che in <b>otto giorni su dieci</b> la massima '
@@ -1527,6 +1543,23 @@ function renderCal(){
         + "meritassero</b>: qui del "+gonfio+"%. &Egrave; il difetto tipico di questi "
         + "sistemi, e questo numero &egrave; la misura di quanto pecchino di ottimismo.")
 
+    + (c.fP!=null
+        ? vocenum("Fattore pioggia", "\u00D7"+c.fP.toFixed(2),
+            "Rapporto fra la pioggia caduta davvero e quella prevista, sui totali di "
+            + c.nP+" giorni. Sotto 1 vuol dire che qui i modelli <b>esagerano</b>, sopra 1 "
+            + "che sottostimano. Si usa il totale del periodo e non il singolo giorno perche' "
+            + "un rovescio spostato di dieci chilometri falserebbe la giornata ma non i tre mesi.")
+        : vocenum("Fattore pioggia", "non calcolato",
+            "Serve pioggia vera a sufficienza nel periodo: sotto quella soglia il rapporto "
+            + "sarebbe rumore travestito da correzione. Si ricalcola dopo una stagione piovosa."))
+    + (c.fW!=null
+        ? vocenum("Fattore raffiche", "\u00D7"+c.fW.toFixed(2),
+            "Stesso metodo sulle raffiche massime giornaliere, su "+c.nW+" giorni. Qui il "
+            + "confronto e' fra due <i>stime</i> di raffica, quella dei modelli e quella della "
+            + "rianalisi: gran parte dell'errore comune si annulla e resta l'effetto del terreno "
+            + "locale, che e' proprio cio' che serve correggere. Resta la voce meno solida delle tre.")
+        : vocenum("Fattore raffiche", "non calcolato",
+            "La rianalisi non ha restituito raffiche utilizzabili su questo punto."))
     + vocenum("Finestra di riferimento", (c.da||"")+" \u2192 "+(c.al||""),
         "I giorni su cui &egrave; stato fatto il confronto. Si ferma a circa una settimana "
         + "fa perch&eacute; la rianalisi usata come metro di paragone arriva con quel ritardo.")
@@ -1602,7 +1635,7 @@ async function registraPrevisione(){
         ? S.cal.k*Math.max(0.15,S.cal.a+S.cal.b*disp) : 1.28*disp;
       arch.push({ emesso:oggi, valida:g.data, lead:d,
                   t:+(grezza-bias).toFixed(2), h:+half.toFixed(2),
-                  p1:Math.round(100*g.psum.filter(x=>x>=1).length/g.psum.length),
+                  p1:Math.round(100*g.psum.filter(x=>x*fattoreP()>=1).length/g.psum.length),
                   n:g.tmax.length });
     });
     if(arch.length>600) arch=arch.slice(-600);
@@ -1726,25 +1759,38 @@ async function calibra(){
   const tz=encodeURIComponent(S.tz);
   const per="latitude="+S.loc.latitude+"&longitude="+S.loc.longitude
     +"&start_date="+iso(inizio)+"&end_date="+iso(fine)
-    +"&daily=temperature_2m_max&timezone="+tz;
+    +"&daily=temperature_2m_max,precipitation_sum,wind_gusts_10m_max&timezone="+tz;
   try{
     st.textContent="Scarico la rianalisi di riferimento\u2026";
-    let truth=null;
-    for(const mod of ["era5_land","era5"]){
-      try{
-        const t=await jget(ARCH+"?"+per+"&models="+mod);
-        if(t.daily?.temperature_2m_max?.some(v=>v!==null)){ truth=t; break; }
-      }catch(e){}
-    }
-    if(!truth) throw new Error("nessuna rianalisi disponibile su questo punto");
-    const V=truth.daily.temperature_2m_max;
+    /* v3.27.0 — due riferimenti: ERA5-Land (9 km) e' migliore sulla
+       temperatura ma non espone le raffiche; ERA5 (25 km) le ha. Da ciascuno
+       si prende cio' che sa fare, variabile per variabile. Valgono ovunque
+       nel mondo: sono rianalisi globali. */
+    let rL=null, rG=null;
+    try{ rL=await jget(ARCH+"?"+per+"&models=era5_land"); }catch(e){}
+    try{ rG=await jget(ARCH+"?"+per+"&models=era5"); }catch(e){}
+    const pesca=k=>{
+      for(const r of [rL,rG]){
+        const a=r&&r.daily&&r.daily[k];
+        if(a&&a.some(v=>v!==null)) return a;
+      }
+      return null;
+    };
+    const V=pesca("temperature_2m_max");
+    const VP=(rG&&rG.daily&&rG.daily.precipitation_sum&&rG.daily.precipitation_sum.some(v=>v!==null))
+             ? rG.daily.precipitation_sum : pesca("precipitation_sum");
+    const VW=pesca("wind_gusts_10m_max");
+    if(!V) throw new Error("nessuna rianalisi disponibile su questo punto");
 
     st.textContent="Recupero le previsioni archiviate dei modelli\u2026";
-    const prev={};
+    const prev={}, prevP={}, prevW={};
     for(const id of DET){
       try{
         const f=await jget(HIST+"?"+per+"&models="+id);
-        if(f.daily?.temperature_2m_max?.some(v=>v!==null)) prev[id]=f.daily.temperature_2m_max;
+        const d=f.daily||{};
+        if(d.temperature_2m_max?.some(v=>v!==null)) prev[id]=d.temperature_2m_max;
+        if(d.precipitation_sum?.some(v=>v!==null))  prevP[id]=d.precipitation_sum;
+        if(d.wind_gusts_10m_max?.some(v=>v!==null)) prevW[id]=d.wind_gusts_10m_max;
       }catch(e){}
     }
     const ids=Object.keys(prev);
@@ -1774,10 +1820,40 @@ async function calibra(){
     const ratio=absC.map((e,i)=>e/Math.max(0.15,reg.a+reg.b*spr[i]));
     const k=quantile(ratio,0.80);
 
+    /* v3.27.0 — pioggia e raffiche non si correggono per differenza ma per
+       RAPPORTO: sbagliare 5 mm su 40 e' un altro conto che sbagliarne 5 su 6.
+       E non giorno per giorno — un rovescio spostato di dieci chilometri
+       manderebbe tutto a monte — ma sui totali di tre mesi, dove lo scarto
+       casuale si compensa e resta la tendenza sistematica. */
+    st.textContent="Confronto pioggia e raffiche\u2026";
+    const idsP=Object.keys(prevP), idsW=Object.keys(prevW);
+    let fP=null, nP=0, sP=0, sPo=0;
+    if(VP && idsP.length>=3){
+      for(let i=0;i<VP.length;i++){
+        if(VP[i]==null) continue;
+        const v=idsP.map(id=>prevP[id][i]).filter(x=>x!=null);
+        if(v.length<3) continue;
+        sP+=media(v); sPo+=VP[i]; nP++;
+      }
+      // senza pioggia vera a sufficienza il rapporto e' rumore: meglio niente
+      if(nP>=30 && sP>15 && sPo>8) fP=Math.max(0.35, Math.min(3.0, sPo/sP));
+    }
+    let fW=null, nW=0, mW=0, mWo=0;
+    if(VW && idsW.length>=3){
+      for(let i=0;i<VW.length;i++){
+        if(VW[i]==null) continue;
+        const v=idsW.map(id=>prevW[id][i]).filter(x=>x!=null);
+        if(v.length<3) continue;
+        mW+=media(v); mWo+=VW[i]; nW++;
+      }
+      if(nW>=30 && mW>0) fW=Math.max(0.6, Math.min(1.6, mWo/mW));
+    }
+
     /* v3.26.0 — mae e' l'errore medio PRIMA di togliere il bias. Serviva
        anche quello dopo: la scheda lo mostrava come "dopo la correzione"
        usando il valore sbagliato, gonfiandolo di circa il doppio. */
     S.cal={ bias, mae, maeC: media(absC), a:reg.a, b:reg.b, k, n:err.length,
+            fP, nP, fW, nW,
             da:iso(inizio), al:iso(fine), modelli:ids.length };
     await store.set(kCal(S.loc), JSON.stringify(S.cal));
     st.innerHTML="Calibrato su <b>"+esc(S.loc.name)+"</b>, "+iso(inizio)+" \u2192 "+iso(fine)
@@ -2388,7 +2464,8 @@ function oraStat(d,h){
   const mm=mem.map(m=>m.P[h]).filter(v=>v!=null);
   // v3.15.0 — denominatore sui soli membri che hanno un valore a quell'ora
   const val=mem.filter(m=>m.P[h]!=null);
-  const wet=val.filter(m=>m.P[h]>=0.1).length;
+  const kP=fattoreP();   // v3.27.0 — soglia sul valore corretto
+  const wet=val.filter(m=>m.P[h]*kP>=0.1).length;
   return {
     t: T.length?quantile(T,.5):null,
     a: A.length?quantile(A,.5):(S.atmo&&S.atmo.app?S.atmo.app[i]:null),
