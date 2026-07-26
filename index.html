@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.22.0 — la finestra informativa parla a tutti
+  VENTAGLIO v3.23.0 — glifi a due tinte, con respiro
   File  : ventaglio-v3.html
-  Build : 2026-07-27 14:00 CEST
+  Build : 2026-07-27 14:45 CEST
+  v3.23.0: ogni glifo prende i colori della cosa che rappresenta
+           (mercurio rosso, goccia azzurra, saetta gialla) e una
+           micro-animazione legata al significato: la pioggia cade,
+           la saetta lampeggia, il vento soffia. Ampiezze di 1-3 px,
+           tempi sfalsati, tutto fermo con prefers-reduced-motion.
+           Il colore di stato resta sul numero, non sull'icona.
   v3.22.0: le sette voci della finestra 'i' riscritte per chi non fa il
            meteorologo, con un'apertura che dice subito di che si tratta.
            BUG: il testo citava '143 simulazioni' e 'quattro centri' come
@@ -191,7 +197,40 @@
   .metric .k svg{width:14px;height:14px;vertical-align:-3px;margin-right:7px;
     fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;
     stroke-linejoin:round;opacity:.9;flex:0 0 auto;overflow:visible}
+  /* v3.23.0 — tavolozza dei glifi. Il colore di stato resta sul numero. */
+  .metric .k svg{--vetro:#8FA8B8; --merc:#E8563C; --acqua:#5AB3E8;
+    --nube:#8FA8B8; --nubescura:#6E8598; --lampo:#F0C56F; --aria:#7FD8C6}
   .metric .k svg .p{fill:currentColor;stroke:none}
+  .g-vetro{stroke:var(--vetro);opacity:.75}
+  .g-merc,.g-bulbo{fill:var(--merc);stroke:none;transform-origin:12px 17.8px}
+  .g-onda{stroke:var(--merc)} .g-onda.o1{stroke:var(--lampo);opacity:.85}
+  .g-goccia{fill:var(--acqua);stroke:none;transform-origin:12px 14px}
+  .g-nube{fill:var(--nube);stroke:none} .g-nube.scura{fill:var(--nubescura)}
+  .g-pio{stroke:var(--acqua)}
+  .g-saetta{fill:var(--lampo);stroke:none}
+  .g-vento{stroke:var(--aria)}
+
+  /* movimento: lento, sfalsato, di ampiezza minima. Un glifo che salta
+     e' un banner; un glifo che respira e' un dettaglio. */
+  @media (prefers-reduced-motion:no-preference){
+    .g-merc{animation:salemerc 4.5s ease-in-out infinite}
+    .g-onda{animation:respira 3.6s ease-in-out infinite}
+    .g-onda.o2{animation-delay:.45s} .g-onda.o3{animation-delay:.9s}
+    .g-goccia{animation:pulsagoccia 3.2s ease-in-out infinite}
+    .g-pio{animation:cade 1.5s linear infinite}
+    .g-pio.p2{animation-delay:.5s} .g-pio.p3{animation-delay:1s}
+    .g-saetta{animation:lampeggia 4.8s ease-in-out infinite}
+    .g-vento{animation:soffia 3.4s ease-in-out infinite}
+    .g-vento.v2{animation-delay:.7s}
+  }
+  @keyframes salemerc{0%,100%{transform:scaleY(.88)}50%{transform:scaleY(1)}}
+  @keyframes respira{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.1px)}}
+  @keyframes pulsagoccia{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  @keyframes cade{0%{transform:translateY(-2.5px);opacity:0}
+    22%{opacity:1}78%{opacity:1}100%{transform:translateY(3px);opacity:0}}
+  @keyframes lampeggia{0%,88%,100%{opacity:1}90%{opacity:.2}93%{opacity:1}95%{opacity:.25}}
+  @keyframes soffia{0%,100%{transform:translateX(0);opacity:.85}
+    50%{transform:translateX(1.6px);opacity:1}}
   .metric.hero .k svg{width:16px;height:16px;vertical-align:-3px;margin-right:8px}
   .metric .k{display:flex;align-items:center;
     font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.15em;
@@ -780,7 +819,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.22.0 &middot; build 2026-07-27<br>
+    v3.23.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1129,35 +1168,33 @@ const ORIZZONTE_CAL = 2;   // 0 oggi, 1 domani, 2 dopodomani
    decoro. Monolinea 1.7, viewBox 24, nessuna dipendenza esterna. */
 const G24 = d => '<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 const GLIFI = {
-  /* v3.21.0 — ridisegnati. La versione precedente aveva tratti sottili e
-     dettaglio da 24 px reso a 12: sotto quella soglia i vuoti si chiudono
-     e la forma diventa una macchia. Qui masse piene (class="p") per il
-     corpo del simbolo e pochi tratti spessi per il resto. */
+  /* v3.23.0 — due tinte per glifo e micro-animazione legata al significato.
+     Il colore di stato resta sul NUMERO: se lo mettessi anche sull'icona
+     avrei due volte lo stesso segnale e nessuna immagine. Qui l'icona
+     prende i colori della cosa: il mercurio e' rosso, la goccia azzurra,
+     la saetta gialla. Movimenti lenti e sfalsati, e fermi del tutto se il
+     sistema chiede meno animazioni. */
 
-  // termometro: stelo pieno + bulbo pieno, il contorno solo per il vetro
-  termo: G24('<rect class="p" x="11" y="6.5" width="2" height="9.5" rx="1"/>'
-            +'<circle class="p" cx="12" cy="17.8" r="3.4"/>'
-            +'<path d="M14.4 14.3V5.4a2.4 2.4 0 0 0-4.8 0v8.9a5 5 0 1 0 4.8 0Z"/>'),
+  termo: G24('<path class="g-vetro" d="M14.4 14.3V5.4a2.4 2.4 0 0 0-4.8 0v8.9a5 5 0 1 0 4.8 0Z"/>'
+            +'<rect class="g-merc" x="11" y="6.5" width="2" height="9.5" rx="1"/>'
+            +'<circle class="g-bulbo" cx="12" cy="17.8" r="3.4"/>'),
 
-  // afa: tre onde di calore, il segno piu' leggibile a questa taglia
-  corpo: G24('<path d="M3 7q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
-            +'<path d="M3 12.4q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
-            +'<path d="M3 17.8q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'),
+  corpo: G24('<path class="g-onda o1" d="M3 7q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
+            +'<path class="g-onda o2" d="M3 12.4q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
+            +'<path class="g-onda o3" d="M3 17.8q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'),
 
-  // goccia piena
-  goccia: G24('<path class="p" d="M12 2.2c0 0 6.9 7.6 6.9 12.1a6.9 6.9 0 0 1-13.8 0C5.1 9.8 12 2.2 12 2.2Z"/>'),
+  goccia: G24('<path class="g-goccia" d="M12 2.2c0 0 6.9 7.6 6.9 12.1a6.9 6.9 0 0 1-13.8 0C5.1 9.8 12 2.2 12 2.2Z"/>'),
 
-  // nube piena con tre scrosci
-  rovescio: G24('<path class="p" d="M7 14.6h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 14.6Z"/>'
-            +'<path d="M8.4 17.2 7 21.6M12 17.2l-1.4 4.4M15.6 17.2l-1.4 4.4"/>'),
+  rovescio: G24('<path class="g-nube" d="M7 14.6h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 14.6Z"/>'
+            +'<path class="g-pio p1" d="M8.4 17.2 7 21.6"/>'
+            +'<path class="g-pio p2" d="M12 17.2l-1.4 4.4"/>'
+            +'<path class="g-pio p3" d="M15.6 17.2l-1.4 4.4"/>'),
 
-  // nube piena con saetta piena
-  nubifragio: G24('<path class="p" d="M7 13.4h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 13.4Z"/>'
-            +'<path class="p" d="M13.6 15.4h3.1l-6.4 7.4 1.4-4.6H8.6l3.6-5.1Z"/>'),
+  nubifragio: G24('<path class="g-nube scura" d="M7 13.4h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 13.4Z"/>'
+            +'<path class="g-saetta" d="M13.6 15.4h3.1l-6.4 7.4 1.4-4.6H8.6l3.6-5.1Z"/>'),
 
-  // raffica: due correnti lunghe con ricciolo, tratto spesso
-  vento: G24('<path d="M2.6 8.6h11.2a3.1 3.1 0 1 0-3.1-3.1"/>'
-            +'<path d="M2.6 14.4h13.8a3.3 3.3 0 1 1-3.3 3.3"/>')
+  vento: G24('<path class="g-vento v1" d="M2.6 8.6h11.2a3.1 3.1 0 1 0-3.1-3.1"/>'
+            +'<path class="g-vento v2" d="M2.6 14.4h13.8a3.3 3.3 0 1 1-3.3 3.3"/>')
 };
 
 function renderVerdetto(){
