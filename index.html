@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.24.1 — anteprima ridisegnata per il ritaglio quadrato
+  VENTAGLIO v3.24.2 — testi delle chat accorciati
   File  : ventaglio-v3.html
-  Build : 2026-07-27 16:10 CEST
+  Build : 2026-07-27 16:55 CEST
+  v3.24.2: nella scheda compatta di WhatsApp il titolo si fermava a
+           'quanto puoi fi...' e la descrizione a 'Non una prevision...'.
+           og:title e og:description accorciati e con la parola
+           informativa in testa; name=description resta lunga per i
+           motori di ricerca, dove lo spazio non manca.
   v3.24.1: og.png ricomposta al centro. WhatsApp ne fa un ritaglio
            quadrato centrale e la versione orizzontale perdeva la
            prima meta' del nome. Nessun cambiamento al codice, ma
@@ -108,17 +113,22 @@
 <title>Ventaglio — previsione probabilistica calibrata</title>
 <meta name="author" content="Dr. Maurizio Monaco">
 <link rel="author" href="mailto:odontoiatria.monaco@gmail.com">
+<!-- v3.24.2 — questa resta lunga: e' quella che legge Google, dove
+     lo spazio non manca. Le versioni per le chat sono corte perche'
+     WhatsApp, nella scheda compatta, taglia il titolo dopo due righe
+     strette e la descrizione dopo una. Non esiste un tag per
+     allargarla: si puo' solo mettere davanti la parola che conta. -->
 <meta name="description" content="Non una previsione sola, ma oltre cento simulazioni dei grandi centri meteorologici — e quante finiscono con la pioggia. Calibrata sul tuo paese.">
 
-<!-- v3.24.1 — anteprima nelle chat. Senza og:image WhatsApp, Telegram e
+<!-- v3.24.2 — anteprima nelle chat. Senza og:image WhatsApp, Telegram e
      iMessage mostrano solo testo grigio. L'URL dell'immagine deve essere
      assoluto: un percorso relativo o un data URI non vengono seguiti. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ventaglio">
 <meta property="og:locale" content="it_IT">
 <meta property="og:url" content="https://ventaglio.vercel.app/">
-<meta property="og:title" content="Ventaglio — quanto puoi fidarti della previsione di oggi">
-<meta property="og:description" content="Non una previsione sola, ma oltre cento simulazioni dei grandi centri meteorologici — e quante finiscono con la pioggia. Calibrata sul tuo paese.">
+<meta property="og:title" content="Ventaglio — quanto fidarsi">
+<meta property="og:description" content="Cento previsioni invece di una.">
 <meta property="og:image" content="https://ventaglio.vercel.app/og.png">
 <meta property="og:image:secure_url" content="https://ventaglio.vercel.app/og.png">
 <meta property="og:image:type" content="image/png">
@@ -126,8 +136,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Ventaglio: traiettorie che divergono su fondo blu notte">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Ventaglio — quanto puoi fidarti della previsione di oggi">
-<meta name="twitter:description" content="Oltre cento simulazioni dei grandi centri meteorologici, e quante finiscono con la pioggia. Calibrata sul tuo paese.">
+<meta name="twitter:title" content="Ventaglio — quanto fidarsi">
+<meta name="twitter:description" content="Cento previsioni invece di una.">
 <meta name="twitter:image" content="https://ventaglio.vercel.app/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -850,7 +860,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.24.1 &middot; build 2026-07-27<br>
+    v3.24.2 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
