@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.29.0 — la taratura dice quando e' stata fatta
+  VENTAGLIO v3.29.1 — variabili disaccoppiate nella taratura
   File  : ventaglio-v3.html
-  Build : 2026-07-27 22:00 CEST
+  Build : 2026-07-27 22:40 CEST
+  v3.29.1: due difetti introdotti dalla v3.27.0. Chiedere temperatura,
+           pioggia e raffiche in un'unica richiesta faceva fallire il
+           TUTTO quando mancava una sola variabile: ERA5-Land non ha le
+           raffiche, quindi la temperatura ripiegava su ERA5 a 25 km; e
+           un modello senza raffiche archiviate spariva anche dal conto
+           della temperatura, potendo far abortire l'intera taratura.
+           Ora richieste separate, come gia' si fa per l'ensemble.
   v3.29.0: la taratura registra la propria data. Oltre i quattro mesi
            compare l'invito a rifarla: i difetti di un punto cambiano
            con la stagione, e una taratura estiva descrive male
@@ -908,7 +915,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.29.0 &middot; build 2026-07-27<br>
+    v3.29.1 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1817,38 +1824,56 @@ async function calibra(){
   const tz=encodeURIComponent(S.tz);
   const per="latitude="+S.loc.latitude+"&longitude="+S.loc.longitude
     +"&start_date="+iso(inizio)+"&end_date="+iso(fine)
-    +"&daily=temperature_2m_max,precipitation_sum,wind_gusts_10m_max&timezone="+tz;
+    +"&timezone="+tz;
+  const D_CORE  = "&daily=temperature_2m_max";
+  const D_EXTRA = "&daily=precipitation_sum,wind_gusts_10m_max";
   try{
     st.textContent="Scarico la rianalisi di riferimento\u2026";
     /* v3.27.0 — due riferimenti: ERA5-Land (9 km) e' migliore sulla
        temperatura ma non espone le raffiche; ERA5 (25 km) le ha. Da ciascuno
        si prende cio' che sa fare, variabile per variabile. Valgono ovunque
        nel mondo: sono rianalisi globali. */
-    let rL=null, rG=null;
-    try{ rL=await jget(ARCH+"?"+per+"&models=era5_land"); }catch(e){}
-    try{ rG=await jget(ARCH+"?"+per+"&models=era5"); }catch(e){}
-    const pesca=k=>{
-      for(const r of [rL,rG]){
-        const a=r&&r.daily&&r.daily[k];
-        if(a&&a.some(v=>v!==null)) return a;
-      }
-      return null;
+    /* v3.29.1 — richieste separate per variabile. Chiedere le raffiche a
+       ERA5-Land, che non le ha, faceva fallire l'INTERA richiesta: si
+       ripiegava su ERA5 a 25 km anche per la temperatura, peggiorandola.
+       E' lo stesso errore gia' corretto sull'ensemble in v1.1.0, che avevo
+       riportato qui senza accorgermene. */
+    const chiedi = async (mod,dai) => {
+      try{ return await jget(ARCH+"?"+per+dai+"&models="+mod); }catch(e){ return null; }
     };
-    const V=pesca("temperature_2m_max");
-    const VP=(rG&&rG.daily&&rG.daily.precipitation_sum&&rG.daily.precipitation_sum.some(v=>v!==null))
-             ? rG.daily.precipitation_sum : pesca("precipitation_sum");
-    const VW=pesca("wind_gusts_10m_max");
+    const ok = a => (a && a.some(v=>v!==null)) ? a : null;
+
+    const tL = await chiedi("era5_land", D_CORE);
+    const tG = ok(tL&&tL.daily&&tL.daily.temperature_2m_max)
+               ? null : await chiedi("era5", D_CORE);
+    const V  = ok(tL&&tL.daily&&tL.daily.temperature_2m_max)
+               || ok(tG&&tG.daily&&tG.daily.temperature_2m_max);
     if(!V) throw new Error("nessuna rianalisi disponibile su questo punto");
 
+    const eG = await chiedi("era5", D_EXTRA);
+    const eL = ok(eG&&eG.daily&&eG.daily.precipitation_sum)
+               ? null : await chiedi("era5_land", "&daily=precipitation_sum");
+    const VP = ok(eG&&eG.daily&&eG.daily.precipitation_sum)
+               || ok(eL&&eL.daily&&eL.daily.precipitation_sum);
+    const VW = ok(eG&&eG.daily&&eG.daily.wind_gusts_10m_max);
+
     st.textContent="Recupero le previsioni archiviate dei modelli\u2026";
+    /* v3.29.1 — stessa correzione: se un modello non archivia le raffiche,
+       la richiesta unica falliva e quel modello spariva anche dal calcolo
+       della TEMPERATURA. Sotto i tre modelli la taratura si interrompeva
+       del tutto, lasciando in piedi quella vecchia senza spiegazioni. */
     const prev={}, prevP={}, prevW={};
     for(const id of DET){
       try{
-        const f=await jget(HIST+"?"+per+"&models="+id);
-        const d=f.daily||{};
-        if(d.temperature_2m_max?.some(v=>v!==null)) prev[id]=d.temperature_2m_max;
-        if(d.precipitation_sum?.some(v=>v!==null))  prevP[id]=d.precipitation_sum;
-        if(d.wind_gusts_10m_max?.some(v=>v!==null)) prevW[id]=d.wind_gusts_10m_max;
+        const f=await jget(HIST+"?"+per+D_CORE+"&models="+id);
+        const a=f.daily&&f.daily.temperature_2m_max;
+        if(a&&a.some(v=>v!==null)) prev[id]=a;
+      }catch(e){ continue; }
+      try{
+        const g2=await jget(HIST+"?"+per+D_EXTRA+"&models="+id);
+        const d=g2.daily||{};
+        if(d.precipitation_sum&&d.precipitation_sum.some(v=>v!==null))  prevP[id]=d.precipitation_sum;
+        if(d.wind_gusts_10m_max&&d.wind_gusts_10m_max.some(v=>v!==null)) prevW[id]=d.wind_gusts_10m_max;
       }catch(e){}
     }
     const ids=Object.keys(prev);
