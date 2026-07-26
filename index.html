@@ -1,9 +1,23 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.14.1 — l'ora corrente non viene piu' azzerata
+  VENTAGLIO v3.16.0 — la scena prende lo spazio che merita
   File  : ventaglio-v3.html
-  Build : 2026-07-27 01:40 CEST
+  Build : 2026-07-27 03:10 CEST
+  v3.16.0: la scena era fissa a 700x250 (2,8:1): su un telefono da
+           360 px risultava alta 129 px. Ora l'altezza dipende dalla
+           larghezza (fino a 380 unita' sotto i 420 px) e il disegno
+           viene ingrandito con una sola trasformazione, ritagliando
+           ai lati invece di ripoggiare ogni elemento. Sotto i 560 px
+           esce dai margini e tocca i bordi dello schermo.
+  v3.15.0: 1) membriGiorno contava come 0 mm i nulli oltre l'orizzonte
+              del modello: stesso difetto gia' corretto sull'aggregato,
+              qui ancora vivo per striscia, scena e grafico.
+           2) tre scale colore diverse per la stessa percentuale.
+           3) barre e striscia leggevano popolazioni di membri diverse.
+           4) date in UTC dove serviva la data locale.
+           Tutte le percentuali orarie ora passano da un'unica
+           funzione: barre, striscia, traccia, scena, widget e testo.
   v3.14.1: renderStriscia riazzerava lo scorrimento e l'aggancio
            riassegnava S.ora=0, cancellando l'ora corrente impostata
            al caricamento. Ora la striscia si riposiziona sull'ora
@@ -160,6 +174,21 @@
     margin-bottom:16px;background:var(--scafo)}
   .cielo svg.scene{display:block;width:100%;height:auto}
   .cielo .legenda{position:absolute;left:18px;bottom:14px;right:18px}
+  /* v3.16.0 — sul telefono la scena esce dai margini del corpo pagina e
+     tocca i bordi dello schermo: e' l'unico elemento che guadagna davvero
+     da tutta la larghezza disponibile, e senza angoli arrotondati smette
+     di sembrare una scheda fra le schede. */
+  @media (max-width:560px){
+    .cielo{
+      margin-left:calc(-16px - env(safe-area-inset-left));
+      margin-right:calc(-16px - env(safe-area-inset-right));
+      margin-bottom:22px;
+      border-radius:0;border-left:0;border-right:0;
+      box-shadow:0 26px 52px -30px rgba(0,0,0,.95);
+    }
+    .cielo .legenda{left:20px;right:20px;bottom:18px}
+    #condNome{font-size:clamp(26px,8vw,36px)}
+  }
   #condNome{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:clamp(22px,6vw,30px);
     line-height:1;letter-spacing:-.02em;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.55);margin:0}
   #condSub{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:#D6E6EC;
@@ -644,7 +673,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.14.1 &middot; build 2026-07-27<br>
+    v3.16.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1117,22 +1146,27 @@ function renderVerdetto(){
 
 /* probabilità oraria: quanti membri sono bagnati in quell'ora */
 function renderOraria(){
-  const g=G();
+  const g=G(), d=S.dayIdx;
+  /* v3.15.0 — le barre leggevano g.oraria (tutti i gruppi), la striscia
+     leggeva oraStat (che rispetta l'esclusione per quota): sulla stessa
+     schermata la stessa ora poteva mostrare due percentuali diverse.
+     Ora entrambe passano da oraStat. */
+  const pOra=[]; for(let h=0;h<24;h++) pOra.push(oraStat(d,h).pioggia||0);
   let best={v:1e9,i:-1};
   for(let h=8;h<=17;h++){
-    const v=(g.oraria[h].wet+g.oraria[h+1].wet+g.oraria[h+2].wet)/3;
+    const v=(pOra[h]+pOra[h+1]+pOra[h+2])/3;
     if(v<best.v) best={v,i:h};
   }
   let bars="";
   for(let h=0;h<24;h++){
-    const pct=Math.round(100*g.oraria[h].wet/Math.max(1,g.oraria[h].tot));
-    const col=pct>=60?"#E0603F":pct>=35?"#E2A33C":pct>=15?"#9BCE7A":"#2A4B58";
+    const pct=pOra[h];
+    const col=colorePioggia(pct);
     const evid=(h>=best.i&&h<best.i+3)?' style="outline:1.5px solid #4FBFA8;outline-offset:-1.5px"':'';
     bars+='<div class="bwrap" title="ore '+h+': piove in '+pct+' simulazioni su 100"'+evid+'>'
       +'<div class="bar" style="height:'+Math.max(3,pct)+'%;background:'+col+'"></div></div>';
   }
   $("bars").innerHTML=bars;
-  const pb=Math.round(100*best.v/Math.max(1,g.oraria[best.i].tot));
+  const pb=Math.round(best.v);
   $("bestWin").innerHTML=best.i>=0
     ? "Finestra diurna pi&ugrave; asciutta: <b>"+String(best.i).padStart(2,"0")+":00\u2013"
       +String(best.i+3).padStart(2,"0")+":00</b> &mdash; in quelle ore piove in "
@@ -1181,12 +1215,23 @@ function mostraBenvenuto(attivo){
    troppo stretto e va detto, non nascosto.
    ============================================================ */
 
+/* v3.15.0 — un solo modo di dire "che giorno e' qui", nel fuso della
+   localita' quando lo conosciamo. toISOString() restituisce la data UTC:
+   in Italia d'estate, fino alle 02:00, e' quella di ieri. */
+function dataLocale(){
+  if(typeof S.utcoff==="number")
+    return new Date(Date.now()+S.utcoff*1000).toISOString().slice(0,10);
+  return new Date().toLocaleDateString("sv-SE");
+}
+
 const kReg = l => "ventaglio3:reg:"+l.latitude.toFixed(2)+","+l.longitude.toFixed(2);
 
 async function registraPrevisione(){
   try{
     if(!S.loc || !S.giorni.length) return;
-    const oggi = new Date().toISOString().slice(0,10);
+    // v3.15.0 — data locale: con toISOString fra mezzanotte e le 02:00
+    // italiane si otteneva la data di ieri
+    const oggi = dataLocale();
     let arch=[]; try{ arch=JSON.parse(await store.get(kReg(S.loc))||"[]"); }catch(e){}
     const visti=new Set(arch.map(r=>r.valida+"|"+r.lead));
     const bias=S.cal?S.cal.bias:0;
@@ -1228,7 +1273,7 @@ async function verifica(){
     (j.daily?.time||[]).forEach((d,i)=>{
       oss[d]={ t:j.daily.temperature_2m_max?.[i], p:j.daily.precipitation_sum?.[i] };
     });
-    const oggi=new Date().toISOString().slice(0,10);
+    const oggi=dataLocale();   // v3.15.0 — vedi sopra
     const corto=[], lungo=[];
     for(const r of arch){
       if(r.valida>=oggi) continue;
@@ -1413,6 +1458,20 @@ $("gps").onclick=()=>{
     $("results").innerHTML='<div class="res-empty">'+m+'</div>';
   }, {timeout:12000, enableHighAccuracy:false, maximumAge:120000});
 };
+/* v3.16.0 — ruotando il telefono cambia la fascia: si ridisegna la scena,
+   con un ritardo per non ricalcolarla a ogni pixel del ridimensionamento */
+let _tScena=null, _ultimaH=null;
+window.addEventListener("resize", ()=>{
+  clearTimeout(_tScena);
+  _tScena=setTimeout(()=>{
+    const nuova=altezzaScena();
+    if(nuova!==_ultimaH && S.giorni.length){
+      _ultimaH=nuova;
+      try{ renderCielo(); }catch(e){}
+    }
+  }, 220);
+});
+
 $("calBtn").onclick=calibra;
 ["bande","scenari","fili"].forEach(k=>$("v_"+k).onclick=()=>setVista(k));
 $("t_reale").onclick=()=>setVar("T");
@@ -1510,7 +1569,11 @@ function condizione(idx){
 
 function quandoPiove(){
   const g=G(); if(!g) return "";
-  const fascia=(a,b)=>{ let w=0,t=0; for(let h=a;h<=b;h++){ w+=g.oraria[h].wet; t+=g.oraria[h].tot; } return t?100*w/t:0; };
+  // v3.15.0 — anche qui la popolazione passa da oraStat, come ovunque
+  const d=S.dayIdx;
+  const fascia=(a,b)=>{ let s=0,n=0;
+    for(let h=a;h<=b;h++){ const q=oraStat(d,h).pioggia; if(q!=null){ s+=q; n++; } }
+    return n?s/n:0; };
   const f=[{n:"al mattino",v:fascia(6,11)},{n:"nel pomeriggio",v:fascia(12,17)},{n:"in serata",v:fascia(18,23)}];
   const top=f.reduce((a,b)=>b.v>a.v?b:a);
   if(top.v<12) return "quasi tutte le simulazioni restano asciutte";
@@ -1524,6 +1587,16 @@ function nuvola(cx,cy,k,fill,op){
   return '<g fill="'+fill+'" opacity="'+op+'">'+e(-38,6,34,20)+e(-6,-8,40,27)+e(32,4,32,20)+e(0,14,58,15)+'</g>';
 }
 
+/* v3.16.0 — piu' alta dove c'e' spazio verticale in abbondanza e ne manca
+   in orizzontale, cioe' sul telefono in verticale. */
+function altezzaScena(){
+  const w = Math.min(window.innerWidth || 700, 900);
+  if(w < 420) return 380;
+  if(w < 560) return 340;
+  if(w < 760) return 300;
+  return 276;
+}
+
 function renderCielo(){
   let P, nome, sub, code;
   if(S.ora!==null && S.giorni.length){
@@ -1535,7 +1608,16 @@ function renderCielo(){
     sub = quandoPiove()+" \u00B7 copertura media "+Math.round(c.cloud)+"%"
         + (c.cape!==null?" \u00B7 CAPE "+Math.round(c.cape)+" J/kg":"");
   }
-  const W=700, H=250;
+  /* v3.16.0 — la scena era bloccata a 700x250, cioe' 2,8:1: su un telefono
+     da 360 px diventava alta 129 px, una fessura. Le coordinate interne
+     sono assolute e tarate su 250, quindi invece di ripoggiare ogni
+     elemento si ingrandisce tutto con una sola trasformazione e si taglia
+     ai lati. Le nuvole sono gia' disegnate due volte per la deriva, quindi
+     il ritaglio orizzontale non lascia buchi, e le proporzioni fra cielo,
+     sole e orizzonte restano identiche a prima. */
+  const W=700, H=altezzaScena();
+  const f=H/250, dx=(W-W*f)/2;
+  $("scene").setAttribute("viewBox","0 0 "+W+" "+H);
   let s='<defs>'
     +'<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
       +'<stop offset="0%" stop-color="'+P.cielo[0]+'"/><stop offset="100%" stop-color="'+P.cielo[1]+'"/></linearGradient>'
@@ -1545,7 +1627,8 @@ function renderCielo(){
     +'<clipPath id="box"><rect width="'+W+'" height="'+H+'" rx="0"/></clipPath>'
     +'</defs>'
     +'<g clip-path="url(#box)">'
-    +'<rect width="'+W+'" height="'+H+'" fill="url(#sky)"/>';
+    +'<rect width="'+W+'" height="'+H+'" fill="url(#sky)"/>'
+    +'<g transform="translate('+dx.toFixed(2)+',0) scale('+f.toFixed(4)+')">';
 
   // luna e stelle quando \u00E8 notte
   if(P.notturno){
@@ -1598,7 +1681,7 @@ function renderCielo(){
     +'fill="#08171F" opacity=".55"/>'
     +'<path d="M0,226 C100,219 160,232 250,226 C350,219 410,233 500,227 C580,221 640,231 700,225 L700,'+H+' L0,'+H+' Z" '
     +'fill="#08171F" opacity=".9"/>'
-    +'</g>';
+    +'</g></g>';
 
   $("scene").innerHTML=s;
   $("condNome").textContent=nome;
@@ -1656,6 +1739,15 @@ function quotaLoc(){
   const q = ENSEMBLES.filter(e=>S.ens[e.id]?.ok && S.ens[e.id].elev!=null).map(e=>S.ens[e.id].elev);
   return q.length ? quantile(q,0.5) : null;
 }
+/* v3.15.0 — la stessa percentuale era colorata con tre soglie diverse
+   (60/35/15 nelle barre, 55/32/14 nella striscia e nella traccia) e con
+   due grigi diversi per l'asciutto. Una sola scala, un solo posto. */
+const SOGLIE_PIOGGIA = [[55,"#E0603F"],[32,"#E2A33C"],[14,"#9BCE7A"]];
+function colorePioggia(pct, asciutto){
+  for(const [s,c] of SOGLIE_PIOGGIA) if(pct>=s) return c;
+  return asciutto || "#2A4B58";
+}
+
 function scartaModello(id){
   const q = quotaLoc(), e = S.ens[id];
   if (q===null || !e || e.elev==null) return false;
@@ -1671,13 +1763,18 @@ function membriGiorno(d){
       const T=[],P=[];
       for(let h=0;h<24;h++){
         T.push(E.T[m][d*24+h]);
-        const p=E.P[m]?E.P[m][d*24+h]:0;
-        P.push(p==null?0:p);
+        const p=E.P[m]?E.P[m][d*24+h]:null;
+        P.push(p==null?null:p);
       }
-      if(!T.some(v=>v!=null)) continue;
+      /* v3.15.0 — qui viveva ancora il difetto corretto in v3.11.0 solo
+         sull'aggregato: i nulli oltre l'orizzonte del modello diventavano
+         0 mm, cioe' simulazioni asciutte inventate, e bastava un solo
+         valore valido per ammettere il membro. Stesso criterio di la':
+         almeno 12 ore valide su 24. Riguardava striscia, scena e grafico. */
+      if(T.filter(v=>v!=null).length<12 || P.filter(v=>v!=null).length<12) continue;
       let A=null;
       if(E.A && E.A[m]){ A=[]; for(let h=0;h<24;h++) A.push(E.A[m][d*24+h]); if(!A.some(v=>v!=null)) A=null; }
-      out.push({T,A,P,mm:P.reduce((s,x)=>s+x,0),col:e.col,mod:e.nome});
+      out.push({T,A,P,mm:P.reduce((s,x)=>s+(x||0),0),col:e.col,mod:e.nome});
     }
   }
   return out;
@@ -1891,11 +1988,13 @@ function oraStat(d,h){
   const T=mem.map(m=>m.T[h]).filter(v=>v!=null);
   const A=mem.map(m=>m.A?m.A[h]:null).filter(v=>v!=null);
   const mm=mem.map(m=>m.P[h]).filter(v=>v!=null);
-  const wet=mem.filter(m=>m.P[h]>=0.1).length;
+  // v3.15.0 — denominatore sui soli membri che hanno un valore a quell'ora
+  const val=mem.filter(m=>m.P[h]!=null);
+  const wet=val.filter(m=>m.P[h]>=0.1).length;
   return {
     t: T.length?quantile(T,.5):null,
     a: A.length?quantile(A,.5):(S.atmo&&S.atmo.app?S.atmo.app[i]:null),
-    pioggia: mem.length?Math.round(100*wet/mem.length):null,
+    pioggia: val.length?Math.round(100*wet/val.length):null,
     mm: mm.length?quantile(mm,.5):null,
     nubi: S.atmo&&S.atmo.cloud?S.atmo.cloud[i]:null,
     cape: S.atmo&&S.atmo.cape?S.atmo.cape[i]:null,
@@ -1930,7 +2029,7 @@ function renderStriscia(){
   for(let h=0;h<24;h++){
     const c=condizioneOra(d,h), o=c.o;
     const alt=Math.max(3, o.pioggia||0);
-    const col=o.pioggia>=55?"#E0603F":o.pioggia>=32?"#E2A33C":o.pioggia>=14?"#9BCE7A":"#2A4B58";
+    const col=colorePioggia(o.pioggia||0);
     html+='<button class="ora'+(c.notte?" notte":"")+'" data-h="'+h+'" '
       +'aria-label="ore '+h+', '+(o.t!=null?o.t.toFixed(0)+" gradi":"")+'">'
       +'<span class="oh">'+String(h).padStart(2,"0")+'</span>'
@@ -1968,7 +2067,7 @@ function dipingiTraccia(d){
   const stops=[];
   for(let h=0;h<24;h++){
     const p=oraStat(d,h).pioggia||0;
-    const c = p>=55?"#E0603F" : p>=32?"#E2A33C" : p>=14?"#9BCE7A" : "#1E3D4C";
+    const c = colorePioggia(p, "#1E3D4C");
     const a=(h/24*100).toFixed(3), b=((h+1)/24*100).toFixed(3);
     stops.push(c+" "+a+"%", c+" "+b+"%");
   }
@@ -2196,8 +2295,9 @@ function renderWidget(){
 
   if(COMPATTA==="oggi"){
     let best={v:1e9,i:-1};
-    for(let h=8;h<=17;h++){
-      const v=(g.oraria[h].wet+g.oraria[h+1].wet+g.oraria[h+2].wet)/3;
+    for(let h=8;h<=17;h++){   // v3.15.0 — stessa fonte del resto dell'app
+      const v=((oraStat(d,h).pioggia||0)+(oraStat(d,h+1).pioggia||0)
+              +(oraStat(d,h+2).pioggia||0))/3;
       if(v<best.v) best={v,i:h};
     }
     if(best.i>=0) html+='<div class="wfin">Finestra pi\u00F9 asciutta <b>'
