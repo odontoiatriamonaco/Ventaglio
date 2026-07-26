@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.24.0 — anteprima nelle chat
+  VENTAGLIO v3.24.1 — anteprima ridisegnata per il ritaglio quadrato
   File  : ventaglio-v3.html
-  Build : 2026-07-27 15:30 CEST
+  Build : 2026-07-27 16:10 CEST
+  v3.24.1: og.png ricomposta al centro. WhatsApp ne fa un ritaglio
+           quadrato centrale e la versione orizzontale perdeva la
+           prima meta' del nome. Nessun cambiamento al codice, ma
+           versione e data vanno mosse lo stesso: altrimenti Git non
+           vede differenze in index.html e il deploy non parte.
+           Aggiornato anche sw.js (cache versionata, guscio dalla rete).
   v3.24.0: mancavano del tutto i meta Open Graph, percio' nelle chat il
            link usciva come blocco di testo grigio senza immagine.
            Aggiunti og:* e twitter:*, con og.png 1200x630 da mettere
@@ -104,7 +110,7 @@
 <link rel="author" href="mailto:odontoiatria.monaco@gmail.com">
 <meta name="description" content="Non una previsione sola, ma oltre cento simulazioni dei grandi centri meteorologici — e quante finiscono con la pioggia. Calibrata sul tuo paese.">
 
-<!-- v3.24.0 — anteprima nelle chat. Senza og:image WhatsApp, Telegram e
+<!-- v3.24.1 — anteprima nelle chat. Senza og:image WhatsApp, Telegram e
      iMessage mostrano solo testo grigio. L'URL dell'immagine deve essere
      assoluto: un percorso relativo o un data URI non vengono seguiti. -->
 <meta property="og:type" content="website">
@@ -844,7 +850,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.24.0 &middot; build 2026-07-27<br>
+    v3.24.1 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 

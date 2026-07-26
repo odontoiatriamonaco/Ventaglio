@@ -1,6 +1,15 @@
 /* ============================================================
    Ventaglio — service worker
-   Versione: v1.0.1   Build: 2026-07-26 17:15 CEST
+   Versione: v1.1.0   Build: 2026-07-27 16:10 CEST
+
+   CHANGELOG v1.1.0
+   - La chiave della cache era fissa a "ventaglio-v1": il blocco di
+     activate cancella le cache diverse dalla corrente, ma non essendo
+     mai cambiata non ripuliva nulla.
+   - Il guscio era servito prima dalla cache e aggiornato in sottofondo:
+     dopo un deploy si vedeva la versione nuova solo al lancio SUCCESSIVO.
+     Ora per le navigazioni si prova prima la rete, con la cache come
+     rete di salvataggio quando si e' offline.
    Autore  : Dr. Maurizio Monaco
 
    Da mettere ACCANTO al file HTML quando si pubblica (stessa cartella).
@@ -13,7 +22,9 @@
    si mostra l'ultima risposta ricevuta, che è meglio del vuoto.
    ============================================================ */
 
-const CACHE = "ventaglio-v1";
+/* v1.1.0 — va cambiata a ogni pubblicazione: e' cio' che fa ripulire
+   le vecchie copie all'attivazione. */
+const CACHE = "ventaglio-2026-07-27-a";
 const GUSCIO = ["./", "./index.html"];
 
 self.addEventListener("install", e=>{
@@ -43,7 +54,19 @@ self.addEventListener("fetch", e=>{
     );
     return;
   }
-  // guscio e font: prima la cache, aggiornando in sottofondo
+  // v1.1.0 — pagina: prima la rete, cosi' un deploy si vede subito.
+  // Offline si ripiega sulla copia salvata.
+  if(req.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith(".html")){
+    e.respondWith(
+      fetch(req).then(r=>{
+        if(r && r.status===200){ const c=r.clone(); caches.open(CACHE).then(x=>x.put(req,c)); }
+        return r;
+      }).catch(()=>caches.match(req).then(hit=>hit || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // font e risorse statiche: prima la cache, aggiornando in sottofondo
   e.respondWith(
     caches.match(req).then(hit=>{
       const rete = fetch(req).then(r=>{
