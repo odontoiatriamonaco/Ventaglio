@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.11.0 — orizzonte a 7 giorni
+  VENTAGLIO v3.12.0 — pagella, raffiche, avvio su oggi
   File  : ventaglio-v3.html
-  Build : 2026-07-26 22:30 CEST
+  Build : 2026-07-26 23:40 CEST
+  v3.12.0: si apre su oggi invece che su domani. Raffiche con
+           probabilita' vere dalle simulazioni. Pagella: l'app
+           archivia cio' che prevede e si verifica da sola
+           (errore, bias residuo, copertura reale, Brier skill).
   v3.11.0: orizzonte esteso a 7 giorni. I membri oltre l'orizzonte del
            proprio modello vengono esclusi invece che contati come 0 mm.
            Intervallo calibrato dichiarato solo fino a giorno 3; oltre
@@ -391,6 +395,15 @@
     font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--nebbia)}
   #bestWin{margin-top:13px;font-size:13px;color:var(--nebbia)}
   #bestWin b{color:var(--verderame)}
+  .pgblock{margin-bottom:18px}
+  .pgblock:last-child{margin-bottom:0}
+  .pgtit{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--verderame);margin-bottom:8px}
+  .voto{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:1px 7px;
+    border-radius:99px;margin-left:8px}
+  .voto.buono{background:rgba(79,191,168,.18);color:var(--verderame)}
+  .voto.medio{background:rgba(226,163,60,.18);color:var(--ottone)}
+  .voto.brutto{background:rgba(224,96,63,.18);color:var(--corallo)}
   .calrow{display:flex;justify-content:space-between;gap:14px;padding:9px 0;
     border-bottom:1px solid rgba(34,72,90,.45);font-size:13px;color:var(--nebbia)}
   .calrow b{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--schiuma)}
@@ -527,6 +540,12 @@
   </section>
 
   <section class="card full">
+    <h2>Pagella &mdash; come se l'&egrave; cavata finora</h2>
+    <p class="note">Ogni volta che apri questa localit&agrave;, l'app archivia le previsioni che sta emettendo. Quando quei giorni arrivano, le confronta con quello che &egrave; successo davvero. Non &egrave; il voto dei modelli: &egrave; il voto di questa app, su questo posto.</p>
+    <div id="pagella" style="margin-top:16px"></div>
+  </section>
+
+  <section class="card full">
     <h2>Limiti dichiarati</h2>
     <p class="note">La verit&agrave; di riferimento &egrave; ERA5-Land: una <strong>rianalisi</strong>, non una stazione. Affidabile sulla temperatura, mediocre sulla precipitazione &mdash; per questo la correzione di bias si applica solo alla temperatura e le probabilit&agrave; di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave; verificata. Quando usi il pulsante della posizione, le coordinate vengono inviate a un servizio di geocodifica inversa (BigDataCloud, in alternativa OpenStreetMap) al solo scopo di ricavare il nome del comune. La calibrazione usa i deterministici archiviati come proxy della dispersione fra le simulazioni, perch&eacute; l'archivio delle simulazioni non &egrave; gratuito. Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore meno.</p>
   </section>
@@ -596,7 +615,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.11.0 &middot; build 2026-07-26<br>
+    v3.12.0 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -644,7 +663,8 @@ const ENSEMBLES = [
 const DET = ["ecmwf_ifs025","gfs_seamless","icon_seamless",
              "meteofrance_seamless","ukmo_seamless","italia_meteo_arpae_icon_2i"];
 
-const S = { loc:null, ens:{}, giorni:[], dayIdx:1, ora:null, cal:null, diag:[], tz:"auto", atmo:null };
+const S = { loc:null, ens:{}, giorni:[], dayIdx:0, ora:null, cal:null, diag:[], tz:"auto", atmo:null,
+            pagella:null };   // v3.12.0 — si apre su oggi, non su domani
 
 /* ---------- storage ---------- */
 const store = {
@@ -824,6 +844,14 @@ async function carica(loc){
         const A=membri(ja.hourly,"apparent_temperature");
         if(A.length && A[0].some(v=>v!==null)){ S.ens[e.id].A=A; extra=" + percepita"; }
       }catch(err2){ extra=" \u00B7 senza percepita"; }
+      // v3.12.0 — raffiche: chiamata separata, non tutti i gruppi le espongono
+      // e una variabile mancante farebbe fallire l'intera richiesta.
+      try{
+        const jw=await jget(ENS+"?latitude="+loc.latitude+"&longitude="+loc.longitude
+          +"&hourly=wind_gusts_10m&models="+e.id+"&timezone="+tz+"&forecast_days=7");
+        const W=membri(jw.hourly,"wind_gusts_10m");
+        if(W.length && W[0].some(v=>v!==null)){ S.ens[e.id].W=W; extra+=" + raffiche"; }
+      }catch(err3){}
       S.diag.push({n:e.nome,ok:true,msg:T.length+" simulazioni"+extra});
     }catch(err){
       S.ens[e.id]={ok:false}; S.diag.push({n:e.nome,ok:false,msg:String(err.message||err)});
@@ -840,7 +868,7 @@ async function carica(loc){
   const nGiorni=Math.min(7,Math.floor(time.length/24));
   S.giorni=[];
   for(let d=0; d<nGiorni; d++){
-    const tmax=[], psum=[], oraria=[], centri=new Set();
+    const tmax=[], psum=[], raff=[], oraria=[], centri=new Set();
     for(let h=0;h<24;h++) oraria.push({wet:0,tot:0,mm:[]});
     for(const e of vivi){
       const E=S.ens[e.id];
@@ -858,6 +886,11 @@ async function carica(loc){
         if(tt.length<12 || pp.filter(v=>v!==null).length<12) continue;
         tmax.push(Math.max(...tt));
         psum.push(pp.reduce((s,x)=>s+(x||0),0));
+        if(E.W && E.W[m]){
+          const ww=[];
+          for(let h=0;h<24;h++){ const v=E.W[m][d*24+h]; if(v!==null&&v!==undefined) ww.push(v); }
+          if(ww.length>=12) raff.push(Math.max(...ww));
+        }
         centri.add(e.id);
         for(let h=0;h<24;h++){
           const pv=pp[h]===null?0:pp[h];
@@ -867,10 +900,12 @@ async function carica(loc){
       }
     }
     if(!tmax.length) break;   // nessun centro arriva fin qui
-    S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, oraria, centri:centri.size });
+    S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, raff, oraria, centri:centri.size });
   }
-  if(S.dayIdx>=S.giorni.length) S.dayIdx=Math.min(1,S.giorni.length-1);
+  if(S.dayIdx>=S.giorni.length) S.dayIdx=0;   // v3.12.0 — oggi
   await atmosfera();
+  await registraPrevisione();
+  await verifica();
   renderTutto();
 }
 
@@ -925,6 +960,10 @@ function renderVerdetto(){
 
   const p = s => Math.round(100*g.psum.filter(x=>x>=s).length/g.psum.length);
   const p02=p(0.2), p1=p(1), p5=p(5), p15=p(15);
+  // v3.12.0 — raffiche: probabilita' vere, contate sulle simulazioni
+  const R = g.raff||[];
+  const pRaff = s => R.length ? Math.round(100*R.filter(x=>x>=s).length/R.length) : null;
+  const raffMed = R.length ? quantile(R,.5) : null;
   const mediana=quantile(g.psum,.5), q90=quantile(g.psum,.9);
   const cls=v=>v>60?"coral":v>30?"amber":"teal";
 
@@ -956,7 +995,9 @@ function renderVerdetto(){
         :dApp<=-1?dApp.toFixed(0)+"\u00B0 sul termometro":"come il termometro")+'</div></div>')
     +'<div class="metric"><div class="v '+cls(p1)+'">'+p1+'%</div><div class="k">pioggia &gt;1 mm</div></div>'
     +'<div class="metric"><div class="v '+cls(p5)+'">'+p5+'%</div><div class="k">rovescio &gt;5 mm</div></div>'
-    +'<div class="metric"><div class="v '+cls(p15)+'">'+p15+'%</div><div class="k">nubifragio &gt;15 mm</div></div>';
+    +'<div class="metric"><div class="v '+cls(p15)+'">'+p15+'%</div><div class="k">nubifragio &gt;15 mm</div></div>'
+    +(raffMed===null?"":'<div class="metric"><div class="v '+cls(pRaff(40))+'">'
+      +Math.round(raffMed)+'<small> km/h</small></div><div class="k">raffica mediana</div></div>');
 
   const su100=v=>Math.round(v);
   $("subVerdict").innerHTML=
@@ -964,6 +1005,8 @@ function renderVerdetto(){
     +su100(p5)+"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
     +"Nella met&agrave; pi&ugrave; asciutta l'accumulo si ferma a "+mediana.toFixed(1)
     +" mm; nel 10% pi&ugrave; bagnato arriva a "+q90.toFixed(1)+" mm."
+    +(raffMed===null?"":" Raffiche oltre 40 km/h in <b>"+pRaff(40)
+      +"</b> simulazioni su 100, oltre 60 in <b>"+pRaff(60)+"</b>.")
     +'<br><span style="opacity:.72">calcolato su '+N+" simulazioni reali, da "
     +ENSEMBLES.filter(e=>S.ens[e.id].ok).length+" centri meteorologici</span>";
 
@@ -1072,11 +1115,139 @@ function mostraBenvenuto(attivo){
   document.body.classList.toggle("senza-luogo", !!attivo);
 }
 
+/* ============================================================
+   v3.12.0 — PAGELLA: verifica a posteriori
+   Build: 2026-07-26 23:40 CEST
+   L'app dichiara probabilita' e un intervallo all'80%. Senza
+   verifica sono affermazioni non falsificabili. Qui si archivia
+   cio' che e' stato emesso e lo si confronta con l'osservato.
+   Se la copertura reale esce 60% invece di 80, l'intervallo e'
+   troppo stretto e va detto, non nascosto.
+   ============================================================ */
+
+const kReg = l => "ventaglio3:reg:"+l.latitude.toFixed(2)+","+l.longitude.toFixed(2);
+
+async function registraPrevisione(){
+  try{
+    if(!S.loc || !S.giorni.length) return;
+    const oggi = new Date().toISOString().slice(0,10);
+    let arch=[]; try{ arch=JSON.parse(await store.get(kReg(S.loc))||"[]"); }catch(e){}
+    const visti=new Set(arch.map(r=>r.valida+"|"+r.lead));
+    const bias=S.cal?S.cal.bias:0;
+    S.giorni.forEach((g,d)=>{
+      if(d===0) return;                        // oggi non e' una previsione
+      const chiave=g.data+"|"+d;
+      if(visti.has(chiave)) return;            // gia' registrata a questo anticipo
+      const grezza=media(g.tmax), disp=sd(g.tmax);
+      const half=(S.cal&&S.cal.a!==undefined)
+        ? S.cal.k*Math.max(0.15,S.cal.a+S.cal.b*disp) : 1.28*disp;
+      arch.push({ emesso:oggi, valida:g.data, lead:d,
+                  t:+(grezza-bias).toFixed(2), h:+half.toFixed(2),
+                  p1:Math.round(100*g.psum.filter(x=>x>=1).length/g.psum.length),
+                  n:g.tmax.length });
+    });
+    if(arch.length>600) arch=arch.slice(-600);
+    await store.set(kReg(S.loc), JSON.stringify(arch));
+  }catch(e){}
+}
+
+function votaCopertura(c){
+  // l'intervallo e' dichiarato all'80%: si giudica lo scarto da 80
+  if(c>=72 && c<=88) return ["buono","onesto"];
+  if(c>=62 && c<=93) return ["medio", c<80?"un po' stretto":"un po' largo"];
+  return ["brutto", c<80?"troppo stretto":"troppo largo"];
+}
+
+async function verifica(){
+  S.pagella=null;
+  try{
+    if(!S.loc) return;
+    let arch=[]; try{ arch=JSON.parse(await store.get(kReg(S.loc))||"[]"); }catch(e){}
+    if(!arch.length){ S.pagella={vuota:true, tot:0}; return; }
+    const j=await jget("https://api.open-meteo.com/v1/forecast?latitude="+S.loc.latitude
+      +"&longitude="+S.loc.longitude
+      +"&daily=temperature_2m_max,precipitation_sum&past_days=60&forecast_days=1&timezone="
+      +encodeURIComponent(S.tz));
+    const oss={};
+    (j.daily?.time||[]).forEach((d,i)=>{
+      oss[d]={ t:j.daily.temperature_2m_max?.[i], p:j.daily.precipitation_sum?.[i] };
+    });
+    const oggi=new Date().toISOString().slice(0,10);
+    const corto=[], lungo=[];
+    for(const r of arch){
+      if(r.valida>=oggi) continue;
+      const o=oss[r.valida];
+      if(!o || o.t===null || o.t===undefined) continue;
+      const rec={...r, ot:o.t, op:(o.p===null||o.p===undefined)?0:o.p};
+      (r.lead<=3?corto:lungo).push(rec);
+    }
+    const calc=arr=>{
+      if(!arr.length) return null;
+      const mae=media(arr.map(r=>Math.abs(r.t-r.ot)));
+      const bias=media(arr.map(r=>r.t-r.ot));
+      const cop=100*arr.filter(r=>Math.abs(r.t-r.ot)<=r.h).length/arr.length;
+      // Brier sulle probabilita' di pioggia, contro la climatologia locale
+      const esito=arr.map(r=>r.op>=1?1:0);
+      const bs=media(arr.map((r,i)=>((r.p1/100)-esito[i])**2));
+      const base=media(esito);
+      const bsRef=media(esito.map(e=>(base-e)**2));
+      const bss=(bsRef>1e-6)?(1-bs/bsRef):null;
+      return {n:arr.length, mae, bias, cop, bs, bss, base:base*100};
+    };
+    S.pagella={ corto:calc(corto), lungo:calc(lungo), tot:arch.length,
+                attesa:arch.filter(r=>r.valida>=oggi).length };
+  }catch(e){ S.pagella={errore:String(e.message||e)}; }
+}
+
+function renderPagella(){
+  const el=$("pagella"); if(!el) return;
+  const P=S.pagella;
+  if(!P){ el.innerHTML='<p class="note">verifica non ancora eseguita</p>'; return; }
+  if(P.errore){ el.innerHTML='<p class="note">Verifica non riuscita: '+esc(P.errore)+'</p>'; return; }
+
+  const blocco=(tit,c)=>{
+    if(!c) return '<div class="pgblock"><div class="pgtit">'+tit+'</div>'
+      +'<p class="note">Nessun giorno ancora verificabile. Serve che passi il giorno previsto.</p></div>';
+    const [cl,et]=votaCopertura(c.cop);
+    return '<div class="pgblock"><div class="pgtit">'+tit+' &middot; '+c.n+' giorni verificati</div>'
+      +'<div class="calrow"><span>Errore medio sulla massima</span><b>'+c.mae.toFixed(2)+' \u00B0C</b></div>'
+      +'<div class="calrow"><span>Bias residuo</span><b>'+(c.bias>=0?"+":"")+c.bias.toFixed(2)+' \u00B0C</b></div>'
+      +'<div class="calrow"><span>Copertura reale dell&apos;intervallo</span><b>'+c.cop.toFixed(0)
+        +'%<span class="voto '+cl+'">'+et+'</span></b></div>'
+      +(c.bss===null?'':'<div class="calrow"><span>Probabilit&agrave; di pioggia</span><b>'
+        +(c.bss>0?"+":"")+(c.bss*100).toFixed(0)+'% sulla climatologia</b></div>')
+      +'</div>';
+  };
+
+  let out=blocco("Fino a 3 giorni", P.corto)+blocco("Da 4 a 7 giorni", P.lungo);
+
+  const nTot=(P.corto?P.corto.n:0)+(P.lungo?P.lungo.n:0);
+  if(nTot===0){
+    out+='<p class="note">Archiviate <b>'+(P.attesa||P.tot||0)+'</b> previsioni in attesa di scadere. '
+      +'La pagella si popola da sola nei prossimi giorni, senza che tu debba fare niente.</p>';
+  }else if(nTot<10){
+    out+='<p class="note"><b>Campione ancora piccolo</b> ('+nTot+' giorni): '
+      +'questi numeri oscillano parecchio. Diventano affidabili sopra la trentina.</p>';
+  }else{
+    const c=P.corto;
+    if(c && c.bss!==null && c.bss<=0)
+      out+='<p class="note">Sulle probabilit&agrave; di pioggia l&apos;app <b>non sta battendo la pura climatologia</b> '
+        +'di questo posto ('+c.base.toFixed(0)+'% di giorni piovosi). &Egrave; un risultato scomodo ma vero: '
+        +'a corto raggio l&apos;informazione utile qui &egrave; poca.</p>';
+    if(c && (c.cop<70 || c.cop>90))
+      out+='<p class="note">La copertura reale &egrave; lontana dall&apos;80% dichiarato: il fattore <b>k</b> '
+        +'della calibrazione andrebbe rivisto. Rilancia <b>Calibra</b>, e se non basta il problema '
+        +'&egrave; nella relazione dispersione&ndash;errore, non nel fattore.</p>';
+  }
+  el.innerHTML=out;
+}
+
 function renderTutto(){
   const passi=[["cielo",renderCielo],["blocco",renderBlocco],["giorni",renderGiorni],
                ["verdetto",renderVerdetto],["grafico",renderGrafico],
                ["viste",()=>setVar(VAR)],["striscia",renderStriscia],
-               ["orario",renderOraria],["calibrazione",renderCal],["compatta",renderWidget],
+               ["orario",renderOraria],["calibrazione",renderCal],
+               ["pagella",renderPagella],["compatta",renderWidget],
                ["stella",aggiornaStella]];
   for(const [nome,fn] of passi){
     try{ fn(); }
