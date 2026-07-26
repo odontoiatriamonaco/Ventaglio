@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.23.0 — glifi a due tinte, con respiro
+  VENTAGLIO v3.24.0 — anteprima nelle chat
   File  : ventaglio-v3.html
-  Build : 2026-07-27 14:45 CEST
+  Build : 2026-07-27 15:30 CEST
+  v3.24.0: mancavano del tutto i meta Open Graph, percio' nelle chat il
+           link usciva come blocco di testo grigio senza immagine.
+           Aggiunti og:* e twitter:*, con og.png 1200x630 da mettere
+           nella stessa cartella. Descrizione riscritta: quella vecchia
+           diceva 'ensemble reali' a gente che non sa cosa siano.
   v3.23.0: ogni glifo prende i colori della cosa che rappresenta
            (mercurio rosso, goccia azzurra, saetta gialla) e una
            micro-animazione legata al significato: la pioggia cade,
@@ -97,7 +102,27 @@
 <title>Ventaglio — previsione probabilistica calibrata</title>
 <meta name="author" content="Dr. Maurizio Monaco">
 <link rel="author" href="mailto:odontoiatria.monaco@gmail.com">
-<meta name="description" content="Ventaglio: previsione meteo probabilistica basata su ensemble reali, calibrata sulla località. Un software del Dr. Maurizio Monaco.">
+<meta name="description" content="Non una previsione sola, ma oltre cento simulazioni dei grandi centri meteorologici — e quante finiscono con la pioggia. Calibrata sul tuo paese.">
+
+<!-- v3.24.0 — anteprima nelle chat. Senza og:image WhatsApp, Telegram e
+     iMessage mostrano solo testo grigio. L'URL dell'immagine deve essere
+     assoluto: un percorso relativo o un data URI non vengono seguiti. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ventaglio">
+<meta property="og:locale" content="it_IT">
+<meta property="og:url" content="https://ventaglio.vercel.app/">
+<meta property="og:title" content="Ventaglio — quanto puoi fidarti della previsione di oggi">
+<meta property="og:description" content="Non una previsione sola, ma oltre cento simulazioni dei grandi centri meteorologici — e quante finiscono con la pioggia. Calibrata sul tuo paese.">
+<meta property="og:image" content="https://ventaglio.vercel.app/og.png">
+<meta property="og:image:secure_url" content="https://ventaglio.vercel.app/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ventaglio: traiettorie che divergono su fondo blu notte">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Ventaglio — quanto puoi fidarti della previsione di oggi">
+<meta name="twitter:description" content="Oltre cento simulazioni dei grandi centri meteorologici, e quante finiscono con la pioggia. Calibrata sul tuo paese.">
+<meta name="twitter:image" content="https://ventaglio.vercel.app/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -819,7 +844,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.23.0 &middot; build 2026-07-27<br>
+    v3.24.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
