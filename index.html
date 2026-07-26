@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.31.0 — il fattore non applicato resta visibile
+  VENTAGLIO v3.32.0 — la scena dichiara il dubbio invece di nasconderlo
   File  : ventaglio-v3.html
-  Build : 2026-07-28 00:50 CEST
+  Build : 2026-07-28 09:30 CEST
+  v3.32.0: con CAPE alto bastavano 45 simulazioni bagnate su 100 per
+           annunciare 'Temporale', cioe' meno della meta': l'etichetta
+           piu' drammatica scattava su un lancio di moneta, e d'estate
+           sul mare il CAPE supera 800 quasi ogni pomeriggio. Ora il
+           temporale certo parte da 60 e richiede pioggia vera (0,6 mm
+           medi, non 0,1), e fra il 35 e il 60 compaiono due stati che
+           dicono 'possibile' invece di dare per certo.
   v3.31.0: il rapporto pioggia viene calcolato e mostrato anche quando
            le guardie ne impediscono l'uso, come termine di paragone.
            BUG: la pagella archiviava le probabilita' senza annotare il
@@ -929,7 +936,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.31.0 &middot; build 2026-07-28<br>
+    v3.32.0 &middot; build 2026-07-28<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2167,6 +2174,12 @@ const PALETTE = {
   pioggia_debole:{ cielo:["#1E3B47","#556E7B"], nuvola:"#8FA3AD", sole:0.16, pioggia:16, fulmini:0, tinta:"#0B1C25", nome:"Pioggia debole" },
   pioggia:       { cielo:["#17303A","#425966"], nuvola:"#72858F", sole:0.05, pioggia:32, fulmini:0, tinta:"#091822", nome:"Pioggia" },
   temporale:     { cielo:["#101F2B","#2E4053"], nuvola:"#53646F", sole:0.00, pioggia:42, fulmini:1, tinta:"#07141D", nome:"Temporale" },
+  /* v3.32.0 — la fascia fra il 40 e il 60% e' testa o croce: annunciare
+     un temporale li' significa dare per certo cio' che meta' delle
+     simulazioni esclude. Due stati che dichiarano il dubbio invece di
+     nasconderlo, con cielo e pioggia piu' tenui dei corrispettivi certi. */
+  temporale_forse:{ cielo:["#152836","#3A5062"], nuvola:"#647784", sole:0.10, pioggia:14, fulmini:1, tinta:"#091924", nome:"Temporale possibile" },
+  pioggia_forse:  { cielo:["#1F4150","#5C7684"], nuvola:"#9BAEB8", sole:0.26, pioggia:7,  fulmini:0, tinta:"#0C2029", nome:"Pioggia possibile" },
 };
 
 function condizione(idx){
@@ -2187,11 +2200,13 @@ function condizione(idx){
     if(cp.length) cape=Math.max(...cp);
   }
   if(cloud===null) cloud=Math.min(95, 22+p1*0.75);
-  // v3.14.0 — stesse soglie riviste sull'aggregato del giorno
+  // v3.32.0 — con la fascia del dubbio anche qui
   let code;
-  if(p15>=25 || (cape>=900 && p1>=55)) code="temporale";
-  else if(p5>=45)  code="pioggia";
-  else if(p1>=50)  code="pioggia_debole";
+  if(p15>=25 || (cape>=900 && p1>=65))            code="temporale";
+  else if(cape>=900 && p1>=45)                    code="temporale_forse";
+  else if(p5>=45)                                 code="pioggia";
+  else if(p1>=50)                                 code="pioggia_debole";
+  else if(p1>=35)                                 code="pioggia_forse";
   else if(cloud>=62) code="nuvoloso";
   else if(cloud>=32) code="velato";
   else code="sereno";
@@ -2604,7 +2619,8 @@ function setVar(v){
 const NOTTE = {
   sereno:["#0A1B2E","#1A3A55"], velato:["#0B1A28","#1E3B50"],
   nuvoloso:["#0C1822","#24363F"], pioggia_debole:["#0A1620","#1D2F39"],
-  pioggia:["#081219","#18262F"], temporale:["#060F16","#152029"]
+  pioggia:["#081219","#18262F"], temporale:["#060F16","#152029"],
+  temporale_forse:["#071119","#17232C"], pioggia_forse:["#0A151C","#1B2A33"]
 };
 
 let _cacheOre = {d:null, mem:null};
@@ -2623,10 +2639,15 @@ function oraStat(d,h){
   const val=mem.filter(m=>m.P[h]!=null);
   const kP=fattoreP();   // v3.27.0 — soglia sul valore corretto
   const wet=val.filter(m=>m.P[h]*kP>=0.1).length;
+  // v3.32.0 — intensita' media fra i membri bagnati: distingue quattro
+  // gocce da un rovescio, cosa che la sola frazione non sa fare
+  const bagnati=val.filter(m=>m.P[h]*kP>=0.1).map(m=>m.P[h]*kP);
+  const mediaMm=bagnati.length?media(bagnati):null;
   return {
     t: T.length?quantile(T,.5):null,
     a: A.length?quantile(A,.5):(S.atmo&&S.atmo.app?S.atmo.app[i]:null),
     pioggia: val.length?Math.round(100*wet/val.length):null,
+    mediaMm,   // v3.32.0
     mm: mm.length?quantile(mm,.5):null,
     nubi: S.atmo&&S.atmo.cloud?S.atmo.cloud[i]:null,
     cape: S.atmo&&S.atmo.cape?S.atmo.cape[i]:null,
@@ -2644,10 +2665,17 @@ function condizioneOra(d,h){
      l'esito che il 78% delle simulazioni esclude. La scena ora rappresenta
      l'esito piu' probabile; il rischio minore resta nelle barre e nel testo,
      dove e' un numero e non una pretesa. */
+  /* v3.32.0 — due correzioni. Il temporale certo passa da 45 a 60: sotto
+     il 60 non e' l'esito piu' probabile, e' un lancio di moneta. E si
+     guarda anche QUANTA pioggia: un membro contava come bagnato con
+     0,1 mm in un'ora, quattro gocce, che non fanno un temporale. */
+  const forte = (o.mediaMm!=null && o.mediaMm>=0.6);
   let code;
-  if(o.cape>=800 && o.pioggia>=45) code="temporale";
-  else if(o.pioggia>=65) code="pioggia";
-  else if(o.pioggia>=45) code="pioggia_debole";
+  if(o.cape>=800 && o.pioggia>=60 && forte)      code="temporale";
+  else if(o.cape>=800 && o.pioggia>=40)          code="temporale_forse";
+  else if(o.pioggia>=65)                         code="pioggia";
+  else if(o.pioggia>=50)                         code="pioggia_debole";
+  else if(o.pioggia>=35)                         code="pioggia_forse";
   else if(nubi>=62) code="nuvoloso";
   else if(nubi>=32) code="velato";
   else code="sereno";
