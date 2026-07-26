@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.28.0 — riconosce una taratura superata
+  VENTAGLIO v3.28.1 — accenti nelle stringhe nuove
   File  : ventaglio-v3.html
-  Build : 2026-07-27 21:00 CEST
+  Build : 2026-07-27 21:25 CEST
+  v3.28.1: sei stringhe visibili aggiunte nelle ultime versioni avevano
+           gli accenti resi con l'apostrofo ("e'" invece di "&egrave;"):
+           abitudine dei commenti, tenuti in ASCII, finita per sbaglio
+           nel testo che si legge a schermo.
   v3.28.0: una taratura salvata prima della v3.27.0 non ha i fattori di
            pioggia e raffiche, e la scheda li dava per 'non calcolato',
            che sembra un fallimento invece di un tentativo mai fatto.
@@ -900,7 +904,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.28.0 &middot; build 2026-07-27<br>
+    v3.28.1 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1419,7 +1423,7 @@ function renderVerdetto(){
   const nCentri = g.centri || ENSEMBLES.filter(e=>S.ens[e.id].ok).length;
   const avvisoLungo = oltreCal
     ? "<b>Nessun intervallo a questa scadenza.</b> Bias e copertura sono stati "
-      + "misurati sul giorno successivo, e l'errore cresce molto piu' che "
+      + "misurati sul giorno successivo, e l'errore cresce molto pi&ugrave; che "
       + "linearmente con l'anticipo: riportare qui lo stesso \u00B1 sarebbe un "
       + "numero preciso e falso. Le probabilit\u00E0 restano valide, l'intervallo no. "
     : "";
@@ -1570,22 +1574,22 @@ function renderCal(){
         ? vocenum("Fattore pioggia", "\u00D7"+c.fP.toFixed(2),
             "Rapporto fra la pioggia caduta davvero e quella prevista, sui totali di "
             + c.nP+" giorni. Sotto 1 vuol dire che qui i modelli <b>esagerano</b>, sopra 1 "
-            + "che sottostimano. Si usa il totale del periodo e non il singolo giorno perche' "
+            + "che sottostimano. Si usa il totale del periodo e non il singolo giorno perch&eacute; "
             + "un rovescio spostato di dieci chilometri falserebbe la giornata ma non i tre mesi.")
         : vocenum("Fattore pioggia", vecchia ? "da ricalcolare" : "non calcolato",
             vecchia
-              ? "Non e' stato tentato: questa taratura e' anteriore alla correzione della pioggia."
+              ? "Non &egrave; stato tentato: questa taratura &egrave; anteriore alla correzione della pioggia."
               : "Serve pioggia vera a sufficienza nel periodo: sotto quella soglia il rapporto "
                 + "sarebbe rumore travestito da correzione. Si ricalcola dopo una stagione piovosa."))
     + (c.fW!=null
         ? vocenum("Fattore raffiche", "\u00D7"+c.fW.toFixed(2),
             "Stesso metodo sulle raffiche massime giornaliere, su "+c.nW+" giorni. Qui il "
-            + "confronto e' fra due <i>stime</i> di raffica, quella dei modelli e quella della "
+            + "confronto &egrave; fra due <i>stime</i> di raffica, quella dei modelli e quella della "
             + "rianalisi: gran parte dell'errore comune si annulla e resta l'effetto del terreno "
-            + "locale, che e' proprio cio' che serve correggere. Resta la voce meno solida delle tre.")
+            + "locale, che &egrave; proprio ci&ograve; che serve correggere. Resta la voce meno solida delle tre.")
         : vocenum("Fattore raffiche", vecchia ? "da ricalcolare" : "non calcolato",
             vecchia
-              ? "Non e' stato tentato: questa taratura e' anteriore alla correzione delle raffiche."
+              ? "Non &egrave; stato tentato: questa taratura &egrave; anteriore alla correzione delle raffiche."
               : "La rianalisi non ha restituito raffiche utilizzabili su questo punto."))
     + vocenum("Finestra di riferimento", (c.da||"")+" \u2192 "+(c.al||""),
         "I giorni su cui &egrave; stato fatto il confronto. Si ferma a circa una settimana "
