@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.14.0 — la scena mostra l'esito piu' probabile
+  VENTAGLIO v3.14.1 — l'ora corrente non viene piu' azzerata
   File  : ventaglio-v3.html
-  Build : 2026-07-27 01:05 CEST
+  Build : 2026-07-27 01:40 CEST
+  v3.14.1: renderStriscia riazzerava lo scorrimento e l'aggancio
+           riassegnava S.ora=0, cancellando l'ora corrente impostata
+           al caricamento. Ora la striscia si riposiziona sull'ora
+           scelta con la guardia _daCursore alzata.
   v3.14.0: la scena disegnava pioggia dal 22% di simulazioni bagnate,
            illustrando cioe' l'esito che il 78% escludeva. Soglie
            portate sopra il 45%: si rappresenta l'esito modale. Su
@@ -640,7 +644,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.14.0 &middot; build 2026-07-27<br>
+    v3.14.1 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -934,10 +938,17 @@ async function carica(loc){
      scena mostrava l'aggregato dell'intera giornata: un rovescio previsto
      per le 17 dipingeva di pioggia anche il cielo delle 10. Su oggi si
      parte dall'ora corrente, nel fuso della localita'. */
-  if(S.dayIdx===0 && S.giorni.length && typeof S.utcoff==="number"){
-    const loc=new Date(Date.now()+S.utcoff*1000);
-    const oggiLoc=loc.toISOString().slice(0,10);
-    if(S.giorni[0].data===oggiLoc) S.ora=loc.getUTCHours();
+  if(S.dayIdx===0 && S.giorni.length){
+    let oraLoc, dataLoc;
+    if(typeof S.utcoff==="number"){
+      const l=new Date(Date.now()+S.utcoff*1000);
+      dataLoc=l.toISOString().slice(0,10); oraLoc=l.getUTCHours();
+    }else{
+      // v3.14.1 — nessun fuso dalle risposte: si ripiega sull'orologio locale
+      const l=new Date();
+      dataLoc=l.toLocaleDateString("sv-SE"); oraLoc=l.getHours();
+    }
+    if(S.giorni[0].data===dataLoc) S.ora=oraLoc;
   }
   await atmosfera();
   await registraPrevisione();
@@ -1932,6 +1943,21 @@ function renderStriscia(){
   box.querySelectorAll(".ora").forEach(b=>{
     b.onclick=()=>{ vaiAllOra(+b.dataset.h, "smooth"); };
   });
+  /* v3.14.1 — riscrivere innerHTML riporta scrollLeft a 0. Parte un evento
+     scroll, agganciaScroll trova come piu' centrata la cella delle 00 e
+     riassegna S.ora=0: l'ora corrente impostata al caricamento veniva
+     cancellata subito dopo, e la scena finiva per mostrare stanotte.
+     Qui si riporta la striscia sull'ora scelta, alzando _daCursore perche'
+     lo scroll che ne consegue non venga scambiato per un gesto dell'utente. */
+  if(S.ora!==null){
+    const cell=box.querySelector('.ora[data-h="'+S.ora+'"]');
+    if(cell){
+      _daCursore=true;
+      try{ cell.scrollIntoView({inline:"center",block:"nearest"}); }catch(e){}
+      setTimeout(()=>{ _daCursore=false; }, 180);
+    }
+    const cur=$("cursore"); if(cur && +cur.value!==S.ora) cur.value=S.ora;
+  }
   dipingiTraccia(d);
   aggiornaOra();
 }
