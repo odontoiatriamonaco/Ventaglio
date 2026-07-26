@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.18.0 — Dettagli richiudibili, calibrazione in italiano
+  VENTAGLIO v3.20.0 — contatto dell'autore
   File  : ventaglio-v3.html
-  Build : 2026-07-27 11:20 CEST
+  Build : 2026-07-27 12:40 CEST
+  v3.20.0: indirizzo di contatto dell'autore nel pie' di pagina e
+           nella finestra informativa, come mailto.
+  v3.19.0: la spiegazione sotto il verdetto passa dietro un pulsante
+           'Come funziona' e viene riscritta senza gergo: le quantita'
+           d'acqua diventano immagini, il numero di prove viene detto
+           una volta sola. BUG: il conteggio delle simulazioni era
+           ripetuto due volte con parole diverse, a due righe di
+           distanza.
   v3.18.0: simulazioni, pagella, limiti e diagnostica spostate dentro
            un pannello 'Dettagli' richiudibile. Calibrazione riscritta
            senza gergo, con esito in lingua corrente prima dei numeri.
@@ -55,7 +63,7 @@
   v3.10.1: viewport-fit=cover — senza di esso iOS restituisce 0 su tutti
            gli env(safe-area-inset-*) e il padding per il notch non ha
            alcun effetto in modalità standalone.
-  Autore: Dr. Maurizio Monaco
+  Autore: Dr. Maurizio Monaco <odontoiatria.monaco@gmail.com>
   Dati  : Open-Meteo (CC BY 4.0) · ERA5/ERA5-Land © Copernicus
   Deploy: file statico singolo — doppio clic, Vercel, o
           python3 -m http.server 8080
@@ -74,6 +82,7 @@
 <link id="appleIcon" rel="apple-touch-icon" href="">
 <title>Ventaglio — previsione probabilistica calibrata</title>
 <meta name="author" content="Dr. Maurizio Monaco">
+<link rel="author" href="mailto:odontoiatria.monaco@gmail.com">
 <meta name="description" content="Ventaglio: previsione meteo probabilistica basata su ensemble reali, calibrata sulla località. Un software del Dr. Maurizio Monaco.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -531,6 +540,14 @@
   footer .autore{display:block;font-family:"Bricolage Grotesque",sans-serif;
     font-size:14px;font-weight:700;letter-spacing:-.01em;color:var(--schiuma);
     text-transform:none;margin-bottom:9px}
+  /* v3.20.0 — contatto: stesso peso della firma ma in verderame, cosi'
+     si legge come un'azione e non come un'altra riga di testo. */
+  .contatto{display:inline-block;font-family:"IBM Plex Mono",monospace;
+    font-size:11.5px;letter-spacing:.02em;color:var(--verderame);
+    text-decoration:none;border-bottom:1px solid rgba(79,191,168,.35);
+    padding:3px 0;margin-bottom:11px;transition:.15s}
+  .contatto:hover{color:var(--schiuma);border-bottom-color:var(--schiuma)}
+  .modale-firma .contatto{margin-top:6px;margin-bottom:0}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -598,8 +615,16 @@
     <h2>Verdetto probabilistico</h2>
     <div class="verdict" id="verdict"><span class="note">Scarico le simulazioni&hellip;</span></div>
     <p id="comfort"></p>
-    <div id="subVerdict"></div>
-    <p id="fiducia"></p>
+    <div class="azioni" style="margin-top:18px">
+      <button class="ghost" id="spiegaBtn" aria-expanded="false" aria-controls="spiegaVerdetto">
+        <svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        Come funziona
+      </button>
+    </div>
+    <div id="spiegaVerdetto" hidden>
+      <div id="subVerdict"></div>
+      <p id="fiducia"></p>
+    </div>
   </section>
 
 
@@ -726,7 +751,8 @@
         <p>La capacit&agrave; previsionale &egrave; quella dei centri meteorologici mondiali: gli stessi dati che stanno sotto tutte le altre app. Nessun modello proprietario, nessuna scorciatoia. La differenza sta in come l&apos;incertezza viene trattata, calibrata e mostrata &mdash; non in una previsione che sa cose che gli altri non sanno. Dentro l&apos;app c&apos;&egrave; una scheda che dichiara i limiti, e va letta.</p>
       </div>
 
-      <p class="modale-firma">un software del <b>Dr. Maurizio Monaco</b></p>
+      <p class="modale-firma">un software del <b>Dr. Maurizio Monaco</b><br>
+        <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a></p>
     </div>
   </div>
 </div>
@@ -735,7 +761,8 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.18.0 &middot; build 2026-07-27<br>
+    <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
+    v3.20.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1172,15 +1199,29 @@ function renderVerdetto(){
       +'raffica mediana</div></div>');
 
   const su100=v=>Math.round(v);
+  /* v3.19.0 — riscritto per chi non fa il meteorologo. Via "accumulo",
+     via "decile", via la riga sul conteggio ripetuta due volte in fondo
+     con parole diverse. Le quantita' d'acqua diventano immagini. */
+  const acqua = mm => mm<1 ? "praticamente niente"
+    : mm<5 ? "una pioggerella"
+    : mm<15 ? "una pioggia vera, da ombrello"
+    : mm<30 ? "un temporale con le strade bagnate a lungo"
+    : "un diluvio";
+  const nCentriS = ENSEMBLES.filter(e=>S.ens[e.id].ok).length;
+
   $("subVerdict").innerHTML=
-    "Su <b>100 simulazioni</b> di "+nomeGiorno(S.dayIdx,g.data).toLowerCase()+": <b>"+su100(p1)+"</b> danno almeno 1 mm di pioggia, <b>"
-    +su100(p5)+"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
-    +"Nella met&agrave; pi&ugrave; asciutta l'accumulo si ferma a "+mediana.toFixed(1)
-    +" mm; nel 10% pi&ugrave; bagnato arriva a "+q90.toFixed(1)+" mm."
-    +(raffMed===null?"":" Raffiche oltre 40 km/h in <b>"+pRaff(40)
-      +"</b> simulazioni su 100, oltre 60 in <b>"+pRaff(60)+"</b>.")
-    +'<br><span style="opacity:.72">calcolato su '+N+" simulazioni reali, da "
-    +ENSEMBLES.filter(e=>S.ens[e.id].ok).length+" centri meteorologici</span>";
+    "<b>Come nasce questo numero.</b> "+nCentriS+" centri meteorologici europei e americani "
+    +"non fanno una previsione sola: la rifanno <b>"+N+" volte</b>, ognuna partendo da una "
+    +"versione appena diversa del tempo di adesso, perch&eacute; nessuno sa com'&egrave; "
+    +"l'atmosfera fino all'ultimo decimale. Le percentuali qui sopra sono semplicemente "
+    +"<b>quante di quelle "+N+" prove finiscono in un modo o nell'altro.</b>"
+    +"<br><br>Riportate a 100 per comodit&agrave;, per "+nomeGiorno(S.dayIdx,g.data).toLowerCase()
+    +": <b>"+su100(p1)+"</b> vedono almeno un po' di pioggia, <b>"+su100(p5)
+    +"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
+    +"Nel caso pi&ugrave; probabile cadono <b>"+mediana.toFixed(0)+" mm</b> d'acqua, cio&egrave; "
+    +acqua(mediana)+"; se va male, fino a <b>"+q90.toFixed(0)+" mm</b>, "+acqua(q90)+"."
+    +(raffMed===null?"":" Il vento supera i 40 all'ora &mdash; quello che porta via l'ombrellone &mdash; in <b>"
+      +pRaff(40)+"</b> prove su 100.");
 
   // perche' i due numeri differiscono
   let rug=null, ur=null;
@@ -1224,11 +1265,12 @@ function renderVerdetto(){
   $("fiducia").innerHTML = avvisoLungo + (S.cal
     ? "Correzione di bias applicata: <b>"+(bias>=0?"\u2212":"+")+Math.abs(bias).toFixed(1)
       +"\u00B0C</b> sulla grezza di "+grezza.toFixed(1)+"\u00B0. Intervallo da "+fonte+"."
-    : "Nessuna calibrazione locale ancora. L'intervallo mostrato viene dalla "+fonte
-      +": &egrave; tipicamente troppo stretto, perch&eacute; le simulazioni tendono a stare troppo vicine fra loro. "
-      +"Premi <b>Calibra</b> qui sotto per correggerlo con i dati di questa localit&agrave;.")
-    + '<br><span style="opacity:.72">' + N + " simulazioni da " + nCentri
-    + " centr" + (nCentri===1?"o":"i") + " a questa scadenza</span>";
+    : "Il <b>&plusmn;</b> accanto alla temperatura dice quanto le "+N+" prove sono "
+      +"d'accordo fra loro: stretto se vanno tutte nella stessa direzione, largo se "
+      +"litigano. Per ora &egrave; una stima grezza e pecca di ottimismo &mdash; le prove "
+      +"tendono a somigliarsi pi&ugrave; di quanto la realt&agrave; le smentisca. Il pulsante "
+      +"<b>Tara l'app su questo posto</b>, poco sotto, lo aggiusta con la storia vera "
+      +"di questa localit&agrave;.");
 }
 
 /* probabilità oraria: quanti membri sono bagnati in quell'ora */
@@ -1579,6 +1621,13 @@ window.addEventListener("resize", ()=>{
     b.setAttribute("aria-expanded", apri);
     b.lastChild.textContent = apri ? " Nascondi i dettagli" : " Dettagli e verifiche";
     if(apri) requestAnimationFrame(()=>{ try{ renderTutto(); }catch(e){} });
+  };
+  const s=$("spiegaBtn"), sv=$("spiegaVerdetto");
+  if(s&&sv) s.onclick=()=>{
+    const apri = sv.hasAttribute("hidden");
+    if(apri) sv.removeAttribute("hidden"); else sv.setAttribute("hidden","");
+    s.setAttribute("aria-expanded", apri);
+    s.lastChild.textContent = apri ? " Nascondi" : " Come funziona";
   };
   const c=$("comeBtn"), i=$("installaInfo");
   if(c&&i) c.onclick=()=>{
