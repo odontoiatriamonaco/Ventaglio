@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.10.0 — località preferite
+  VENTAGLIO v3.10.1 — località preferite
   File  : ventaglio-v3.html
-  Build : 2026-07-26 20:35 CEST
+  Build : 2026-07-26 21:10 CEST
+  v3.10.1: viewport-fit=cover — senza di esso iOS restituisce 0 su tutti
+           gli env(safe-area-inset-*) e il padding per il notch non ha
+           alcun effetto in modalità standalone.
   Autore: Dr. Maurizio Monaco
   Dati  : Open-Meteo (CC BY 4.0) · ERA5/ERA5-Land © Copernicus
   Deploy: file statico singolo — doppio clic, Vercel, o
@@ -13,7 +16,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#08171F">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -584,7 +587,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.10.0 &middot; build 2026-07-26<br>
+    v3.10.1 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
