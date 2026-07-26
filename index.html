@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.20.0 — contatto dell'autore
+  VENTAGLIO v3.22.0 — la finestra informativa parla a tutti
   File  : ventaglio-v3.html
-  Build : 2026-07-27 12:40 CEST
+  Build : 2026-07-27 14:00 CEST
+  v3.22.0: le sette voci della finestra 'i' riscritte per chi non fa il
+           meteorologo, con un'apertura che dice subito di che si tratta.
+           BUG: il testo citava '143 simulazioni' e 'quattro centri' come
+           numeri fissi, ma cambiano da localita' a localita'.
+  v3.21.0: i sei glifi erano disegnati con dettaglio da 24 px e resi a
+           12: i vuoti si chiudevano e la saetta sembrava un palloncino.
+           Ridisegnati con masse piene e pochi tratti spessi, resi a
+           14 px (16 nella metrica principale).
   v3.20.0: indirizzo di contatto dell'autore nel pie' di pagina e
            nella finestra informativa, come mailto.
   v3.19.0: la spiegazione sotto il verdetto passa dietro un pulsante
@@ -178,10 +186,13 @@
   .metric.hero .v small{font-size:clamp(20px,5vw,26px)}
   /* v3.17.0 — il glifo vive nella didascalia ma prende il colore del
      valore sopra, cosi' porta segnale invece che solo decoro. */
-  .metric .k svg{width:12px;height:12px;vertical-align:-2px;margin-right:6px;
-    fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;
-    stroke-linejoin:round;opacity:.85;flex:0 0 auto}
-  .metric.hero .k svg{width:14px;height:14px;vertical-align:-3px;margin-right:7px}
+  /* v3.21.0 — 14 px invece di 12 e tratto 2.1: sotto questa soglia i
+     controni si chiudono. Le masse piene portano la classe .p. */
+  .metric .k svg{width:14px;height:14px;vertical-align:-3px;margin-right:7px;
+    fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;
+    stroke-linejoin:round;opacity:.9;flex:0 0 auto;overflow:visible}
+  .metric .k svg .p{fill:currentColor;stroke:none}
+  .metric.hero .k svg{width:16px;height:16px;vertical-align:-3px;margin-right:8px}
   .metric .k{display:flex;align-items:center;
     font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.15em;
     text-transform:uppercase;color:var(--nebbia);margin-top:6px}
@@ -548,6 +559,11 @@
     padding:3px 0;margin-bottom:11px;transition:.15s}
   .contatto:hover{color:var(--schiuma);border-bottom-color:var(--schiuma)}
   .modale-firma .contatto{margin-top:6px;margin-bottom:0}
+  /* v3.22.0 — apertura della finestra informativa: un gradino di peso
+     fra il titolo e le voci, cosi' si capisce subito dove si e' finiti. */
+  .modale-intro{font-size:15px;line-height:1.65;color:var(--schiuma);
+    margin:0 0 24px;padding-bottom:20px;border-bottom:1px solid var(--linea)}
+  .modale-intro b{color:var(--verderame);font-weight:600}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -714,41 +730,43 @@
     <div class="modale-carta">
       <button id="chiudiInfo" class="chiudi" aria-label="Chiudi">&times;</button>
       <p class="eyebrow" style="margin-bottom:6px">Ventaglio</p>
-      <h2 id="infoTitolo" class="modale-titolo">Perch&eacute; &egrave; diverso</h2>
+      <h2 id="infoTitolo" class="modale-titolo">Che cos&apos;&egrave;, in parole semplici</h2>
+
+      <p class="modale-intro">Tutte le app meteo ti danno un numero e via. Questa ti fa vedere <b>da dove arriva</b> quel numero, e quanto puoi fidartene &mdash; anche quando la risposta &egrave; &laquo;poco&raquo;.</p>
 
       <div class="voce">
-        <h3>Le probabilit&agrave; sono conteggi, non stime</h3>
-        <p>Le app comuni mostrano una previsione sola e una percentuale che nessuno spiega. Qui ogni numero nasce da <b>143 simulazioni reali</b> di quattro centri meteorologici &mdash; ECMWF, NOAA, DWD, Environment Canada. Quando leggi &laquo;47 su 100&raquo; significa che quarantasette di quelle simulazioni bagnano davvero.</p>
+        <h3>Il &laquo;40% di pioggia&raquo;, finalmente spiegato</h3>
+        <p>Nessuno sa com&apos;&egrave; l&apos;atmosfera adesso fino all&apos;ultimo decimale. Allora i grandi centri meteorologici &mdash; l&apos;europeo, l&apos;americano, il tedesco, il canadese &mdash; non fanno una previsione sola: la rifanno <b>oltre cento volte</b>, ognuna partendo da un&apos;ipotesi appena diversa su com&apos;&egrave; il tempo in questo momento. Quando qui leggi &laquo;47 su 100&raquo; vuol dire semplicemente che quarantasette di quelle prove finiscono con la pioggia. Niente di misterioso.</p>
       </div>
 
       <div class="voce">
-        <h3>Si calibra su dove sei</h3>
-        <p>Novanta giorni di previsioni archiviate confrontate con la rianalisi, <b>su quel punto preciso</b>. Ne esce di quanto il consenso sbaglia sistematicamente l&igrave;, e quel numero viene sottratto invece che ignorato. Quale modello sia il migliore cambia da luogo a luogo, e qui viene misurato, non supposto.</p>
+        <h3>Impara i difetti del tuo paese</h3>
+        <p>I modelli dividono il mondo in caselle larghe chilometri. Un paese sul mare, una casa in fondo a una valle, un giardino all&apos;ombra di una collina: in posti cos&igrave; sbagliano quasi sempre <b>nello stesso verso</b>. Con un tocco l&apos;app va a riprendersi tre mesi di previsioni passate proprio l&igrave;, le confronta con il tempo che ha fatto davvero, e da quel momento corregge da sola.</p>
       </div>
 
       <div class="voce">
-        <h3>L&apos;intervallo ha una copertura verificata</h3>
-        <p>Le simulazioni tendono a stare troppo vicine fra loro: dichiarano una precisione che non hanno. L&apos;app misura di quanto si sono sbagliate in passato proprio qui e allarga l&apos;intervallo di conseguenza, fino a una copertura reale dell&apos;80%. Quel &plusmn; ha un significato controllato.</p>
+        <h3>Il &plusmn; accanto ai gradi dice la verit&agrave;</h3>
+        <p>Le prove tendono a somigliarsi fra loro pi&ugrave; di quanto la realt&agrave; poi le confermi: promettono una precisione che non hanno. L&apos;app va a vedere di quanto hanno toppato in passato in questo punto e allarga la fascia di conseguenza. Cos&igrave; quando leggi <b>28 &plusmn; 1,5 gradi</b>, in otto casi su dieci la temperatura ci finisce dentro sul serio.</p>
       </div>
 
       <div class="voce">
-        <h3>Controlla che il modello guardi il posto giusto</h3>
-        <p>Se la cella di un modello cade duecento metri pi&ugrave; in alto, sta descrivendo un altro luogo: escursione termica sbagliata, brezza di mare assente. L&apos;app se ne accorge, lo esclude e te lo scrive. &Egrave; un errore che nessuna app consumer segnala, e che gonfia silenziosamente l&apos;incertezza.</p>
+        <h3>Controlla che il modello guardi casa tua</h3>
+        <p>Se la casella di un modello cade duecento metri pi&ugrave; in alto, sta descrivendo un altro posto: pi&ugrave; freddo la notte, senza la brezza del mare. L&apos;app se ne accorge, lo mette da parte e te lo scrive. &Egrave; un errore che nessun&apos;altra app segnala, e intanto sporca il risultato in silenzio.</p>
       </div>
 
       <div class="voce">
-        <h3>Mostra i futuri invece di mediarli</h3>
-        <p>Quando le simulazioni si dividono &mdash; met&agrave; anticiclone, met&agrave; temporale &mdash; la media descrive un pomeriggio che non accadr&agrave; in nessuno dei due casi. L&apos;app riconosce la biforcazione e mostra i due rami con la loro quota, perch&eacute; l&igrave; la domanda giusta non &egrave; quanti gradi far&agrave;, ma quale dei due succede.</p>
+        <h3>Se ci sono due giornate possibili, te le fa vedere tutte e due</h3>
+        <p>Certi pomeriggi le prove si spaccano: met&agrave; tengono il sole, met&agrave; fanno scoppiare il temporale. Farne la media racconta una giornata che non succeder&agrave; in nessuno dei due casi &mdash; come dire che una moneta cade a met&agrave; fra testa e croce. Quando l&apos;app riconosce che le strade sono due, invece di mediarle <b>te le mostra separate</b>, con quante prove stanno da una parte e quante dall&apos;altra.</p>
       </div>
 
       <div class="voce">
-        <h3>Parla italiano</h3>
-        <p>Niente gergo: conteggi su cento invece di percentuali astratte, e una frase che spiega perch&eacute; ventotto gradi se ne fanno sentire trentatr&eacute;. Il punto di rugiada &egrave; in chiaro, perch&eacute; dell&apos;afa dice pi&ugrave; dell&apos;umidit&agrave; relativa.</p>
+        <h3>Niente parole da addetti ai lavori</h3>
+        <p>Conteggi su cento invece di percentuali astratte. I millimetri tradotti in &laquo;una pioggerella&raquo; o &laquo;una pioggia da ombrello&raquo;, perch&eacute; <i>7,2 mm</i> non dice niente a nessuno. E una frase che spiega perch&eacute; ventotto gradi se ne fanno sentire trentatr&eacute;.</p>
       </div>
 
       <div class="voce onesta">
-        <h3>E cosa non &egrave;</h3>
-        <p>La capacit&agrave; previsionale &egrave; quella dei centri meteorologici mondiali: gli stessi dati che stanno sotto tutte le altre app. Nessun modello proprietario, nessuna scorciatoia. La differenza sta in come l&apos;incertezza viene trattata, calibrata e mostrata &mdash; non in una previsione che sa cose che gli altri non sanno. Dentro l&apos;app c&apos;&egrave; una scheda che dichiara i limiti, e va letta.</p>
+        <h3>E quello che non fa</h3>
+        <p>Non indovina il tempo meglio dei centri meteorologici: usa <b>gli stessi identici dati</b> che stanno sotto a tutte le altre app, senza modelli segreti n&eacute; scorciatoie. La differenza sta tutta in come tratta l&apos;incertezza &mdash; la misura, la corregge, e te la mette davanti invece di nasconderla dietro un numero solo. Dentro l&apos;app, sotto <i>Dettagli</i>, c&apos;&egrave; una scheda che elenca per esteso i suoi limiti: vale la pena leggerla.</p>
       </div>
 
       <p class="modale-firma">un software del <b>Dr. Maurizio Monaco</b><br>
@@ -762,7 +780,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.20.0 &middot; build 2026-07-27<br>
+    v3.22.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1111,21 +1129,35 @@ const ORIZZONTE_CAL = 2;   // 0 oggi, 1 domani, 2 dopodomani
    decoro. Monolinea 1.7, viewBox 24, nessuna dipendenza esterna. */
 const G24 = d => '<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 const GLIFI = {
-  // termometro
-  termo: G24('<path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 9v6"/>'),
-  // corpo con onde di calore: la percepita
-  corpo: G24('<path d="M12 13.5v6"/><circle cx="12" cy="5" r="2"/><path d="M8.5 9.5h7l-1.5 4h-4Z"/>'
-            +'<path d="M4.5 6c.8.9.8 2.1 0 3M19.5 6c.8.9.8 2.1 0 3"/>'),
-  // goccia
-  goccia: G24('<path d="M12 3.5S6.5 10 6.5 14a5.5 5.5 0 0 0 11 0c0-4-5.5-10.5-5.5-10.5Z"/>'),
-  // nube con rovescio
-  rovescio: G24('<path d="M7.5 14a4 4 0 0 1 .5-8 5 5 0 0 1 9.3 1.2A3.4 3.4 0 0 1 17 14Z"/>'
-            +'<path d="M9 17l-1 3M13 17l-1 3M17 17l-1 3"/>'),
-  // nube con fulmine
-  nubifragio: G24('<path d="M7.5 13.5a4 4 0 0 1 .5-8 5 5 0 0 1 9.3 1.2 3.4 3.4 0 0 1-.3 6.8Z"/>'
-            +'<path d="M13 15l-3 3.5h3L12 22"/>'),
-  // raffica
-  vento: G24('<path d="M3 9h10.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 14h13a2.5 2.5 0 1 1-2.5 2.5"/><path d="M3 11.5h7"/>')
+  /* v3.21.0 — ridisegnati. La versione precedente aveva tratti sottili e
+     dettaglio da 24 px reso a 12: sotto quella soglia i vuoti si chiudono
+     e la forma diventa una macchia. Qui masse piene (class="p") per il
+     corpo del simbolo e pochi tratti spessi per il resto. */
+
+  // termometro: stelo pieno + bulbo pieno, il contorno solo per il vetro
+  termo: G24('<rect class="p" x="11" y="6.5" width="2" height="9.5" rx="1"/>'
+            +'<circle class="p" cx="12" cy="17.8" r="3.4"/>'
+            +'<path d="M14.4 14.3V5.4a2.4 2.4 0 0 0-4.8 0v8.9a5 5 0 1 0 4.8 0Z"/>'),
+
+  // afa: tre onde di calore, il segno piu' leggibile a questa taglia
+  corpo: G24('<path d="M3 7q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
+            +'<path d="M3 12.4q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'
+            +'<path d="M3 17.8q2.83-2.9 5.67 0t5.66 0 5.67 0"/>'),
+
+  // goccia piena
+  goccia: G24('<path class="p" d="M12 2.2c0 0 6.9 7.6 6.9 12.1a6.9 6.9 0 0 1-13.8 0C5.1 9.8 12 2.2 12 2.2Z"/>'),
+
+  // nube piena con tre scrosci
+  rovescio: G24('<path class="p" d="M7 14.6h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 14.6Z"/>'
+            +'<path d="M8.4 17.2 7 21.6M12 17.2l-1.4 4.4M15.6 17.2l-1.4 4.4"/>'),
+
+  // nube piena con saetta piena
+  nubifragio: G24('<path class="p" d="M7 13.4h10.3a3.6 3.6 0 0 0 .3-7.2 5.5 5.5 0 0 0-10.5-1.2A4 4 0 0 0 7 13.4Z"/>'
+            +'<path class="p" d="M13.6 15.4h3.1l-6.4 7.4 1.4-4.6H8.6l3.6-5.1Z"/>'),
+
+  // raffica: due correnti lunghe con ricciolo, tratto spesso
+  vento: G24('<path d="M2.6 8.6h11.2a3.1 3.1 0 1 0-3.1-3.1"/>'
+            +'<path d="M2.6 14.4h13.8a3.3 3.3 0 1 1-3.3 3.3"/>')
 };
 
 function renderVerdetto(){
