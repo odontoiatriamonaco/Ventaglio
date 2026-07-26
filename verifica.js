@@ -229,6 +229,12 @@ regola("una sola scala di colore per la pioggia", "const SOGLIE_PIOGGIA",
 regola("percentuali orarie da un'unica fonte", "function oraStat",
   "letture da popolazioni diverse mostravano due numeri per la stessa ora");
 
+regola("la pagella annota il fattore pioggia in vigore", "kp:+kp.toFixed(3)",
+  "senza, mescolerebbe previsioni corrette e non corrette credendole omogenee");
+
+regola("il rapporto pioggia si conserva anche se non applicato", "fPgrezzo",
+  "serve come termine di paragone alla taratura successiva");
+
 /* ============================================================
    5. FUNZIONI DI CALCOLO
    ============================================================ */

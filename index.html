@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.30.0 — il fattore pioggia si puo' verificare a occhio
+  VENTAGLIO v3.31.0 — il fattore non applicato resta visibile
   File  : ventaglio-v3.html
-  Build : 2026-07-27 23:20 CEST
+  Build : 2026-07-28 00:50 CEST
+  v3.31.0: il rapporto pioggia viene calcolato e mostrato anche quando
+           le guardie ne impediscono l'uso, come termine di paragone.
+           BUG: la pagella archiviava le probabilita' senza annotare il
+           fattore in vigore; all'entrata in funzione della correzione
+           avrebbe mescolato due regimi credendoli omogenei. Ora ogni
+           voce porta il proprio kp e la verifica li separa, dicendo se
+           la correzione migliora davvero le probabilita'.
   v3.30.0: la soglia per calcolare il fattore pioggia era 8 mm osservati
            in novanta giorni, cioe' un temporale solo: troppo blanda.
            Ora servono almeno 15 giornate piovose, 40 mm e 45 giorni
@@ -922,7 +929,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.30.0 &middot; build 2026-07-27<br>
+    v3.31.0 &middot; build 2026-07-28<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1630,8 +1637,12 @@ function renderCal(){
                   ? "<b>Previsti "+Math.round(c.sP)+" mm, caduti "+Math.round(c.sPo)+" mm</b> in "
                     + c.nP+" giorni, di cui <b>"+(c.nWet!=null?c.nWet:"?")+" con pioggia</b>: "
                     + "troppo pochi. Servono almeno quindici giornate piovose e 40 mm, altrimenti "
-                    + "il rapporto dipende da un paio di rovesci e sarebbe rumore travestito da "
-                    + "correzione. Si ricalcola dopo una stagione piovosa."
+                    + "il rapporto dipende da un paio di rovesci."
+                    + (c.fPgrezzo!=null
+                        ? " Il rapporto <b>sarebbe &times;"+c.fPgrezzo.toFixed(2)+"</b>, ma non viene "
+                          + "applicato: segnatelo, alla prossima taratura avrai un termine di paragone."
+                        : "")
+                    + " Si ricalcola dopo una stagione piovosa."
                   : "Serve pioggia vera a sufficienza nel periodo. Si ricalcola dopo una stagione piovosa.")))
     + (c.fW!=null
         ? vocenum("Fattore raffiche", "\u00D7"+c.fW.toFixed(2),
@@ -1720,10 +1731,15 @@ async function registraPrevisione(){
       const grezza=media(g.tmax), disp=sd(g.tmax);
       const half=(S.cal&&S.cal.a!==undefined)
         ? S.cal.k*Math.max(0.15,S.cal.a+S.cal.b*disp) : 1.28*disp;
+      /* v3.31.0 — si annota il fattore pioggia in vigore. Senza, l'archivio
+         mescolerebbe previsioni corrette e non corrette in modo
+         indistinguibile, e la pagella confronterebbe grandezze diverse
+         credendole omogenee. */
+      const kp=fattoreP();
       arch.push({ emesso:oggi, valida:g.data, lead:d,
                   t:+(grezza-bias).toFixed(2), h:+half.toFixed(2),
-                  p1:Math.round(100*g.psum.filter(x=>x*fattoreP()>=1).length/g.psum.length),
-                  n:g.tmax.length });
+                  p1:Math.round(100*g.psum.filter(x=>x*kp>=1).length/g.psum.length),
+                  kp:+kp.toFixed(3), n:g.tmax.length });
     });
     if(arch.length>600) arch=arch.slice(-600);
     await store.set(kReg(S.loc), JSON.stringify(arch));
@@ -1773,7 +1789,13 @@ async function verifica(){
       const bss=(bsRef>1e-6)?(1-bs/bsRef):null;
       return {n:arr.length, mae, bias, cop, bs, bss, base:base*100};
     };
+    // v3.31.0 — pioggia: due popolazioni, prima e dopo la correzione
+    const tutti=corto.concat(lungo);
+    const grezzi=tutti.filter(r=>!(r.kp) || Math.abs(r.kp-1)<0.02);
+    const corretti=tutti.filter(r=>r.kp && Math.abs(r.kp-1)>=0.02);
+
     S.pagella={ corto:calc(corto), lungo:calc(lungo), tot:arch.length,
+                pioggiaPrima:calc(grezzi), pioggiaDopo:calc(corretti),
                 attesa:arch.filter(r=>r.valida>=oggi).length };
   }catch(e){ S.pagella={errore:String(e.message||e)}; }
 }
@@ -1799,6 +1821,23 @@ function renderPagella(){
   };
 
   let out=blocco("Fino a 3 giorni", P.corto)+blocco("Da 4 a 7 giorni", P.lungo);
+
+  // v3.31.0 — il confronto che dice se la correzione della pioggia serve
+  const A=P.pioggiaPrima, B=P.pioggiaDopo;
+  if(A && B && A.n>=15 && B.n>=15 && A.bss!=null && B.bss!=null){
+    const meglio = B.bss>A.bss;
+    out += '<div class="pgblock"><div class="pgtit">La correzione della pioggia serve?</div>'
+      + '<div class="calrow"><span>Senza correzione ('+A.n+' giorni)</span><b>'
+        +(A.bss*100).toFixed(0)+'%</b></div>'
+      + '<div class="calrow"><span>Con la correzione ('+B.n+' giorni)</span><b>'
+        +(B.bss*100).toFixed(0)+'%</b></div>'
+      + '<p class="note" style="margin-top:12px">Guadagno sulla pura climatologia, prima e dopo. '
+      + (meglio
+          ? "La correzione <b>sta migliorando</b> le probabilit&agrave; di pioggia."
+          : "La correzione <b>non sta migliorando</b> niente, o peggiora. "
+            + "Vale la pena rifare la taratura, o lasciare i conteggi grezzi.")
+      + '</p></div>';
+  }
 
   const nTot=(P.corto?P.corto.n:0)+(P.lungo?P.lungo.n:0);
   if(nTot===0){
@@ -1932,7 +1971,7 @@ async function calibra(){
        casuale si compensa e resta la tendenza sistematica. */
     st.textContent="Confronto pioggia e raffiche\u2026";
     const idsP=Object.keys(prevP), idsW=Object.keys(prevW);
-    let fP=null, nP=0, sP=0, sPo=0, nWet=0;
+    let fP=null, fPgrezzo=null, nP=0, sP=0, sPo=0, nWet=0;
     if(VP && idsP.length>=3){
       for(let i=0;i<VP.length;i++){
         if(VP[i]==null) continue;
@@ -1946,8 +1985,12 @@ async function calibra(){
          sarebbe rumore con l'aspetto di una misura. Quello che conta non e'
          il totale ma il numero di EVENTI su cui si media: sotto una quindicina
          di giorni piovosi il risultato dipende da un paio di rovesci. */
+      /* v3.31.0 — il rapporto si calcola comunque e si conserva: serve come
+         termine di paragone alla prossima taratura. Le guardie decidono solo
+         se APPLICARLO, non se guardarlo. */
+      if(sP>0 && sPo>=0) fPgrezzo=sPo/sP;
       if(nP>=45 && nWet>=15 && sPo>=40 && sP>=20)
-        fP=Math.max(0.35, Math.min(3.0, sPo/sP));
+        fP=Math.max(0.35, Math.min(3.0, fPgrezzo));
     }
     let fW=null, nW=0, mW=0, mWo=0;
     if(VW && idsW.length>=3){
@@ -1965,6 +2008,7 @@ async function calibra(){
        usando il valore sbagliato, gonfiandolo di circa il doppio. */
     S.cal={ ver: CAL_VER, quando: new Date().toISOString(),   // v3.29.0
             sP, sPo, nWet, mWprev:(nW?mW/nW:null), mWoss:(nW?mWo/nW:null),   // v3.30.0
+            fPgrezzo,   // v3.31.0 — calcolato ma non applicato
             bias, mae, maeC: media(absC), a:reg.a, b:reg.b, k, n:err.length,
             fP, nP, fW, nW,
             da:iso(inizio), al:iso(fine), modelli:ids.length };
