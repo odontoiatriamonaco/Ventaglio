@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.10.1 — località preferite
+  VENTAGLIO v3.10.2 — località preferite
   File  : ventaglio-v3.html
-  Build : 2026-07-26 21:10 CEST
+  Build : 2026-07-26 21:45 CEST
+  v3.10.2: avvio in modalità completa. La scelta "Completa" veniva
+           persistita come stringa vuota e quindi ignorata all'avvio
+           dell'app installata, che ripiegava sempre sulla vista "oggi".
   v3.10.1: viewport-fit=cover — senza di esso iOS restituisce 0 su tutti
            gli env(safe-area-inset-*) e il padding per il notch non ha
            alcun effetto in modalità standalone.
@@ -587,7 +590,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.10.1 &middot; build 2026-07-26<br>
+    v3.10.2 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1178,8 +1181,11 @@ window.addEventListener("unhandledrejection", e=>segnalaGuasto(e.reason));
   const salvata = await store.get("ventaglio3:vista");
   if(last){
     await carica(last);
-    // lanciata come app installata: si apre sulla vista compatta scelta
-    await setCompatta(salvata || (inApp() ? "oggi" : null));
+    // v3.10.2 — la vista completa si salva come "" (falsy): il vecchio
+    // fallback inApp()?"oggi" la scavalcava a ogni lancio dell'app
+    // installata, rendendo impossibile fissare la modalità completa.
+    // Ora: compatta solo se esplicitamente scelta, altrimenti completa.
+    await setCompatta(salvata || null);
   }else{
     // primo avvio: nessuna localit\u00E0 imposta, la sceglie chi usa l'app
     mostraBenvenuto(true);
