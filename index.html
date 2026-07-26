@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.28.1 — accenti nelle stringhe nuove
+  VENTAGLIO v3.29.0 — la taratura dice quando e' stata fatta
   File  : ventaglio-v3.html
-  Build : 2026-07-27 21:25 CEST
+  Build : 2026-07-27 22:00 CEST
+  v3.29.0: la taratura registra la propria data. Oltre i quattro mesi
+           compare l'invito a rifarla: i difetti di un punto cambiano
+           con la stagione, e una taratura estiva descrive male
+           l'inverno.
   v3.28.1: sei stringhe visibili aggiunte nelle ultime versioni avevano
            gli accenti resi con l'apostrofo ("e'" invece di "&egrave;"):
            abitudine dei commenti, tenuti in ASCII, finita per sbaglio
@@ -904,7 +908,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.28.1 &middot; build 2026-07-27<br>
+    v3.29.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1485,6 +1489,27 @@ function renderCal(){
 
   // v3.28.0
   const vecchia = !(c.ver >= CAL_VER);
+
+  /* v3.29.0 — quando e' stata fatta. Senza questo dato non c'e' modo di
+     capire se si sta guardando una taratura fresca o di mesi fa, e una
+     taratura estiva descrive male l'inverno: il bias di un punto costiero
+     cambia con la stagione. */
+  let quandoTxt = "", stagionale = "";
+  if(c.quando){
+    const d = new Date(c.quando);
+    if(!isNaN(d)){
+      quandoTxt = d.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+      const gg = Math.floor((Date.now()-d.getTime())/864e5);
+      if(gg >= 120){
+        const mesi = Math.round(gg/30);
+        stagionale = '<p class="note" style="margin-top:14px;padding:12px 14px;'
+          + 'border:1px solid var(--linea);border-radius:10px">Questa taratura ha <b>'
+          + mesi+' mesi</b> ed &egrave; stata fatta in un\'altra stagione. I difetti di '
+          + 'un posto cambiano nel corso dell\'anno &mdash; la brezza di mare d\'estate, '
+          + 'le inversioni termiche d\'inverno &mdash; quindi conviene rifarla.</p>';
+      }
+    }
+  }
   const avviso = vecchia
     ? '<p class="note" style="margin-bottom:16px;padding:12px 14px;'
       + 'border:1px solid var(--ottone);border-radius:10px;'
@@ -1507,6 +1532,7 @@ function renderCal(){
     + riga("Di quanto sbaglia in media, dopo la correzione",
            "circa "+(c.maeC!=null?c.maeC:c.a).toFixed(1)+" \u00B0C")
     + riga("Su quanti giorni ha imparato", c.n+" giorni")
+    + (quandoTxt ? riga("Eseguita il", quandoTxt) : "")
     + (vecchia ? riga("Pioggia e raffiche", "non ancora tarate") : "")
     + (c.fP ? riga("Pioggia prevista, corretta di",
         (c.fP>=1?"+":"\u2212")+Math.round(Math.abs(c.fP-1)*100)+"%") : "")
@@ -1517,6 +1543,7 @@ function renderCal(){
       + tipico.toFixed(1)+'</b>, vuol dire che in <b>otto giorni su dieci</b> la massima '
       + 'finisce dentro quella fascia. Non &egrave; una promessa: &egrave; quello che '
       + '&egrave; successo davvero qui negli ultimi tre mesi.</p>'
+    + stagionale
     + '<p class="note" style="margin-top:12px">'+(c.b>0.25
       ? "E c'&egrave; un secondo segnale utile: nelle giornate in cui le previsioni "
         + "sono <b>pi&ugrave; in disaccordo fra loro</b>, qui sbagliano davvero di pi&ugrave;. "
@@ -1883,7 +1910,7 @@ async function calibra(){
     /* v3.26.0 — mae e' l'errore medio PRIMA di togliere il bias. Serviva
        anche quello dopo: la scheda lo mostrava come "dopo la correzione"
        usando il valore sbagliato, gonfiandolo di circa il doppio. */
-    S.cal={ ver: CAL_VER,
+    S.cal={ ver: CAL_VER, quando: new Date().toISOString(),   // v3.29.0
             bias, mae, maeC: media(absC), a:reg.a, b:reg.b, k, n:err.length,
             fP, nP, fW, nW,
             da:iso(inizio), al:iso(fine), modelli:ids.length };
