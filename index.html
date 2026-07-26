@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.25.0 — esito della taratura in lingua corrente
+  VENTAGLIO v3.26.0 — ogni numero con la sua spiegazione
   File  : ventaglio-v3.html
-  Build : 2026-07-27 18:20 CEST
+  Build : 2026-07-27 19:05 CEST
+  v3.26.0: BUG — la riga 'errore medio dopo la correzione' mostrava il
+           valore di PRIMA (mae invece della media di absC), gonfiandolo
+           di circa il doppio. Aggiunto maeC. Le soglie del giudizio
+           chiamavano 'parecchio' un bias di 1,2 gradi: alzate.
+           Ogni numero tecnico ora ha sotto che cosa misura.
   v3.25.0: BUG statistico — una pendenza dispersione/errore negativa
            veniva usata tal quale, cioe' si affermava che i modelli
            sbagliano di meno quando sono piu' in disaccordo. Ora se
@@ -601,6 +606,12 @@
   .voto.buono{background:rgba(79,191,168,.18);color:var(--verderame)}
   .voto.medio{background:rgba(226,163,60,.18);color:var(--ottone)}
   .voto.brutto{background:rgba(224,96,63,.18);color:var(--corallo)}
+  /* v3.26.0 — ogni numero tecnico con la sua nota sotto */
+  .numvoce{padding:4px 0 12px}
+  .numvoce .calrow{border-bottom:0;padding-bottom:4px}
+  .numnota{margin:0;font-size:12px;line-height:1.6;color:var(--nebbia);
+    opacity:.82;padding-bottom:12px;border-bottom:1px solid rgba(34,72,90,.45)}
+  .numnota b{color:var(--schiuma);font-weight:600}
   .calrow{display:flex;justify-content:space-between;gap:14px;padding:9px 0;
     border-bottom:1px solid rgba(34,72,90,.45);font-size:13px;color:var(--nebbia)}
   .calrow b{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--schiuma)}
@@ -878,7 +889,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.25.0 &middot; build 2026-07-27<br>
+    v3.26.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1440,7 +1451,8 @@ function renderCal(){
      guarda l'app; i numeri restano, ma dietro un pulsante. */
   const verso  = c.bias>=0 ? "in eccesso" : "in difetto";
   const entita = Math.abs(c.bias)<0.4 ? "pochissimo"
-               : Math.abs(c.bias)<1.2 ? "un po'" : "parecchio";
+               : Math.abs(c.bias)<1.5 ? "un po'"
+               : Math.abs(c.bias)<2.5 ? "parecchio" : "molto";
   const segno  = c.bias>=0 ? "\u2212" : "+";          // la correzione ha segno opposto
   const tipico = c.k*Math.max(0.15, c.a);              // ampiezza tipica della fascia
 
@@ -1455,7 +1467,7 @@ function renderCal(){
     + riga("Correzione applicata a ogni temperatura",
            segno+Math.abs(c.bias).toFixed(1)+" \u00B0C")
     + riga("Di quanto sbaglia in media, dopo la correzione",
-           "circa "+c.mae.toFixed(1)+" \u00B0C")
+           "circa "+(c.maeC!=null?c.maeC:c.a).toFixed(1)+" \u00B0C")
     + riga("Su quanti giorni ha imparato", c.n+" giorni")
     + '</div>'
     + '<p class="note" style="margin-top:14px">In pratica: se leggi <b>28 &plusmn; '
@@ -1470,16 +1482,54 @@ function renderCal(){
         + "<b>non</b> sono quelle in cui sbagliano di pi&ugrave;. La fascia larga, qui, "
         + "non &egrave; un cattivo segno. Vale la pena saperlo.")+'</p>';
 
+  /* v3.26.0 — ogni numero con sotto che cosa misura e come si legge:
+     un valore senza unita' di misura concettuale non e' informazione. */
   const eq = c.b>0 ? c.a.toFixed(2)+" + "+c.b.toFixed(2)+"\u00B7&sigma;"
-                   : c.a.toFixed(2)+" (pendenza azzerata: non significativa)";
+                   : c.a.toFixed(2)+" (pendenza azzerata)";
+  const vocenum = (t,v,spieg) =>
+    '<div class="numvoce"><div class="calrow"><span>'+t+'</span><b>'+v+'</b></div>'
+    + '<p class="numnota">'+spieg+'</p></div>';
+
+  const maeDopo = (c.maeC!=null?c.maeC:c.a);
+  const gonfio  = Math.round((c.k-1)*100);
+
   const tecnico =
     '<div id="calNumeri" hidden style="margin-top:16px;padding-top:14px;'
     + 'border-top:1px solid var(--linea)">'
-    + riga("Bias del consenso", (c.bias>=0?"+":"")+c.bias.toFixed(2)+" \u00B0C")
-    + riga("Errore medio assoluto", c.mae.toFixed(2)+" \u00B0C")
-    + riga("Relazione dispersione\u2192errore", "|e| = "+eq)
-    + riga("Fattore copertura 80%", "&times;"+c.k.toFixed(2))
-    + riga("Finestra di riferimento", (c.da||"")+" \u2192 "+(c.al||""))
+
+    + vocenum("Bias del consenso", (c.bias>=0?"+":"")+c.bias.toFixed(2)+" \u00B0C",
+        "La media di tutti gli scarti fra previsto e osservato. Positivo vuol dire che "
+        + "le previsioni stavano <b>sopra</b> la realt&agrave;. &Egrave; l'unica parte "
+        + "dell'errore che si pu&ograve; togliere, perch&eacute; si ripete sempre uguale: "
+        + "l'app la sottrae a ogni temperatura.")
+
+    + vocenum("Errore medio, prima della correzione", c.mae.toFixed(2)+" \u00B0C",
+        "Di quanto sbagliavano in media i modelli grezzi, senza guardare il verso.")
+
+    + vocenum("Errore medio, dopo la correzione", maeDopo.toFixed(2)+" \u00B0C",
+        "Quello che resta una volta tolto il bias, ed &egrave; irriducibile: se un giorno "
+        + "sbaglia di +3 e il giorno dopo di &minus;3, la media degli scarti &egrave; zero "
+        + "ma l'errore vero &egrave; 3 gradi entrambe le volte. Il primo si corregge, "
+        + "questo no: si pu&ograve; solo dichiararlo.")
+
+    + vocenum("Relazione dispersione\u2192errore", "|e| = "+eq,
+        (c.b>0
+          ? "Quanto il disaccordo fra i modelli anticipa l'errore. La pendenza &egrave; "
+            + "positiva, quindi la fascia si allarga nelle giornate in cui litigano."
+          : "Qui la pendenza &egrave; uscita <b>negativa</b>, cio&egrave; direbbe che "
+            + "sbagliano di meno quando sono pi&ugrave; in disaccordo: impossibile, "
+            + "su novanta giorni &egrave; rumore. &Egrave; stata azzerata e l'errore "
+            + "atteso resta costante a "+c.a.toFixed(2)+" \u00B0C."))
+
+    + vocenum("Fattore copertura 80%", "&times;"+c.k.toFixed(2),
+        "Di quanto va allargata la fascia perch&eacute; contenga davvero otto giorni su "
+        + "dieci. Sopra 1 significa che le previsioni erano <b>pi&ugrave; sicure di quanto "
+        + "meritassero</b>: qui del "+gonfio+"%. &Egrave; il difetto tipico di questi "
+        + "sistemi, e questo numero &egrave; la misura di quanto pecchino di ottimismo.")
+
+    + vocenum("Finestra di riferimento", (c.da||"")+" \u2192 "+(c.al||""),
+        "I giorni su cui &egrave; stato fatto il confronto. Si ferma a circa una settimana "
+        + "fa perch&eacute; la rianalisi usata come metro di paragone arriva con quel ritardo.")
     + '</div>';
 
   $("calOut").innerHTML = frase + chiaro
@@ -1724,7 +1774,10 @@ async function calibra(){
     const ratio=absC.map((e,i)=>e/Math.max(0.15,reg.a+reg.b*spr[i]));
     const k=quantile(ratio,0.80);
 
-    S.cal={ bias, mae, a:reg.a, b:reg.b, k, n:err.length,
+    /* v3.26.0 — mae e' l'errore medio PRIMA di togliere il bias. Serviva
+       anche quello dopo: la scheda lo mostrava come "dopo la correzione"
+       usando il valore sbagliato, gonfiandolo di circa il doppio. */
+    S.cal={ bias, mae, maeC: media(absC), a:reg.a, b:reg.b, k, n:err.length,
             da:iso(inizio), al:iso(fine), modelli:ids.length };
     await store.set(kCal(S.loc), JSON.stringify(S.cal));
     st.innerHTML="Calibrato su <b>"+esc(S.loc.name)+"</b>, "+iso(inizio)+" \u2192 "+iso(fine)
