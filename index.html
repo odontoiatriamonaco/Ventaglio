@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.24.3 — testi lunghi, ma troncabili senza danno
+  VENTAGLIO v3.25.0 — esito della taratura in lingua corrente
   File  : ventaglio-v3.html
-  Build : 2026-07-27 17:30 CEST
+  Build : 2026-07-27 18:20 CEST
+  v3.25.0: BUG statistico — una pendenza dispersione/errore negativa
+           veniva usata tal quale, cioe' si affermava che i modelli
+           sbagliano di meno quando sono piu' in disaccordo. Ora se
+           esce sotto zero viene azzerata e si torna a un errore
+           atteso costante. Esito della taratura riscritto per chi non
+           fa statistica: bias, MAE, retta e fattore k stanno dietro
+           'I numeri esatti'.
   v3.24.3: accorciare per il telefono aveva impoverito l'anteprima sul
            PC, dove lo spazio c'e'. Ripristinati testi distesi, ma
            riscritti perche' i primi 26 caratteri del titolo e i primi
@@ -871,7 +878,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.24.3 &middot; build 2026-07-27<br>
+    v3.25.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1427,26 +1434,67 @@ function renderOraria(){
 function renderCal(){
   if(!S.cal){ $("calOut").innerHTML=""; return; }
   const c=S.cal;
-  /* v3.18.0 — prima la frase, poi i numeri: chi vuole i numeri scende. */
-  const verso = c.bias>=0 ? "in eccesso" : "in difetto";
+
+  /* v3.25.0 — la tabella tecnica (bias, MAE, retta, fattore k) non dice
+     niente a chi non fa statistica. Davanti va che cosa cambia per chi
+     guarda l'app; i numeri restano, ma dietro un pulsante. */
+  const verso  = c.bias>=0 ? "in eccesso" : "in difetto";
   const entita = Math.abs(c.bias)<0.4 ? "pochissimo"
                : Math.abs(c.bias)<1.2 ? "un po'" : "parecchio";
-  const frase = '<p class="note" style="margin-bottom:16px">Fatto. Qui i modelli sbagliano '
-    + '<strong>'+entita+'</strong>, quasi sempre '+verso+' di <strong>'
-    + Math.abs(c.bias).toFixed(1)+' gradi</strong>: da adesso l\'app lo toglie da sola, '
-    + 'e la fascia di incertezza accanto alla temperatura &egrave; tarata su quello che '
-    + '&egrave; successo davvero in questi tre mesi.</p>';
+  const segno  = c.bias>=0 ? "\u2212" : "+";          // la correzione ha segno opposto
+  const tipico = c.k*Math.max(0.15, c.a);              // ampiezza tipica della fascia
 
-  $("calOut").innerHTML=frase+
-    '<div class="calrow"><span>Bias del consenso</span><b>'+(c.bias>=0?"+":"")+c.bias.toFixed(2)+' \u00B0C</b></div>'
-    +'<div class="calrow"><span>Errore medio assoluto</span><b>'+c.mae.toFixed(2)+' \u00B0C</b></div>'
-    +'<div class="calrow"><span>Relazione dispersione\u2192errore</span><b>|e| = '
-      +c.a.toFixed(2)+' + '+c.b.toFixed(2)+'\u00B7&sigma;</b></div>'
-    +'<div class="calrow"><span>Fattore copertura 80%</span><b>&times;'+c.k.toFixed(2)+'</b></div>'
-    +'<div class="calrow"><span>Campione</span><b>'+c.n+' giorni</b></div>'
-    +'<p class="note" style="margin-top:14px">'+(c.b>0.25
-      ? "La pendenza &egrave; positiva: qui quando i modelli divergono sbagliano davvero di pi&ugrave;, quindi la dispersione di oggi &egrave; un segnale utilizzabile."
-      : "La pendenza &egrave; quasi piatta: in questo punto la dispersione fra modelli <b>non</b> predice l'errore, e un intervallo largo non significa previsione peggiore. Utile saperlo.")+'</p>';
+  const frase = '<p class="note" style="margin-bottom:18px">Fatto. Qui i modelli '
+    + 'sbagliano <strong>'+entita+'</strong>, quasi sempre '+verso+' di <strong>'
+    + Math.abs(c.bias).toFixed(1)+' gradi</strong>. Da adesso l\'app li corregge da sola.</p>';
+
+  const riga = (t,v) => '<div class="calrow"><span>'+t+'</span><b>'+v+'</b></div>';
+
+  const chiaro =
+    '<div class="pgblock">'
+    + riga("Correzione applicata a ogni temperatura",
+           segno+Math.abs(c.bias).toFixed(1)+" \u00B0C")
+    + riga("Di quanto sbaglia in media, dopo la correzione",
+           "circa "+c.mae.toFixed(1)+" \u00B0C")
+    + riga("Su quanti giorni ha imparato", c.n+" giorni")
+    + '</div>'
+    + '<p class="note" style="margin-top:14px">In pratica: se leggi <b>28 &plusmn; '
+      + tipico.toFixed(1)+'</b>, vuol dire che in <b>otto giorni su dieci</b> la massima '
+      + 'finisce dentro quella fascia. Non &egrave; una promessa: &egrave; quello che '
+      + '&egrave; successo davvero qui negli ultimi tre mesi.</p>'
+    + '<p class="note" style="margin-top:12px">'+(c.b>0.25
+      ? "E c'&egrave; un secondo segnale utile: nelle giornate in cui le previsioni "
+        + "sono <b>pi&ugrave; in disaccordo fra loro</b>, qui sbagliano davvero di pi&ugrave;. "
+        + "Quando vedi la fascia allargarsi, prendila sul serio."
+      : "Una cosa curiosa di questo posto: le giornate in cui le previsioni litigano "
+        + "<b>non</b> sono quelle in cui sbagliano di pi&ugrave;. La fascia larga, qui, "
+        + "non &egrave; un cattivo segno. Vale la pena saperlo.")+'</p>';
+
+  const eq = c.b>0 ? c.a.toFixed(2)+" + "+c.b.toFixed(2)+"\u00B7&sigma;"
+                   : c.a.toFixed(2)+" (pendenza azzerata: non significativa)";
+  const tecnico =
+    '<div id="calNumeri" hidden style="margin-top:16px;padding-top:14px;'
+    + 'border-top:1px solid var(--linea)">'
+    + riga("Bias del consenso", (c.bias>=0?"+":"")+c.bias.toFixed(2)+" \u00B0C")
+    + riga("Errore medio assoluto", c.mae.toFixed(2)+" \u00B0C")
+    + riga("Relazione dispersione\u2192errore", "|e| = "+eq)
+    + riga("Fattore copertura 80%", "&times;"+c.k.toFixed(2))
+    + riga("Finestra di riferimento", (c.da||"")+" \u2192 "+(c.al||""))
+    + '</div>';
+
+  $("calOut").innerHTML = frase + chiaro
+    + '<div class="azioni" style="margin-top:16px">'
+    + '<button class="ghost" id="numBtn" aria-expanded="false" aria-controls="calNumeri">'
+    + '<svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
+    + ' I numeri esatti</button></div>' + tecnico;
+
+  const nb=$("numBtn"), nn=$("calNumeri");
+  if(nb&&nn) nb.onclick=()=>{
+    const apri=nn.hasAttribute("hidden");
+    if(apri) nn.removeAttribute("hidden"); else nn.setAttribute("hidden","");
+    nb.setAttribute("aria-expanded", apri);
+    nb.lastChild.textContent = apri ? " Nascondi i numeri" : " I numeri esatti";
+  };
 }
 
 function renderDiag(){
@@ -1666,7 +1714,13 @@ async function calibra(){
     const bias=media(err), mae=media(abs);
     // errore residuo dopo la correzione di bias: è quello che l'intervallo deve coprire
     const absC=err.map(e=>Math.abs(e-bias));
-    const reg=regress(spr,absC) || {a:media(absC),b:0};
+    let reg=regress(spr,absC) || {a:media(absC),b:0};
+    /* v3.25.0 — una pendenza negativa direbbe che i modelli sbagliano DI MENO
+       quando sono piu' in disaccordo: e' un assurdo fisico, quasi sempre
+       rumore su un campione di novanta giorni. Se esce sotto zero la si
+       azzera e si torna a un errore atteso costante, che e' l'ipotesi
+       onesta quando la dispersione non porta informazione. */
+    if(!(reg.b > 0)){ reg = {a: media(absC), b: 0}; }
     const ratio=absC.map((e,i)=>e/Math.max(0.15,reg.a+reg.b*spr[i]));
     const k=quantile(ratio,0.80);
 
