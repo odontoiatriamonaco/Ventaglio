@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.32.0 — la scena dichiara il dubbio invece di nasconderlo
+  VENTAGLIO v3.33.0 — la striscia mostra l'intensita', non solo il tipo
   File  : ventaglio-v3.html
-  Build : 2026-07-28 09:30 CEST
+  Build : 2026-07-28 10:15 CEST
+  v3.33.0: due difetti visivi degli stati 'possibile'. Il disco solare
+           restava visibile mentre cadeva la pioggia (sole 0.10 e 0.26):
+           azzerato. E nella striscia dieci ore consecutive mostravano
+           la stessa identica icona mentre le barrette cambiavano
+           colore: ora l'opacita' del simbolo segue la probabilita'.
   v3.32.0: con CAPE alto bastavano 45 simulazioni bagnate su 100 per
            annunciare 'Temporale', cioe' meno della meta': l'etichetta
            piu' drammatica scattava su un lancio di moneta, e d'estate
@@ -936,7 +941,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.32.0 &middot; build 2026-07-28<br>
+    v3.33.0 &middot; build 2026-07-28<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2178,8 +2183,12 @@ const PALETTE = {
      un temporale li' significa dare per certo cio' che meta' delle
      simulazioni esclude. Due stati che dichiarano il dubbio invece di
      nasconderlo, con cielo e pioggia piu' tenui dei corrispettivi certi. */
-  temporale_forse:{ cielo:["#152836","#3A5062"], nuvola:"#647784", sole:0.10, pioggia:14, fulmini:1, tinta:"#091924", nome:"Temporale possibile" },
-  pioggia_forse:  { cielo:["#1F4150","#5C7684"], nuvola:"#9BAEB8", sole:0.26, pioggia:7,  fulmini:0, tinta:"#0C2029", nome:"Pioggia possibile" },
+  /* v3.33.0 — sole azzerato: con 0.10 e 0.26 il disco restava riconoscibile
+     mentre cadeva la pioggia, e la scena si leggeva come "pioggia di sole"
+     invece che come incertezza. Il dubbio lo dicono l'etichetta e la pioggia
+     piu' rada, non un sole che contraddice le gocce. */
+  temporale_forse:{ cielo:["#152836","#3A5062"], nuvola:"#647784", sole:0, pioggia:14, fulmini:1, tinta:"#091924", nome:"Temporale possibile" },
+  pioggia_forse:  { cielo:["#1F4150","#5C7684"], nuvola:"#9BAEB8", sole:0, pioggia:7,  fulmini:0, tinta:"#0C2029", nome:"Pioggia possibile" },
 };
 
 function condizione(idx){
@@ -2690,10 +2699,17 @@ function renderStriscia(){
     const c=condizioneOra(d,h), o=c.o;
     const alt=Math.max(3, o.pioggia||0);
     const col=colorePioggia(o.pioggia||0);
+    /* v3.33.0 — dieci ore di fila con la stessa identica icona invitano a
+       non guardare la striscia: il colore diceva che le probabilita'
+       cambiavano e il simbolo lo smentiva. Ora l'opacita' segue la
+       probabilita', cosi' il simbolo dice "quanto" oltre che "cosa". */
+    const pOra = o.pioggia||0;
+    const forza = (c.code==="sereno"||c.code==="velato"||c.code==="nuvoloso")
+      ? 1 : Math.max(0.42, Math.min(1, 0.42 + pOra/100*0.58));
     html+='<button class="ora'+(c.notte?" notte":"")+'" data-h="'+h+'" '
       +'aria-label="ore '+h+', '+(o.t!=null?o.t.toFixed(0)+" gradi":"")+'">'
       +'<span class="oh">'+String(h).padStart(2,"0")+'</span>'
-      +'<span class="oi">'+iconaSvg(c.code)+'</span>'
+      +'<span class="oi" style="opacity:'+forza.toFixed(2)+'">'+iconaSvg(c.code)+'</span>'
       +'<span class="ot">'+(o.t!=null?o.t.toFixed(0)+"\u00B0":"\u2014")+'</span>'
       +'<span class="op"><i style="height:'+alt+'%;background:'+col+'"></i></span>'
       +'</button>';
