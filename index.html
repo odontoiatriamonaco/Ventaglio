@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.13.0 — gerarchia, profondita', movimento
+  VENTAGLIO v3.14.0 — la scena mostra l'esito piu' probabile
   File  : ventaglio-v3.html
-  Build : 2026-07-27 00:20 CEST
+  Build : 2026-07-27 01:05 CEST
+  v3.14.0: la scena disegnava pioggia dal 22% di simulazioni bagnate,
+           illustrando cioe' l'esito che il 78% escludeva. Soglie
+           portate sopra il 45%: si rappresenta l'esito modale. Su
+           oggi la scena parte dall'ora corrente invece che
+           dall'aggregato dell'intera giornata.
   v3.13.0: lavoro solo visivo. La massima passa a riga propria e a
            corpo doppio rispetto alle altre metriche; schede con
            velatura in alto e ombra portata invece del solo bordo;
@@ -635,7 +640,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.13.0 &middot; build 2026-07-27<br>
+    v3.14.0 &middot; build 2026-07-27<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -684,6 +689,7 @@ const DET = ["ecmwf_ifs025","gfs_seamless","icon_seamless",
              "meteofrance_seamless","ukmo_seamless","italia_meteo_arpae_icon_2i"];
 
 const S = { loc:null, ens:{}, giorni:[], dayIdx:0, ora:null, cal:null, diag:[], tz:"auto", atmo:null,
+            utcoff:null,
             pagella:null };   // v3.12.0 — si apre su oggi, non su domani
 
 /* ---------- storage ---------- */
@@ -854,6 +860,7 @@ async function carica(loc){
       const j=await jget(ENS+"?latitude="+loc.latitude+"&longitude="+loc.longitude
         +"&hourly=temperature_2m,precipitation&models="+e.id
         +"&timezone="+tz+"&forecast_days=7");
+      if(typeof j.utc_offset_seconds==="number") S.utcoff=j.utc_offset_seconds;
       const T=membri(j.hourly,"temperature_2m"), P=membri(j.hourly,"precipitation");
       if(!T.length || !T[0].some(v=>v!==null)) throw new Error("fuori dominio");
       S.ens[e.id]={ok:true,time:j.hourly.time,T,P,A:null,elev:(typeof j.elevation==="number"?j.elevation:null)};
@@ -923,6 +930,15 @@ async function carica(loc){
     S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, raff, oraria, centri:centri.size });
   }
   if(S.dayIdx>=S.giorni.length) S.dayIdx=0;   // v3.12.0 — oggi
+  /* v3.14.0 — "adesso" deve voler dire adesso. Senza ora selezionata la
+     scena mostrava l'aggregato dell'intera giornata: un rovescio previsto
+     per le 17 dipingeva di pioggia anche il cielo delle 10. Su oggi si
+     parte dall'ora corrente, nel fuso della localita'. */
+  if(S.dayIdx===0 && S.giorni.length && typeof S.utcoff==="number"){
+    const loc=new Date(Date.now()+S.utcoff*1000);
+    const oggiLoc=loc.toISOString().slice(0,10);
+    if(S.giorni[0].data===oggiLoc) S.ora=loc.getUTCHours();
+  }
   await atmosfera();
   await registraPrevisione();
   await verifica();
@@ -1470,10 +1486,11 @@ function condizione(idx){
     if(cp.length) cape=Math.max(...cp);
   }
   if(cloud===null) cloud=Math.min(95, 22+p1*0.75);
+  // v3.14.0 — stesse soglie riviste sull'aggregato del giorno
   let code;
-  if(p15>=20 || (cape>=900 && p1>=35)) code="temporale";
-  else if(p5>=30)  code="pioggia";
-  else if(p1>=25)  code="pioggia_debole";
+  if(p15>=25 || (cape>=900 && p1>=55)) code="temporale";
+  else if(p5>=45)  code="pioggia";
+  else if(p1>=50)  code="pioggia_debole";
   else if(cloud>=62) code="nuvoloso";
   else if(cloud>=32) code="velato";
   else code="sereno";
@@ -1880,10 +1897,15 @@ function condizioneOra(d,h){
   const o=oraStat(d,h);
   let nubi=o.nubi;
   if(nubi===null) nubi=Math.min(95, 20+(o.pioggia||0)*0.8);
+  /* v3.14.0 — le soglie erano di POSSIBILITA', non di probabilita': con
+     il 22% di simulazioni bagnate si disegnava pioggia, cioe' si illustrava
+     l'esito che il 78% delle simulazioni esclude. La scena ora rappresenta
+     l'esito piu' probabile; il rischio minore resta nelle barre e nel testo,
+     dove e' un numero e non una pretesa. */
   let code;
-  if(o.cape>=800 && o.pioggia>=30) code="temporale";
-  else if(o.pioggia>=50) code="pioggia";
-  else if(o.pioggia>=22) code="pioggia_debole";
+  if(o.cape>=800 && o.pioggia>=45) code="temporale";
+  else if(o.pioggia>=65) code="pioggia";
+  else if(o.pioggia>=45) code="pioggia_debole";
   else if(nubi>=62) code="nuvoloso";
   else if(nubi>=32) code="velato";
   else code="sereno";
