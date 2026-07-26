@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.10.2 — località preferite
+  VENTAGLIO v3.11.0 — orizzonte a 7 giorni
   File  : ventaglio-v3.html
-  Build : 2026-07-26 21:45 CEST
+  Build : 2026-07-26 22:30 CEST
+  v3.11.0: orizzonte esteso a 7 giorni. I membri oltre l'orizzonte del
+           proprio modello vengono esclusi invece che contati come 0 mm.
+           Intervallo calibrato dichiarato solo fino a giorno 3; oltre
+           restano le probabilita', che non dipendono dalla taratura.
   v3.10.2: avvio in modalità completa. La scelta "Completa" veniva
            persistita come stringa vuota e quindi ignorata all'avvio
            dell'app installata, che ripiegava sempre sulla vista "oggi".
@@ -89,8 +93,10 @@
   .firma{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.16em;
     text-transform:uppercase;color:var(--nebbia);opacity:.75;margin:0 0 22px}
   .firma b{color:var(--verderame);font-weight:600;letter-spacing:.13em}
-  .days{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-  .day{flex:1;min-width:88px;cursor:pointer;background:var(--scafo);border:1px solid var(--linea);
+  .days{display:flex;gap:8px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;
+    scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .days::-webkit-scrollbar{display:none}
+  .day{flex:0 0 auto;min-width:92px;cursor:pointer;background:var(--scafo);border:1px solid var(--linea);
     border-radius:var(--r);padding:11px 12px;text-align:left;color:var(--nebbia);
     font-family:"Inter Tight",sans-serif;font-size:13px;transition:.15s}
   .day:hover{border-color:var(--verderame)}
@@ -590,7 +596,7 @@
 
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
-    v3.10.2 &middot; build 2026-07-26<br>
+    v3.11.0 &middot; build 2026-07-26<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -807,14 +813,14 @@ async function carica(loc){
     try{
       const j=await jget(ENS+"?latitude="+loc.latitude+"&longitude="+loc.longitude
         +"&hourly=temperature_2m,precipitation&models="+e.id
-        +"&timezone="+tz+"&forecast_days=4");
+        +"&timezone="+tz+"&forecast_days=7");
       const T=membri(j.hourly,"temperature_2m"), P=membri(j.hourly,"precipitation");
       if(!T.length || !T[0].some(v=>v!==null)) throw new Error("fuori dominio");
       S.ens[e.id]={ok:true,time:j.hourly.time,T,P,A:null,elev:(typeof j.elevation==="number"?j.elevation:null)};
       let extra="";
       try{
         const ja=await jget(ENS+"?latitude="+loc.latitude+"&longitude="+loc.longitude
-          +"&hourly=apparent_temperature&models="+e.id+"&timezone="+tz+"&forecast_days=4");
+          +"&hourly=apparent_temperature&models="+e.id+"&timezone="+tz+"&forecast_days=7");
         const A=membri(ja.hourly,"apparent_temperature");
         if(A.length && A[0].some(v=>v!==null)){ S.ens[e.id].A=A; extra=" + percepita"; }
       }catch(err2){ extra=" \u00B7 senza percepita"; }
@@ -827,12 +833,14 @@ async function carica(loc){
   const vivi=ENSEMBLES.filter(e=>S.ens[e.id].ok);
   if(!vivi.length){ renderBlocco(); renderDiag(); return; }
 
-  // asse temporale comune + aggregazione giornaliera per membro
-  const time=S.ens[vivi[0].id].time;
-  const nGiorni=Math.min(4,Math.floor(time.length/24));
+  // v3.11.0 — asse temporale: il piu' lungo fra gli ensemble vivi, non
+  // quello del primo. ICON-EU finisce prima di ECMWF e troncava tutti.
+  let time=S.ens[vivi[0].id].time;
+  for(const e of vivi){ const t=S.ens[e.id].time; if(t && t.length>time.length) time=t; }
+  const nGiorni=Math.min(7,Math.floor(time.length/24));
   S.giorni=[];
   for(let d=0; d<nGiorni; d++){
-    const tmax=[], psum=[], oraria=[];
+    const tmax=[], psum=[], oraria=[], centri=new Set();
     for(let h=0;h<24;h++) oraria.push({wet:0,tot:0,mm:[]});
     for(const e of vivi){
       const E=S.ens[e.id];
@@ -840,18 +848,26 @@ async function carica(loc){
         const tt=[], pp=[];
         for(let h=0;h<24;h++){
           const i=d*24+h;
-          const t=E.T[m][i], p=E.P[m]?E.P[m][i]:null;
+          const t=E.T[m][i], x=E.P[m]?E.P[m][i]:null;
           if(t!==null&&t!==undefined) tt.push(t);
-          const pv=(p===null||p===undefined)?0:p;
-          pp.push(pv);
+          pp.push((x===null||x===undefined)?null:x);
+        }
+        // v3.11.0 — oltre l'orizzonte del suo modello un membro ha valori
+        // nulli. Contarlo come "0 mm" significherebbe inventare simulazioni
+        // asciutte: a giorno 6 i 40 membri di ICON-EU falserebbero tutto.
+        if(tt.length<12 || pp.filter(v=>v!==null).length<12) continue;
+        tmax.push(Math.max(...tt));
+        psum.push(pp.reduce((s,x)=>s+(x||0),0));
+        centri.add(e.id);
+        for(let h=0;h<24;h++){
+          const pv=pp[h]===null?0:pp[h];
           oraria[h].tot++; oraria[h].mm.push(pv);
           if(pv>=0.1) oraria[h].wet++;
         }
-        if(tt.length) tmax.push(Math.max(...tt));
-        psum.push(pp.reduce((s,x)=>s+x,0));
       }
     }
-    S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, oraria });
+    if(!tmax.length) break;   // nessun centro arriva fin qui
+    S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, oraria, centri:centri.size });
   }
   if(S.dayIdx>=S.giorni.length) S.dayIdx=Math.min(1,S.giorni.length-1);
   await atmosfera();
@@ -861,22 +877,36 @@ async function carica(loc){
 /* ---------- render ---------- */
 function G(){ return S.giorni[S.dayIdx]; }
 
+function nomeGiorno(i,data){
+  if(i===0) return "Oggi";
+  if(i===1) return "Domani";
+  if(i===2) return "Dopodom.";
+  const s=new Date(data+"T12:00:00").toLocaleDateString("it-IT",{weekday:"long"});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
 function renderGiorni(){
-  const nomi=["Oggi","Domani","Dopodomani","Fra 3 giorni"];
   $("days").innerHTML="";
   S.giorni.forEach((g,i)=>{
     const dt=new Date(g.data+"T12:00:00"), b=document.createElement("button");
     b.className="day"; b.setAttribute("aria-pressed",i===S.dayIdx);
     const cc=condizione(i);
     b.innerHTML='<span class="dayico">'+(cc?iconaSvg(cc.code):"")+'</span>'
-      +"<b>"+nomi[i]+"</b><span>"+dt.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})+"</span>";
+      +"<b>"+nomeGiorno(i,g.data)+"</b><span>"+dt.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})+"</span>";
     b.onclick=()=>{S.dayIdx=i; S.ora=null; invalidaOre(); renderTutto();};
     $("days").appendChild(b);
   });
 }
 
+/* v3.11.0 — bias, pendenza e fattore k sono stati stimati sul giorno
+   successivo. L'errore cresce molto piu' che linearmente con la scadenza:
+   applicare lo stesso k a giorno 6 darebbe un intervallo che sembra
+   rigoroso e non lo e'. Oltre questo indice il numero non si mostra. */
+const ORIZZONTE_CAL = 2;   // 0 oggi, 1 domani, 2 dopodomani
+
 function renderVerdetto(){
   const g=G(), N=g.tmax.length;
+  const oltreCal = S.dayIdx > ORIZZONTE_CAL;
   const grezza=media(g.tmax);
   const bias=S.cal?S.cal.bias:0;
   const corretta=grezza-bias;
@@ -917,8 +947,9 @@ function renderVerdetto(){
 
   $("verdict").innerHTML=
     '<div class="metric wide"><div class="v">'+corretta.toFixed(1)+'\u00B0'
-      +'<small> \u00B1'+half.toFixed(1)+'</small></div>'
-      +'<div class="k">massima reale \u00B7 intervallo 80%</div></div>'
+      +(oltreCal?'':'<small> \u00B1'+half.toFixed(1)+'</small>')+'</div>'
+      +'<div class="k">'+(oltreCal?'massima reale \u00B7 oltre la calibrazione'
+                                  :'massima reale \u00B7 intervallo 80%')+'</div></div>'
     +(appMax===null?"":'<div class="metric wide"><div class="v '+clsApp(appMax)+'">'
       +appMax.toFixed(0)+'\u00B0<small> percepiti</small></div><div class="k">'
       +(dApp>=1?"+"+dApp.toFixed(0)+"\u00B0 sul termometro"
@@ -929,7 +960,7 @@ function renderVerdetto(){
 
   const su100=v=>Math.round(v);
   $("subVerdict").innerHTML=
-    "Su <b>100 simulazioni</b> del domani: <b>"+su100(p1)+"</b> danno almeno 1 mm di pioggia, <b>"
+    "Su <b>100 simulazioni</b> di "+nomeGiorno(S.dayIdx,g.data).toLowerCase()+": <b>"+su100(p1)+"</b> danno almeno 1 mm di pioggia, <b>"
     +su100(p5)+"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
     +"Nella met&agrave; pi&ugrave; asciutta l'accumulo si ferma a "+mediana.toFixed(1)
     +" mm; nel 10% pi&ugrave; bagnato arriva a "+q90.toFixed(1)+" mm."
@@ -967,12 +998,22 @@ function renderVerdetto(){
       ?' <span style="opacity:.6">percepita da un solo modello, senza intervallo</span>':"");
   }
 
-  $("fiducia").innerHTML = (S.cal
+  const nCentri = g.centri || ENSEMBLES.filter(e=>S.ens[e.id].ok).length;
+  const avvisoLungo = oltreCal
+    ? "<b>Nessun intervallo a questa scadenza.</b> Bias e copertura sono stati "
+      + "misurati sul giorno successivo, e l'errore cresce molto piu' che "
+      + "linearmente con l'anticipo: riportare qui lo stesso \u00B1 sarebbe un "
+      + "numero preciso e falso. Le probabilit\u00E0 restano valide, l'intervallo no. "
+    : "";
+
+  $("fiducia").innerHTML = avvisoLungo + (S.cal
     ? "Correzione di bias applicata: <b>"+(bias>=0?"\u2212":"+")+Math.abs(bias).toFixed(1)
       +"\u00B0C</b> sulla grezza di "+grezza.toFixed(1)+"\u00B0. Intervallo da "+fonte+"."
     : "Nessuna calibrazione locale ancora. L'intervallo mostrato viene dalla "+fonte
       +": &egrave; tipicamente troppo stretto, perch&eacute; le simulazioni tendono a stare troppo vicine fra loro. "
-      +"Premi <b>Calibra</b> qui sotto per correggerlo con i dati di questa localit&agrave;.");
+      +"Premi <b>Calibra</b> qui sotto per correggerlo con i dati di questa localit&agrave;.")
+    + '<br><span style="opacity:.72">' + N + " simulazioni da " + nCentri
+    + " centr" + (nCentri===1?"o":"i") + " a questa scadenza</span>";
 }
 
 /* probabilità oraria: quanti membri sono bagnati in quell'ora */
@@ -1353,7 +1394,7 @@ async function atmosfera(){
   try{
     const j=await jget("https://api.open-meteo.com/v1/forecast?latitude="+S.loc.latitude
       +"&longitude="+S.loc.longitude+"&hourly=cloud_cover,cape,relative_humidity_2m,dew_point_2m,apparent_temperature,wind_speed_10m,is_day&timezone="
-      +encodeURIComponent(S.tz)+"&forecast_days=4");
+      +encodeURIComponent(S.tz)+"&forecast_days=7");
     S.atmo={ cloud:j.hourly?.cloud_cover||null, cape:j.hourly?.cape||null,
              ur:j.hourly?.relative_humidity_2m||null, rug:j.hourly?.dew_point_2m||null,
              app:j.hourly?.apparent_temperature||null,
