@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.41.0 — la vista compatta allineata al verdetto
+  VENTAGLIO v3.42.0 — adesso davanti, massima di contorno
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.42.0: il numero grande era un fatto sul passato. Alle nove di sera il
+           verdetto apriva con '28,0 massima reale', ma la massima era
+           successa nel pomeriggio: lo stesso errore dell'81% di pioggia
+           che comprendeva la notte. Sul giorno in corso il posto d'onore
+           va alla temperatura di adesso, con massima e minima accanto
+           come contesto. Sugli altri giorni la massima resta protagonista.
+           Aggiunto l'indice UV, con ripiego se la fonte non lo espone.
   v3.41.0: revisione completa del codice. Unico difetto reale trovato:
            renderWidget calcolava le probabilita' di pioggia su g.psum
            grezzo, quindi senza la finestra oraria del giorno in corso
@@ -1008,7 +1015,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.41.0 &middot; build 2026-07-29<br>
+v3.42.0 &middot; build 2026-07-29<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1456,21 +1463,73 @@ function renderVerdetto(){
         {duration:240,easing:"cubic-bezier(.2,.7,.3,1)"});
   }catch(e){}
 
-  $("verdict").innerHTML=
-    '<div class="metric wide hero"><div class="v">'+corretta.toFixed(1)+'\u00B0'
-      +(oltreCal?'':'<small> \u00B1'+half.toFixed(1)+'</small>')+'</div>'
-      +'<div class="k">'+GLIFI.termo+(oltreCal?'massima reale \u00B7 oltre la calibrazione'
-                                  :'massima reale \u00B7 intervallo 80%')+'</div></div>'
-    +(appMax===null?"":'<div class="metric wide"><div class="v '+clsApp(appMax)+'">'
-      +appMax.toFixed(0)+'\u00B0<small> percepiti</small></div><div class="k">'+GLIFI.corpo
-      +(dApp>=1?"+"+dApp.toFixed(0)+"\u00B0 sul termometro"
-        :dApp<=-1?dApp.toFixed(0)+"\u00B0 sul termometro":"come il termometro")+'</div></div>')
+  /* v3.42.0 — IL NUMERO GRANDE ERA UN FATTO SUL PASSATO.
+     Alle nove di sera il verdetto apriva con "28,0° massima reale": la
+     massima e' successa nel pomeriggio, e presentarla come risposta
+     principale e' lo stesso errore dell'81% di pioggia che comprendeva la
+     notte. Chi apre l'app alle nove vuole sapere quanto fa adesso.
+     Sul giorno in corso il posto d'onore va alla temperatura attuale;
+     massima e minima scendono accanto, dove sono contesto e non verdetto.
+     Sugli altri giorni la massima resta protagonista, perche' li' e'
+     davvero la previsione.
+     Nota onesta: la correzione di bias e' misurata sulla massima, e viene
+     applicata anche all'ora corrente. E' ragionevole — quello scarto nasce
+     soprattutto da dove cade la cella del modello, non dall'ora del giorno
+     — ma resta un'estensione, non una misura. */
+  const oraOra = oraInizio(S.dayIdx);
+  const adesso = (S.dayIdx === 0 && oraOra > 0) ? oraStat(0, oraOra) : null;
+  const tAdesso = adesso && adesso.t !== null ? adesso.t - bias : null;
+  const tMin = mediaPesata(d => num(d.daily?.temperature_2m_min?.[S.dayIdx]));
+
+  const bloccoPercepita = appMax === null ? "" :
+    '<div class="metric wide"><div class="v ' + clsApp(appMax) + '">'
+    + appMax.toFixed(0) + '\u00B0<small> percepiti</small></div><div class="k">' + GLIFI.corpo
+    + (dApp >= 1 ? "+" + dApp.toFixed(0) + "\u00B0 sul termometro"
+      : dApp <= -1 ? dApp.toFixed(0) + "\u00B0 sul termometro" : "come il termometro")
+    + '</div></div>';
+
+  $("verdict").innerHTML =
+    (tAdesso !== null
+      ? '<div class="metric wide hero"><div class="v">' + tAdesso.toFixed(0) + '\u00B0'
+        + (adesso.a !== null ? '<small> ' + Math.round(adesso.a) + '\u00B0 percepiti</small>' : '')
+        + '</div><div class="k">' + GLIFI.termo + 'adesso, ore '
+        + String(oraOra).padStart(2, "0") + ':00</div></div>'
+        + '<div class="metric"><div class="v">' + corretta.toFixed(0) + '\u00B0'
+        + (tMin !== null ? '<small> / ' + tMin.toFixed(0) + '\u00B0</small>' : '')
+        + '</div><div class="k">massima e minima di oggi</div></div>'
+      : '<div class="metric wide hero"><div class="v">' + corretta.toFixed(1) + '\u00B0'
+        + (oltreCal ? '' : '<small> \u00B1' + half.toFixed(1) + '</small>') + '</div>'
+        + '<div class="k">' + GLIFI.termo
+        + (oltreCal ? 'massima \u00B7 oltre la calibrazione' : 'massima \u00B7 intervallo 80%')
+        + '</div></div>')
+    + (tAdesso !== null ? "" : bloccoPercepita)
     +'<div class="metric"><div class="v '+cls(p1)+'">'+p1+'%</div><div class="k">'+GLIFI.goccia+'pioggia &gt;1 mm</div></div>'
     +'<div class="metric"><div class="v '+cls(p5)+'">'+p5+'%</div><div class="k">'+GLIFI.rovescio+'rovescio &gt;5 mm</div></div>'
     +'<div class="metric"><div class="v '+cls(p15)+'">'+p15+'%</div><div class="k">'+GLIFI.nubifragio+'nubifragio &gt;15 mm</div></div>'
     +(raffMed===null?"":'<div class="metric"><div class="v '+cls(pRaff(40))+'">'
       +Math.round(raffMed)+'<small> km/h</small></div><div class="k">'+GLIFI.vento
-      +'raffica mediana</div></div>');
+      +'raffica mediana</div></div>')
+    /* v3.42.0 — indice UV: d'estate al mare e' il numero che decide se stare
+       all'ombra, e mancava del tutto. Si mostra solo se vale qualcosa: di
+       notte e' zero e occuperebbe spazio per niente. */
+    + (() => {
+        const uv = S.atmo && S.atmo.uv;
+        if (!uv) return "";
+        const base = S.dayIdx * 24;
+        let max = null, oraMax = null;
+        for (let hh = (S.dayIdx === 0 ? oraOra : 0); hh < 24; hh++) {
+          const v = uv[base + hh];
+          if (v === null || v === undefined) continue;
+          if (max === null || v > max) { max = v; oraMax = hh; }
+        }
+        if (max === null || max < 1) return "";
+        const cl = max >= 8 ? "coral" : max >= 6 ? "amber" : "teal";
+        const che = max >= 8 ? "molto forte" : max >= 6 ? "forte"
+                  : max >= 3 ? "moderato" : "debole";
+        return '<div class="metric"><div class="v ' + cl + '">' + max.toFixed(0)
+          + '</div><div class="k">UV ' + che + ', ore '
+          + String(oraMax).padStart(2, "0") + '</div></div>';
+      })();
 
   const su100=v=>Math.round(v);
   /* v3.19.0 — riscritto per chi non fa il meteorologo. Via "accumulo",
@@ -2885,14 +2944,24 @@ function iconaSvg(code){
 async function atmosfera(){
   S.atmo=null;
   try{
-    const j=await jget("https://api.open-meteo.com/v1/forecast?latitude="+S.loc.latitude
-      +"&longitude="+S.loc.longitude+"&hourly=cloud_cover,cape,relative_humidity_2m,dew_point_2m,apparent_temperature,wind_speed_10m,is_day&timezone="
-      +encodeURIComponent(S.tz)+"&forecast_days=7");
+    /* v3.42.0 — aggiunto uv_index, con ripiego. Se non fosse disponibile,
+       chiedere una variabile in piu' farebbe cadere l'INTERA richiesta e con
+       essa umidita', nuvolosita' e CAPE: e' il difetto gia' corretto due
+       volte altrove, qui prevenuto. */
+    const base = "https://api.open-meteo.com/v1/forecast?latitude="+S.loc.latitude
+      +"&longitude="+S.loc.longitude+"&hourly=cloud_cover,cape,relative_humidity_2m,"
+      +"dew_point_2m,apparent_temperature,wind_speed_10m,is_day";
+    const coda = "&timezone="+encodeURIComponent(S.tz)+"&forecast_days=7";
+    let j;
+    try{ j = await jget(base+",uv_index"+coda); }
+    catch(e){ j = await jget(base+coda); }
     S.atmo={ cloud:j.hourly?.cloud_cover||null, cape:j.hourly?.cape||null,
              ur:j.hourly?.relative_humidity_2m||null, rug:j.hourly?.dew_point_2m||null,
              app:j.hourly?.apparent_temperature||null,
-             vento:j.hourly?.wind_speed_10m||null, dayflag:j.hourly?.is_day||null };
-    S.diag.push({n:"Umidit\u00E0 / nuvolosit\u00E0 / CAPE", ok:true, msg:"best_match"});
+             vento:j.hourly?.wind_speed_10m||null, dayflag:j.hourly?.is_day||null,
+             uv:j.hourly?.uv_index||null };   // v3.42.0
+    S.diag.push({n:"Umidit\u00E0 / nuvolosit\u00E0 / CAPE", ok:true,
+                 msg:"best_match"+(S.atmo.uv?" + UV":" \u00B7 senza UV")});
   }catch(e){
     S.diag.push({n:"Nuvolosit\u00E0 / CAPE", ok:false, msg:String(e.message||e)});
   }
