@@ -1,9 +1,126 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.42.0 — adesso davanti, massima di contorno
+  VENTAGLIO v3.56.1 — accenti nelle spiegazioni nuove
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.56.0: le spiegazioni davano per scontati mare e agosto — ombrelloni,
+           spiaggia, barche — e a Milano in gennaio erano comiche. Ora due
+           strati: uno fisico che vale ovunque (che cosa fa quel numero al
+           corpo) e un solo esempio concreto scelto da stagione e quota.
+           D'inverno l'umidita' non e' afa ma conduzione del freddo, e il
+           vento non riguarda gli ombrelloni ma il raffreddamento: sono
+           meccanismi opposti descritti prima con lo stesso testo. Se il
+           contesto non e' chiaro l'esempio si omette.
+  v3.56.1: le stringhe nuove avevano gli accenti resi con l'apostrofo.
+           Trovate da verifica.js prima della consegna: 27 in un colpo.
+  v3.55.0: toccando un valore si apre una spiegazione con i numeri di
+           adesso dentro la frase: che cosa comporta quell'umidita' a
+           quella temperatura, in quanto ci si scotta con quell'indice
+           UV, che cosa cambia con quelle raffiche, come si legge davvero
+           una probabilita' di pioggia. Le indicazioni pratiche su caldo e
+           sole seguono le raccomandazioni condivise: buon senso
+           applicato, non consiglio medico.
+  v3.54.0: pioggia, rovescio e nubifragio occupavano tre riquadri come se
+           fossero eventi distinti, mentre sono soglie annidate della
+           stessa cosa. Con tre 'esclusa' in fila mezza scheda diceva
+           niente. Ora una casella sola separa le due domande vere:
+           quanto e' probabile che piova, e che pioggia sarebbe se
+           cadesse. L'icona segue l'intensita' e il rischio di nubifragio
+           compare solo quando conta.
+  v3.53.0: la v3.52.0 faceva seguire al numero grande l'ora selezionata,
+           ma nessuno ridisegnava il verdetto quando quell'ora cambiava.
+           Passando a domani l'ora si azzera, la scheda si disegna con la
+           massima, poi la striscia si riposiziona sulle 11 avvisando solo
+           il cielo: striscia e verdetto dicevano numeri diversi. Ora
+           aggiornaOra ridisegna entrambi.
+  v3.52.0: il numero grande seguiva solo l'orologio. Scorrendo la striscia
+           su un'altra ora, o passando a domani, restava la massima del
+           giorno mentre la striscia diceva 32 gradi alle 11: due parti
+           della stessa schermata che si contraddicevano. Ora segue l'ora
+           selezionata, con l'etichetta giusta ('domani alle 11:00'), e la
+           massima conserva il suo intervallo calibrato viaggiando con la
+           freccia in su.
+  v3.51.0: due incongruenze. L'umidita' esisteva solo nel ramo 'adesso',
+           quindi sui giorni futuri spariva pur essendo un dato
+           disponibile: ora si mostra il valore tipico della giornata con
+           le sue frecce. E l'UV metteva il giudizio dentro la didascalia
+           invece che sotto il numero, unica voce con una struttura
+           diversa da tutte le altre.
+  v3.50.0: '4%' e' un dato, 'molto improbabile' e' una risposta. Sotto
+           ogni probabilita' compare la parola corrispondente, e lo stesso
+           per vento e umidita'. Le soglie seguono il linguaggio comune
+           delle previsioni; la fascia 50-60% ha una formula sua perche'
+           chiamarla 'possibile' sarebbe una furbizia: e' un lancio di
+           moneta e va detto.
+  v3.49.1: la v3.49.0 costruiva normaHtml DOPO averlo usato. Essendo un
+           let non viene sollevato, quindi ReferenceError a ogni
+           caricamento e verdetto fermo sul messaggio d'attesa: identico
+           al caso mediaPesata di ieri. Blocco spostato prima dell'uso, e
+           verifica.js impara a riconoscere questa classe di errore.
+  v3.49.0: la riga della norma stagionale stava in fondo alla scheda, dove
+           sembrava una nota a pie' di pagina. Ora e' dentro la griglia,
+           subito sotto la temperatura e le sue frecce: e' quella che da'
+           senso a massima e minima, e va letta insieme a loro.
+  v3.48.0: la riga diceva '2 gradi sotto la media' e insieme 'piu' calda
+           del 30% delle giornate': compatibili solo se la distribuzione
+           e' storta, cosa che nessuno ha voglia di dedurre leggendo il
+           meteo. Due correzioni: si usa la MEDIANA invece della media,
+           cosi' scarto e percentile sono coerenti per costruzione e le
+           ondate isolate non falsano il riferimento; e la percentuale si
+           dice dal lato maggioritario — 'piu' fresca del 70%' invece di
+           'piu' calda del 30%'.
+  v3.47.2: la frase diceva '1 grado sotto la media' mostrando accanto 29
+           e 31, che di gradi ne fanno 2. Tre arrotondamenti indipendenti
+           che non si parlavano. Ora lo scarto si ricava dai valori
+           stampati: chi rifa' la sottrazione trova lo stesso numero.
+  v3.47.1: la riga della norma stagionale non compariva mai. Lo scarico
+           dei dieci anni gira in sottofondo per non rallentare
+           l'apertura, ma al termine nessuno ridisegnava la scheda: al
+           primo render i dati non c'erano ancora e la riga restava
+           vuota per sempre. Ora renderVerdetto viene richiamata quando
+           l'archivio arriva, sia dalla rete sia dalla memoria.
+  v3.47.0: confronto con la norma stagionale. Dieci anni di massime da
+           ERA5 su questo punto, confrontate con i giorni vicini nel
+           calendario: di quanti gradi ci si scosta e quante giornate di
+           quel periodo sono state piu' fresche. Risponde alla domanda
+           che tutti si fanno guardando il termometro e che nessuna app
+           affronta. Lo scarico e' pesante ma si fa una volta e resta in
+           memoria trenta giorni: la climatologia non cambia di settimana
+           in settimana. Sotto i trenta giorni di campione non si dice
+           niente.
+  v3.46.0: la scheda radar non e' piu' nascosta dietro tre tocchi. Da
+           quando esiste ha risposto correttamente su pioggia in
+           allontanamento, pioggia lontana e cielo pulito, sempre
+           d'accordo con cio' che si vedeva dalla finestra. Resta marcata
+           sperimentale e continua a dichiarare i propri limiti. Si
+           ricalcola cambiando localita', dopo il primo disegno per non
+           rallentare l'apertura.
+  v3.45.0: massima, minima e raffica massima occupavano due riquadri
+           interi. Ora sono frecce sotto il valore a cui appartengono:
+           meno spazio, contesto attaccato alla grandezza giusta, e il
+           valore attuale resta il protagonista. Le frecce riguardano la
+           giornata intera — si leggono ovunque come 'l'intervallo di
+           oggi' — mentre le probabilita' restano sulle ore che mancano.
+  v3.44.0: il verdetto mostrava solo aggregati — massima, minima, raffica
+           massima — mentre chi apre l'app vuole prima sapere che aria
+           tira adesso. Sul giorno in corso compaiono vento e umidita'
+           dell'ora corrente, con le raffiche accanto quando si staccano
+           dal vento medio; massima e minima scendono in corpo minore,
+           dove sono contesto e non risposta.
+  v3.43.0: ultimo superstite del difetto delle 24 ore. Alle 23 il verdetto
+           mostrava 'raffica mediana 30 km/h' mentre il vento era di 4:
+           quel picco era successo nel pomeriggio. Ora i membri portano le
+           raffiche ora per ora e la finestra parte dall'ora attuale, come
+           gia' per temperatura e pioggia. L'etichetta distingue 'da
+           adesso' da 'di giornata'.
+  v3.42.1: la v3.42.0 chiamava mediaPesata(), funzione dell'architettura
+           precedente a modelli deterministici, che in questa versione non
+           esiste. renderVerdetto moriva con un ReferenceError a ogni
+           caricamento e la scheda restava sul messaggio d'attesa. La
+           minima ora si ricava dalle simulazioni, come la massima.
+           verifica.js non poteva accorgersene: non controllava i nomi
+           chiamati e mai definiti. Adesso lo fa.
   v3.42.0: il numero grande era un fatto sul passato. Alle nove di sera il
            verdetto apriva con '28,0 massima reale', ma la massima era
            successa nel pomeriggio: lo stesso errore dell'81% di pioggia
@@ -412,6 +529,37 @@
     font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.15em;
     text-transform:uppercase;color:var(--nebbia);margin-top:6px}
   .metric.hero .k{font-size:10.5px;margin-top:9px}
+  /* v3.44.0 — la sintesi della giornata e' contesto, non verdetto */
+  /* v3.45.0 — gli estremi della giornata, sotto il valore attuale */
+  /* v3.49.0 — la norma stagionale occupa una riga intera della griglia,
+     subito sotto la temperatura a cui si riferisce */
+  .verdict .norma{flex:0 0 100%;margin:-4px 0 4px;font-size:13px;line-height:1.55;
+    color:var(--nebbia);padding-left:2px}
+  .verdict .norma b{color:var(--schiuma);font-weight:600}
+  /* v3.55.0 — i valori si possono toccare, e il pannello che si apre */
+  .metric[data-sp]{cursor:pointer;border-radius:10px;padding:6px 8px;margin:-6px -8px;
+    transition:background .15s}
+  .metric[data-sp]:hover{background:rgba(255,255,255,.04)}
+  .metric[data-sp][aria-expanded="true"]{background:rgba(79,191,168,.09)}
+  .spiegaval{margin-top:18px;padding:16px 18px;border-radius:12px;
+    border:1px solid var(--verderame);background:rgba(79,191,168,.06)}
+  .spiegaval h4{margin:0 0 9px;font-family:"Bricolage Grotesque",sans-serif;
+    font-size:17px;font-weight:700;letter-spacing:-.012em;color:var(--schiuma)}
+  .spiegaval p{margin:0;font-size:13.5px;line-height:1.62;color:var(--nebbia)}
+  .spiegaval p b{color:var(--schiuma);font-weight:600}
+  .spiegaval .chiudi-sp{margin-top:12px;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;color:var(--nebbia);background:transparent;border:1px solid var(--linea);
+    border-radius:99px;padding:6px 14px;cursor:pointer}
+  /* v3.50.0 — la parola sotto il numero: dice cosa farne */
+  .dida{font-size:12px;color:var(--schiuma);opacity:.72;margin-top:4px;line-height:1.3}
+  .rng{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--nebbia);
+    margin-top:5px;letter-spacing:.02em}
+  .rng .su{color:var(--corallo);margin-right:1px}
+  .rng .giu{color:#7FB3D9;margin:0 1px 0 4px}
+  .rng .err{color:var(--nebbia);opacity:.8}
+  .metric.hero .rng{font-size:13px;margin-top:8px}
+  .metric.piccola .v{font-size:21px;color:var(--nebbia)}
+  .metric.piccola .v small{font-size:13px}
   .metric .k{color:var(--nebbia)}
   .metric:has(.v.coral) .k svg{color:var(--corallo)}
   .metric:has(.v.amber) .k svg{color:var(--ottone)}
@@ -852,6 +1000,7 @@
     <h2>Verdetto probabilistico</h2>
     <div class="verdict" id="verdict"><span class="note">Scarico le simulazioni&hellip;</span></div>
     <p id="comfort"></p>
+    <div id="spiegaValore" class="spiegaval" hidden></div>
     <p id="finestraNota" class="note" style="margin-top:16px"></p>
     <div class="azioni" style="margin-top:14px">
       <button class="ghost" id="spiegaBtn" aria-expanded="false" aria-controls="spiegaVerdetto">
@@ -873,11 +1022,16 @@
     <p id="bestWin"></p>
   </section>
 
-  <!-- v3.34.0 — scheda radar, nascosta: si scopre con tre tocchi sul titolo
-       qui sopra. Sta dietro un gesto perche' il metodo e' stato verificato
-       su un caso solo, e un numero che sembra autorevole senza esserlo fa
-       piu' danni della sua assenza. -->
-  <section class="card full" id="radarCard" hidden>
+  <!-- v3.46.0 — la scheda radar non e' piu' nascosta. Stava dietro tre
+       tocchi perche' il metodo era verificato su un caso solo; da allora ha
+       risposto correttamente su pioggia in allontanamento, pioggia lontana e
+       cielo pulito, ogni volta d'accordo con cio' che si vedeva dalla
+       finestra. Resta marcata "sperimentale" e dichiara i propri limiti: non
+       e' ancora stata messa alla prova su pioggia in avvicinamento, che e'
+       il caso che conta di piu'. Il pulsante "Nascondi" resta, e i tre
+       tocchi sul titolo la fanno riapparire: chi la chiude ha una via di
+       ritorno. -->
+  <section class="card full" id="radarCard">
     <h2>Radar &mdash; sperimentale</h2>
     <div id="radarOut"><p class="note">in attesa&hellip;</p></div>
     <div class="azioni" style="margin-top:14px">
@@ -1015,7 +1169,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.42.0 &middot; build 2026-07-29<br>
+v3.56.1 &middot; build 2026-07-29<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1327,9 +1481,15 @@ async function carica(loc){
     }
     if(S.giorni[0].data===dataLoc) S.ora=oraLoc;
   }
-  // v3.34.0 — cambiando localita' il radar va rifatto, non riciclato
-  if (S.radar) { S.radar = null; renderRadar(); }
+  /* v3.46.0 — cambiando localita' il radar va rifatto, non riciclato. Ora
+     che e' sempre in vista si ricalcola anche alla prima apertura di una
+     localita' nuova, non solo se era gia' stato usato. */
+  S.radar = null;
+  try{ renderRadar(); }catch(e){}
+  const cardR = $("radarCard");
+  if (cardR && !cardR.hasAttribute("hidden")) setTimeout(radarCalcola, 500);
   await atmosfera();
+  normaCarica();          // v3.47.0 — in sottofondo, non blocca il disegno
   await registraPrevisione();
   await verifica();
   renderTutto();
@@ -1406,6 +1566,199 @@ const GLIFI = {
 function fattoreP(){ return (S.cal && S.cal.fP) ? S.cal.fP : 1; }
 function fattoreW(){ return (S.cal && S.cal.fW) ? S.cal.fW : 1; }
 
+/* v3.50.0 — un numero da solo non dice cosa farne. "4%" e' un dato; "molto
+   improbabile" e' una risposta. Le soglie sotto non sono opinioni: seguono
+   il linguaggio comune delle previsioni, dove sotto il 10% si parla di
+   evento improbabile e sopra l'80% di evento molto probabile. Il caso
+   50-60% ha una formula sua, perche' "possibile" li' sarebbe una furbizia:
+   e' un lancio di moneta e va detto. */
+function paroleProb(p){
+  if (p === null || p === undefined) return "";
+  if (p === 0)  return "esclusa";
+  if (p <= 10)  return "molto improbabile";
+  if (p <= 25)  return "poco probabile";
+  if (p <= 45)  return "possibile";
+  if (p <= 60)  return "una probabilit\u00E0 su due";
+  if (p <= 80)  return "probabile";
+  if (p <= 95)  return "molto probabile";
+  return "quasi certa";
+}
+/* scala del vento in parole: quello che cambia davvero all'aperto, non i
+   gradi Beaufort che nessuno ha in testa */
+function paroleVento(k){
+  if (k === null || k === undefined) return "";
+  if (k < 12) return "aria calma";
+  if (k < 20) return "brezza leggera";
+  if (k < 30) return "brezza tesa";
+  if (k < 40) return "vento sostenuto";
+  if (k < 55) return "ombrelloni a rischio";
+  return "vento molto forte";
+}
+function paroleUr(u){
+  if (u === null || u === undefined) return "";
+  if (u < 35) return "aria secca";
+  if (u < 60) return "gradevole";
+  if (u < 75) return "aria umida";
+  return "afosa";
+}
+const dida = t => t ? '<div class="dida">' + t + '</div>' : '';
+
+/* ============================================================
+   v3.55.0 — SPIEGAZIONI A RICHIESTA
+   Ogni valore si puo' toccare e racconta che cosa comporta, con i numeri
+   di adesso dentro la frase invece che in astratto. Le indicazioni pratiche
+   su caldo e raggi solari seguono le raccomandazioni condivise in materia:
+   sono buon senso applicato, non consiglio medico, e l'app lo dice.
+   ============================================================ */
+function testiSpiegazione(v){
+  const t = {};
+  const n = x => (x === null || x === undefined) ? null : Math.round(x);
+
+  /* v3.56.0 — il contesto non si da' per scontato.
+     I testi precedenti presumevano mare e agosto: ombrelloni, spiaggia,
+     barche. A Milano in gennaio erano comici, e un esempio fuori luogo fa
+     perdere fiducia anche nella parte giusta della frase.
+     Due strati. Il primo e' FISICO e vale ovunque: che cosa fa quel numero
+     al corpo. Il secondo e' un esempio concreto, uno solo, scelto da
+     stagione e quota — e se il contesto non e' chiaro non si mette: una
+     frase in meno vale piu' di una frase sbagliata.
+     La quota arriva dal geocoding e non dice la distanza dal mare, ma sopra
+     i 300 metri l'entroterra e' certo e sotto i 20 la costa e' probabile:
+     per decidere se nominare un ombrellone e' piu' che sufficiente. */
+  const mese = new Date((v.data || new Date().toISOString().slice(0,10)) + "T12:00:00").getMonth();
+  const caldo  = mese >= 4 && mese <= 8;          // maggio-settembre
+  const freddo = mese <= 1 || mese >= 10;         // novembre-febbraio
+  const quota = (S.loc && typeof S.loc.elevation === "number") ? S.loc.elevation : null;
+  const costa = quota !== null && quota <= 20;
+  const monte = quota !== null && quota >= 700;
+
+  if (v.ur !== null) {
+    const rug = v.rug;
+    let fisico, pratico;
+    if (caldo || (v.t !== null && v.t >= 24)) {
+      fisico = "Con il caldo il corpo si raffredda sudando, e il sudore funziona solo se "
+        + "riesce a evaporare. Se l'aria &egrave; gi&agrave; carica di vapore non evapora, e il calore "
+        + "resta addosso: &egrave; per questo che l'afa si sente pi&ugrave; del termometro."
+        + (rug !== null ? " Quanto sia carica lo dice il <b>punto di rugiada</b>, oggi <b>"
+            + n(rug) + "&deg;</b>: sopra i 20 l'aria comincia a pesare, sopra i 24 diventa "
+            + "opprimente." : "");
+      pratico = "Bere prima di avere sete, perch&eacute; la sete arriva quando si &egrave; gi&agrave; indietro. "
+        + "Cercare l'aria che si muove pi&ugrave; dell'ombra e basta: &egrave; la ventilazione a rimettere "
+        + "in moto l'evaporazione. E spostare lo sforzo prolungato fuori dalle ore centrali.";
+    } else if (freddo || (v.t !== null && v.t <= 12)) {
+      fisico = "Al freddo l'umidit&agrave; lavora al contrario: l'aria umida conduce calore molto "
+        + "meglio di quella secca, quindi sottrae calore alla pelle pi&ugrave; in fretta. Sono i "
+        + "cinque gradi umidi che sembrano pi&ugrave; pungenti di zero gradi asciutti."
+        + (rug !== null ? " Il punto di rugiada &egrave; <b>" + n(rug) + "&deg;</b>." : "");
+      pratico = "Conta pi&ugrave; il primo strato del cappotto: se il tessuto a contatto trattiene "
+        + "l'umidit&agrave; del sudore, il freddo lo senti appena ti fermi. E se la temperatura si "
+        + "avvicina al punto di rugiada, di notte le superfici si bagnano e diventano scivolose "
+        + "anche senza pioggia.";
+    } else {
+      fisico = "L'umidit&agrave; relativa da sola dice poco: la stessa percentuale a cinque gradi o a "
+        + "trenta descrive due arie diversissime. Quello che conta &egrave; quanta acqua c'&egrave; davvero, "
+        + "e lo misura il <b>punto di rugiada</b>"
+        + (rug !== null ? ", oggi <b>" + n(rug) + "&deg;</b>" : "") + ".";
+      pratico = "In mezza stagione l'umidit&agrave; incide poco sul comfort: comincia a farsi sentire "
+        + "quando il termometro sale sopra i 24 gradi o scende sotto i dieci.";
+    }
+    t.umidita = { titolo: "Umidit&agrave; " + n(v.ur) + "%",
+      corpo: fisico + "<br><br><b>Che fare.</b> " + pratico };
+  }
+
+  if (v.uv !== null) {
+    const u = v.uv;
+    if (u < 3) {
+      t.uv = { titolo: "Raggi solari, indice " + n(u),
+        corpo: "Indice <b>basso</b>. Il rischio di scottatura &egrave; trascurabile anche restando "
+          + "fuori a lungo: in Italia da novembre a febbraio l'indice sta quasi sempre qui, "
+          + "perch&eacute; il sole resta basso sull'orizzonte e i raggi attraversano pi&ugrave; atmosfera."
+          + (monte ? "<br><br>Unica eccezione: in quota il valore sale in fretta, e sulla neve "
+              + "la riflessione pu&ograve; raddoppiare la dose che arriva alla pelle." : "") };
+    } else {
+      const quanto = u >= 8 ? "una ventina di minuti" : u >= 6 ? "una mezz'ora" : "circa un'ora";
+      t.uv = { titolo: "Raggi solari, indice " + n(u),
+        corpo: (u >= 8 ? "Indice <b>molto forte</b>. " : u >= 6 ? "Indice <b>forte</b>. "
+                : "Indice <b>moderato</b>. ")
+          + "Su pelle chiara non protetta l'arrossamento pu&ograve; comparire in <b>" + quanto
+          + "</b> nelle ore attorno al picco. L'indice non dipende dal caldo: si scotta anche "
+          + "in una giornata fresca e ventilata, ed &egrave; l'errore pi&ugrave; comune."
+          + "<br><br><b>Che fare.</b> Protezione 30 o 50 mezz'ora prima e rinnovata ogni due ore. "
+          + "Nelle ore centrali maglietta, cappello e occhiali con filtro."
+          + (costa ? " Sotto l'ombrellone arriva comunque circa met&agrave; della radiazione, perch&eacute; "
+              + "sabbia e acqua riflettono: all'ombra ci si scotta lo stesso."
+            : monte ? " In quota la radiazione cresce di circa il dieci per cento ogni mille "
+              + "metri, e la neve riflette gran parte di quello che arriva."
+            : " Anche l'asfalto e i muri chiari riflettono, quindi l'ombra protegge meno di "
+              + "quanto sembri.") };
+    }
+  }
+
+  if (v.p1 !== null) {
+    t.pioggia = { titolo: "Probabilit&agrave; di pioggi&agrave; " + v.p1 + "%",
+      corpo: "<b>Non</b> vuol dire che piover&agrave; per il " + v.p1 + "% del tempo, n&eacute; sul "
+        + v.p1 + "% del territorio. Vuol dire che su cento futuri possibili, calcolati facendo "
+        + "ripartire i modelli da condizioni appena diverse, in <b>" + v.p1 + "</b> la pioggi&agrave; c'&egrave;."
+        + (v.mmTip !== null
+            ? "<br><br>Quando c'&egrave;, la quantit&agrave; tipica &egrave; di <b>" + v.mmTip.toFixed(0) + " mm</b>: "
+              + (v.mmTip < 5 ? "poca acqua, giusto il terreno bagnato"
+                 : v.mmTip < 15 ? "una pioggi&agrave; vera, con l'ombrello che serve"
+                 : "acqua che cade pi&ugrave; in fretta di quanto scoli, con allagamenti possibili "
+                   + "dove il drenaggio &egrave; scarso") + "."
+            : "")
+        + "<br><br><b>Come leggerla.</b> Sotto il 20% si pu&ograve; ignorare, sopra l'80% conviene "
+        + "organizzarsi. In mezzo l'unica risposta onesta &egrave; che non si sa, e allora la domanda "
+        + "utile diventa <i>quando</i>: la striscia oraria lo dice." };
+  }
+
+  if (v.vento !== null || v.raff !== null) {
+    const r = v.raff !== null ? v.raff : v.vento;
+    let effetto;
+    if (freddo || (v.t !== null && v.t <= 12)) {
+      effetto = "Al freddo il vento &egrave; quello che decide come ti vesti, pi&ugrave; del termometro: "
+        + "porta via lo strato d'aria tiepida che la pelle si crea addosso. Con temperature "
+        + "vicine allo zero una raffica a trenta all'ora vale <b>quattro o cinque gradi in meno</b> "
+        + "sulla sensazione, e le mani e il viso sono le prime a sentirlo.";
+    } else if (caldo) {
+      effetto = "Con il caldo il vento aiuta: fa evaporare il sudore e abbassa la sensazione. "
+        + "Diventa un problema solo quando supera i 40 all'ora, e allora solleva polvere e "
+        + "rende faticoso stare fuori."
+        + (costa ? " Sulla costa &egrave; anche quello che decide se l'ombrellone regge: "
+            + "sopra i 40 va chiuso." : "");
+    } else {
+      effetto = "Il vento cambia la sensazione pi&ugrave; del termometro: sottrae calore alla pelle "
+        + "in proporzione alla sua velocit&agrave;, ed &egrave; il motivo per cui la stessa temperatura "
+        + "sembra un'altra cosa al riparo o allo scoperto.";
+    }
+    t.vento = { titolo: "Vento" + (v.vento !== null ? " " + n(v.vento) + " km/h" : ""),
+      corpo: "Quello che si sente non &egrave; il vento medio ma le <b>raffiche</b>, i picchi "
+        + "improvvisi: qui arrivano a <b>" + n(r) + " km/h</b>.<br><br>" + effetto
+        + "<br><br>Come riferimento: sotto i 20 all'ora non ci si accorge di niente, fra 20 e 40 "
+        + "gli oggetti leggeri si spostano, sopra i 50 diventa difficile tenere aperto un ombrello." };
+  }
+
+  if (v.tmaxG !== null) {
+    t.temperatura = { titolo: "Temperatura",
+      corpo: (v.t !== null && v.app !== null && Math.abs(v.app - v.t) >= 2
+        ? "Il termometro segna <b>" + n(v.t) + "&deg;</b> ma il corpo ne sente <b>" + n(v.app)
+          + "&deg;</b>. La differenza dipende da umidit&agrave;, vento e sole, cio&egrave; da quanto il "
+          + "corpo riesce a smaltire o trattenere calore.<br><br>"
+        : "")
+        + "Le frecce accanto sono <b>massima e minima della giornata</b>, e servono a capire se "
+        + "sei nel punto pi&ugrave; caldo o pi&ugrave; fresco"
+        + (v.escursione !== null
+            ? ". Oggi fra le due passano <b>" + n(v.escursione) + " gradi</b>: "
+              + (v.escursione >= 12
+                  ? "un'escursione ampia, tipica dell'entroterra e delle giornate limpide, "
+                    + "quando di notte il calore se ne va verso il cielo senza nuvole a trattenerlo"
+                  : v.escursione >= 7 ? "un'escursione nella norma"
+                  : "un'escursione ridotta, come capita vicino al mare, che fa da volano termico, "
+                    + "oppure con il cielo coperto")
+            : "") + "." };
+  }
+  return t;
+}
+
 function renderVerdetto(){
   const g=G(), N=g.tmax.length;
   const oltreCal = S.dayIdx > ORIZZONTE_CAL;
@@ -1430,8 +1783,19 @@ function renderVerdetto(){
   const PS = psumFinestra(S.dayIdx);
   const p = s => PS.length ? Math.round(100*PS.filter(x=>x*kP>=s).length/PS.length) : 0;
   const p02=p(0.2), p1=p(1), p5=p(5), p15=p(15);
+  /* v3.54.0 — le tre soglie sono ANNIDATE: chi supera i 15 mm ha gia'
+     superato i 5 e l'1. Tre riquadri affiancati le facevano sembrare tre
+     eventi distinti, e con tre "esclusa" in fila occupavano mezza scheda per
+     dire una cosa sola. Ora una casella che tiene separate le due domande
+     vere: quanto e' probabile che piova, e che pioggia sarebbe se cadesse. */
+  const bagnate = PS.map(x => x * kP).filter(x => x >= 1);
+  const mmTipici = bagnate.length ? quantile(bagnate, .5) : null;
+  const tipoPioggia = mmTipici === null ? ""
+    : mmTipici < 5  ? "poca acqua"
+    : mmTipici < 15 ? "un rovescio"
+    : "un nubifragio";
   // v3.12.0 — raffiche: probabilita' vere, contate sulle simulazioni
-  const R = (g.raff||[]).map(x=>x*fattoreW());   // v3.27.0
+  const R = raffFinestra(S.dayIdx).map(x=>x*fattoreW());   // v3.43.0
   const pRaff = s => R.length ? Math.round(100*R.filter(x=>x>=s).length/R.length) : null;
   const raffMed = R.length ? quantile(R,.5) : null;
   const mediana=quantile(PS,.5)*kP, q90=quantile(PS,.9)*kP;   // v3.37.0
@@ -1477,9 +1841,88 @@ function renderVerdetto(){
      soprattutto da dove cade la cella del modello, non dall'ora del giorno
      — ma resta un'estensione, non una misura. */
   const oraOra = oraInizio(S.dayIdx);
-  const adesso = (S.dayIdx === 0 && oraOra > 0) ? oraStat(0, oraOra) : null;
+  /* v3.52.0 — il numero grande seguiva solo l'orologio: scorrendo la
+     striscia su un'altra ora, o passando a domani, restava la massima del
+     giorno mentre la striscia diceva un'altra cosa. Ora segue l'ora
+     selezionata; in mancanza di selezione, sul giorno in corso resta
+     l'ora attuale e sugli altri giorni la massima. */
+  const oraSel = (S.ora !== null && S.ora !== undefined) ? S.ora
+               : (S.dayIdx === 0 && oraOra > 0 ? oraOra : null);
+  const adesso = (oraSel !== null) ? oraStat(S.dayIdx, oraSel) : null;
   const tAdesso = adesso && adesso.t !== null ? adesso.t - bias : null;
-  const tMin = mediaPesata(d => num(d.daily?.temperature_2m_min?.[S.dayIdx]));
+  const oraEtichetta = oraSel === null ? ""
+    : (S.dayIdx === 0 && oraSel === oraOra)
+      ? "adesso, ore " + String(oraSel).padStart(2, "0") + ":00"
+      : nomeGiorno(S.dayIdx, g.data).toLowerCase()
+        + " alle " + String(oraSel).padStart(2, "0") + ":00";
+  /* v3.42.1 — qui c'era una chiamata a mediaPesata(), funzione
+     dell'architettura precedente a modelli deterministici: in questa
+     versione non esiste piu' e ogni caricamento moriva con un
+     ReferenceError, lasciando il verdetto fermo sul messaggio d'attesa.
+     L'ho scritta a memoria senza verificare che ci fosse.
+     La minima si ricava dalle simulazioni, come gia' la massima. */
+  /* v3.44.0 — le condizioni di ADESSO passano in primo piano. Prima il
+     verdetto mostrava solo aggregati: massima, minima, raffica massima.
+     Chi apre l'app vuole prima sapere che aria tira in questo momento;
+     la sintesi della giornata e' contesto, e va in corpo minore. */
+  const iOra = S.dayIdx * 24 + oraOra;
+  const ventoOra = (adesso && S.atmo && S.atmo.vento) ? S.atmo.vento[iOra] : null;
+  const urOra    = (adesso && S.atmo && S.atmo.ur)    ? S.atmo.ur[iOra]    : null;
+  const raffiche = adesso
+    ? memDelGiorno(S.dayIdx).map(m => (m.W ? m.W[oraOra] : null))
+        .filter(v => v !== null && v !== undefined).map(v => v * fattoreW())
+    : [];
+  const raffOra = raffiche.length ? quantile(raffiche, .5) : null;
+
+  /* v3.45.0 — sotto ogni valore attuale, gli estremi della giornata con le
+     frecce. Due riquadri in meno (massima/minima e raffica massima) e il
+     contesto attaccato alla grandezza a cui appartiene, invece che sparso
+     in caselle separate.
+     Le frecce riguardano la giornata INTERA, ed e' voluto: una freccia su e
+     una giu' si leggono ovunque come "l'intervallo di oggi". Le previsioni
+     vere e proprie — le probabilita' di pioggia — restano sulle ore che
+     mancano, come dice la nota in fondo alla scheda. */
+  const estremi = (arr) => {
+    const v = arr.filter(x => x !== null && x !== undefined);
+    return v.length ? { min: Math.min(...v), max: Math.max(...v) } : null;
+  };
+  const oreGiorno = (serie) => {
+    if (!serie) return [];
+    const b = S.dayIdx * 24, out = [];
+    for (let hh = 0; hh < 24; hh++) out.push(serie[b + hh]);
+    return out;
+  };
+  const estVento = estremi(oreGiorno(S.atmo && S.atmo.vento));
+  const estUr    = estremi(oreGiorno(S.atmo && S.atmo.ur));
+  /* v3.51.0 — l'umidita' compariva solo nel ramo "adesso", quindi sui giorni
+     futuri spariva del tutto pur essendo un dato che c'e': sul domani si
+     mostra il valore tipico della giornata. */
+  const urOreValide = oreGiorno(S.atmo && S.atmo.ur).filter(v => v !== null && v !== undefined);
+  const urGiorno = urOreValide.length ? quantile(urOreValide, .5) : null;
+  const raffGiorno = memDelGiorno(S.dayIdx).map(m => {
+    if (!m.W) return null;
+    const v = m.W.filter(x => x !== null && x !== undefined);
+    return v.length ? Math.max(...v) : null;
+  }).filter(x => x !== null).map(x => x * fattoreW());
+  const raffMaxG = raffGiorno.length ? quantile(raffGiorno, .5) : null;
+
+  // v3.45.0 — la coppia di frecce sotto un valore
+  /* v3.52.0 — quando il posto d'onore va all'ora selezionata, la massima
+     perderebbe il suo intervallo calibrato: qui viaggia con la freccia in
+     su, che e' il suo posto naturale. */
+  const frecce = (max, min, u, err) =>
+    '<div class="rng">' + (max !== null && max !== undefined
+        ? '<span class="su">\u2191</span>' + Math.round(max) + (u || '')
+          + (err ? '<span class="err"> \u00B1' + err.toFixed(1) + '</span>' : '') : '')
+      + (min !== null && min !== undefined
+        ? ' <span class="giu">\u2193</span>' + Math.round(min) + (u || '') : '')
+      + '</div>';
+
+  const minimi = memDelGiorno(S.dayIdx).map(m => {
+    const v = m.T.filter(x => x !== null && x !== undefined);
+    return v.length ? Math.min(...v) : null;
+  }).filter(x => x !== null);
+  const tMin = minimi.length ? quantile(minimi, .5) - bias : null;
 
   const bloccoPercepita = appMax === null ? "" :
     '<div class="metric wide"><div class="v ' + clsApp(appMax) + '">'
@@ -1488,27 +1931,121 @@ function renderVerdetto(){
       : dApp <= -1 ? dApp.toFixed(0) + "\u00B0 sul termometro" : "come il termometro")
     + '</div></div>';
 
+  /* v3.49.1 — questo blocco stava PIU' IN BASSO di dove viene usato:
+     normaHtml e' un let, quindi non e' sollevato come le funzioni e
+     leggerlo prima della dichiarazione lancia un ReferenceError. Stessa
+     famiglia di mediaPesata: sintassi valida, app rotta a ogni
+     caricamento. */
+  /* v3.49.0 — la riga della norma passa DENTRO la griglia, subito sotto la
+     temperatura e le sue frecce: e' li' che serve, perche' e' quella che da'
+     senso a massima e minima. In fondo alla scheda sembrava una nota a
+     pie' di pagina. */
+  let normaHtml = "";
+  {
+    const nrm = normaPer(g.data, corretta);
+    if (nrm) {
+      /* v3.47.2 — lo scarto va ricavato dai valori ARROTONDATI, non
+         arrotondato per conto suo: con massima 29,4 e media 30,6 lo scarto
+         vero e' 1,2 e usciva "1 grado sotto", mentre i due numeri stampati
+         accanto — 29 e 31 — ne facevano vedere 2. Tre arrotondamenti
+         indipendenti che non si parlano: chi legge fa la sottrazione e
+         trova che non torna. */
+      const massimaR = Math.round(corretta);
+      const mediaR = Math.round(nrm.media);
+      const s = massimaR - mediaR;
+      const mese = new Date(g.data + "T12:00:00")
+        .toLocaleDateString("it-IT", { month: "long" });
+      const gg = new Date(g.data + "T12:00:00").getDate();
+      const parte = gg <= 10 ? "inizio" : gg <= 20 ? "met&agrave;" : "fine";
+      const quando = parte + " " + mese;
+      let giudizio, colore;
+      if (s === 0)      { giudizio = "<b>in linea</b> con la norma"; colore = "var(--nebbia)"; }
+      else if (s >= 5)  { giudizio = "<b>" + s + "\u00B0 sopra</b> la norma"; colore = "var(--corallo)"; }
+      else if (s > 0)   { giudizio = "<b>" + s + "\u00B0 sopra</b> la norma"; colore = "var(--ottone)"; }
+      else if (s <= -5) { giudizio = "<b>" + (-s) + "\u00B0 sotto</b> la norma"; colore = "#7FB3D9"; }
+      else              { giudizio = "<b>" + (-s) + "\u00B0 sotto</b> la norma"; colore = "var(--verderame)"; }
+      const estremo = nrm.pct >= 90 ? " &Egrave; fra le giornate pi&ugrave; calde che questo posto conosca in questo periodo."
+                    : nrm.pct <= 10 ? " &Egrave; fra le pi&ugrave; fresche che questo posto conosca in questo periodo."
+                    : "";
+      // v3.48.0 — "media" era impreciso: ora e' la mediana, cioe' il valore
+      // tipico. La parola giusta e' "norma", che e' anche quella che si usa
+      // parlando di clima.
+      /* v3.48.0 — la percentuale va detta dal lato maggioritario. "Piu' calda
+         del 30%" accanto a "2 gradi sotto" suona come una smentita, mentre
+         "piu' fresca del 70%" dice la stessa identica cosa rafforzando. */
+      const versoPct = nrm.pct >= 50
+        ? 'Pi&ugrave; calda del <b>' + nrm.pct + '%</b>'
+        : 'Pi&ugrave; fresca del <b>' + (100 - nrm.pct) + '%</b>';
+      normaHtml = '<div class="norma"><span style="color:' + colore + '">\u25CF</span> '
+        + 'La massima di ' + massimaR + '\u00B0 &egrave; ' + giudizio + ' di ' + quando
+        + ' qui, che &egrave; di <b>' + mediaR + '\u00B0</b>. ' + versoPct
+        + ' delle giornate di questo periodo negli ultimi dieci anni.' + estremo + '</div>';
+    }
+  }
+
+  /* v3.55.0 — i testi si preparano qui, con i valori di adesso gia' dentro */
+  S.spiega = testiSpiegazione({
+    ur: adesso ? urOra : urGiorno,
+    rug: (S.atmo && S.atmo.rug) ? S.atmo.rug[S.dayIdx*24 + (oraSel !== null ? oraSel : 14)] : null,
+    t: tAdesso !== null ? tAdesso : corretta,
+    app: appMax,
+    uv: (() => { const u = S.atmo && S.atmo.uv; if (!u) return null;
+          let mx = null; for (let k=0;k<24;k++){ const x=u[S.dayIdx*24+k];
+            if (x!==null && x!==undefined && (mx===null||x>mx)) mx=x; } return mx; })(),
+    p1, mmTip: mmTipici,
+    vento: ventoOra, raff: raffMaxG !== null ? raffMaxG : raffMed,
+    tmaxG: corretta, data: g.data,
+    escursione: (tMin !== null) ? corretta - tMin : null
+  });
+
   $("verdict").innerHTML =
     (tAdesso !== null
-      ? '<div class="metric wide hero"><div class="v">' + tAdesso.toFixed(0) + '\u00B0'
+      ? '<div data-sp="temperatura" class="metric wide hero"><div class="v">' + tAdesso.toFixed(0) + '\u00B0'
         + (adesso.a !== null ? '<small> ' + Math.round(adesso.a) + '\u00B0 percepiti</small>' : '')
-        + '</div><div class="k">' + GLIFI.termo + 'adesso, ore '
-        + String(oraOra).padStart(2, "0") + ':00</div></div>'
-        + '<div class="metric"><div class="v">' + corretta.toFixed(0) + '\u00B0'
-        + (tMin !== null ? '<small> / ' + tMin.toFixed(0) + '\u00B0</small>' : '')
-        + '</div><div class="k">massima e minima di oggi</div></div>'
+        + '</div>' + frecce(corretta, tMin, '\u00B0', oltreCal ? null : half)
+        + '<div class="k">' + GLIFI.termo + oraEtichetta + '</div></div>' + normaHtml
+        + (ventoOra !== null
+            ? '<div data-sp="vento" class="metric"><div class="v">' + Math.round(ventoOra)
+              + '<small> km/h</small></div>'
+              + frecce(raffMaxG !== null ? raffMaxG : (estVento && estVento.max), null, '')
+              + dida(paroleVento(ventoOra))
+              + '<div class="k">' + GLIFI.vento + 'vento adesso'
+              + (raffOra !== null && raffOra > ventoOra * 1.4
+                  ? ', raffiche ' + Math.round(raffOra) : '') + '</div></div>'
+            : '')
+        + (urOra !== null
+            ? '<div data-sp="umidita" class="metric"><div class="v">' + Math.round(urOra)
+              + '<small>%</small></div>'
+              + (estUr ? frecce(estUr.max, estUr.min, '%') : '')
+              + dida(paroleUr(urOra))
+              + '<div class="k">' + GLIFI.corpo + 'umidit&agrave; adesso</div></div>'
+            : '')
       : '<div class="metric wide hero"><div class="v">' + corretta.toFixed(1) + '\u00B0'
         + (oltreCal ? '' : '<small> \u00B1' + half.toFixed(1) + '</small>') + '</div>'
         + '<div class="k">' + GLIFI.termo
         + (oltreCal ? 'massima \u00B7 oltre la calibrazione' : 'massima \u00B7 intervallo 80%')
-        + '</div></div>')
+        + '</div></div>' + normaHtml
+        + (urGiorno !== null
+            ? '<div data-sp="umidita" class="metric"><div class="v">' + Math.round(urGiorno)
+              + '<small>%</small></div>'
+              + (estUr ? frecce(estUr.max, estUr.min, '%') : '')
+              + dida(paroleUr(urGiorno))
+              + '<div class="k">' + GLIFI.corpo + 'umidit&agrave; tipica del giorno</div></div>'
+            : ''))
     + (tAdesso !== null ? "" : bloccoPercepita)
-    +'<div class="metric"><div class="v '+cls(p1)+'">'+p1+'%</div><div class="k">'+GLIFI.goccia+'pioggia &gt;1 mm</div></div>'
-    +'<div class="metric"><div class="v '+cls(p5)+'">'+p5+'%</div><div class="k">'+GLIFI.rovescio+'rovescio &gt;5 mm</div></div>'
-    +'<div class="metric"><div class="v '+cls(p15)+'">'+p15+'%</div><div class="k">'+GLIFI.nubifragio+'nubifragio &gt;15 mm</div></div>'
-    +(raffMed===null?"":'<div class="metric"><div class="v '+cls(pRaff(40))+'">'
-      +Math.round(raffMed)+'<small> km/h</small></div><div class="k">'+GLIFI.vento
-      +'raffica mediana</div></div>')
+    +'<div data-sp="pioggia" class="metric wide"><div class="v '+cls(p1)+'">'+p1+'%</div>'
+      +dida(paroleProb(p1) + (p1 > 0 && tipoPioggia ? ' \u00B7 se cade, ' + tipoPioggia : ''))
+      +'<div class="k">'
+      +(p15>=25 ? GLIFI.nubifragio : p5>=35 ? GLIFI.rovescio : GLIFI.goccia)
+      +'probabilit&agrave; di pioggia'
+      +(p15>=15 ? ', nubifragio nel '+p15+'%' : '')
+      +'</div></div>'
+    /* v3.45.0 — sul giorno in corso la raffica massima e' gia' la freccia
+       sotto il vento: un riquadro in meno. Sugli altri giorni resta, perche'
+       li' non c'e' nessun "adesso" a cui attaccarla. */
+    +((raffMed===null||tAdesso!==null)?"":'<div data-sp="vento" class="metric"><div class="v '+cls(pRaff(40))+'">'
+      +Math.round(raffMed)+'<small> km/h</small></div>'+dida(paroleVento(raffMed))
+      +'<div class="k">'+GLIFI.vento+'raffica massima di giornata</div></div>')
     /* v3.42.0 — indice UV: d'estate al mare e' il numero che decide se stare
        all'ombra, e mancava del tutto. Si mostra solo se vale qualcosa: di
        notte e' zero e occuperebbe spazio per niente. */
@@ -1526,8 +2063,12 @@ function renderVerdetto(){
         const cl = max >= 8 ? "coral" : max >= 6 ? "amber" : "teal";
         const che = max >= 8 ? "molto forte" : max >= 6 ? "forte"
                   : max >= 3 ? "moderato" : "debole";
-        return '<div class="metric"><div class="v ' + cl + '">' + max.toFixed(0)
-          + '</div><div class="k">UV ' + che + ', ore '
+        /* v3.51.0 — l'UV metteva il giudizio dentro la didascalia, mentre
+           tutti gli altri valori ce l'hanno sotto il numero: due strutture
+           diverse nella stessa griglia. Ora segue la regola comune. */
+        return '<div data-sp="uv" class="metric"><div class="v ' + cl + '">' + max.toFixed(0)
+          + '</div>' + dida(che)
+          + '<div class="k">UV, picco alle '
           + String(oraMax).padStart(2, "0") + '</div></div>';
       })();
 
@@ -1546,6 +2087,8 @@ function renderVerdetto(){
      significa un'altra cosa rispetto a "81% da adesso a mezzanotte" */
   const perTit = daOra > 0 ? `da adesso alle 24 (${24-daOra} ore)`
                            : nomeGiorno(S.dayIdx, g.data).toLowerCase();
+  /* v3.47.0 — "fa caldo per il periodo?" Il confronto con i giorni vicini
+     nel calendario, negli ultimi dieci anni su questo punto. */
   const fin = $("finestraNota");
   if (fin) fin.innerHTML = daOra > 0
     ? `Le probabilit&agrave; qui sopra valgono <b>da adesso a mezzanotte</b>, `
@@ -1564,7 +2107,7 @@ function renderVerdetto(){
     +"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
     +"Nel caso pi&ugrave; probabile cadono <b>"+mediana.toFixed(0)+" mm</b> d'acqua, cio&egrave; "
     +acqua(mediana)+"; se va male, fino a <b>"+q90.toFixed(0)+" mm</b>, "+acqua(q90)+"."
-    +(raffMed===null?"":" Il vento supera i 40 all'ora &mdash; quello che porta via l'ombrellone &mdash; in <b>"
+    +(raffMed===null?"":" Nelle ore che restano il vento supera i 40 all'ora &mdash; quello che porta via l'ombrellone &mdash; in <b>"
       +pRaff(40)+"</b> prove su 100.");
 
   // perche' i due numeri differiscono
@@ -2613,6 +3156,32 @@ window.addEventListener("resize", ()=>{
      Sta dietro un gesto perche' il metodo e' verificato su un caso solo:
      finche' non regge anche su pioggia in avvicinamento, non deve stare
      davanti a chi apre l'app per sapere se prendere l'ombrello. */
+  /* v3.55.0 — un solo aggancio sulla griglia, cosi' vale anche per le
+     caselle ricostruite a ogni disegno */
+  const griglia = $("verdict"), pann = $("spiegaValore");
+  if (griglia && pann) {
+    griglia.addEventListener("click", (e) => {
+      const cella = e.target.closest(".metric[data-sp]");
+      if (!cella) return;
+      const chi = cella.dataset.sp;
+      const testo = S.spiega && S.spiega[chi];
+      griglia.querySelectorAll(".metric[data-sp]").forEach(x => x.removeAttribute("aria-expanded"));
+      if (!testo || pann.dataset.chi === chi) {
+        pann.setAttribute("hidden", ""); pann.dataset.chi = "";
+        return;
+      }
+      cella.setAttribute("aria-expanded", "true");
+      pann.dataset.chi = chi;
+      pann.innerHTML = "<h4>" + testo.titolo + "</h4><p>" + testo.corpo + "</p>"
+        + '<button class="chiudi-sp">chiudi</button>';
+      pann.removeAttribute("hidden");
+      pann.querySelector(".chiudi-sp").onclick = () => {
+        pann.setAttribute("hidden", ""); pann.dataset.chi = "";
+        griglia.querySelectorAll(".metric[data-sp]").forEach(x => x.removeAttribute("aria-expanded"));
+      };
+    });
+  }
+
   const tq = $("titQuando"), rc = $("radarCard");
   if (tq && rc) {
     let colpi = 0, ultimo = 0;
@@ -2623,7 +3192,7 @@ window.addEventListener("resize", ()=>{
       if (colpi >= 3) {
         colpi = 0;
         rc.removeAttribute("hidden");
-        await store.set("ventaglio3:radar", "1");
+        await store.set("ventaglio3:radar", "si");   // v3.46.0
         rc.scrollIntoView({ behavior: "smooth", block: "start" });
         if (!S.radar) radarCalcola();
       }
@@ -2631,7 +3200,7 @@ window.addEventListener("resize", ()=>{
     $("radarAgg").onclick = () => radarCalcola();
     $("radarOff").onclick = async () => {
       rc.setAttribute("hidden", "");
-      await store.set("ventaglio3:radar", "");
+      await store.set("ventaglio3:radar", "no");   // v3.46.0
     };
   }
 
@@ -2684,13 +3253,17 @@ window.addEventListener("unhandledrejection", e=>segnalaGuasto(e.reason));
   const salvata = await store.get("ventaglio3:vista");
   if(last){
     await carica(last);
-    // v3.34.0 — se la scheda radar era stata scoperta, resta scoperta
+    /* v3.46.0 — visibile di default: si nasconde solo se l'hai chiesto.
+       Il calcolo parte dopo il primo disegno, cosi' non rallenta
+       l'apertura: sono una ventina di riquadri da scaricare. */
     try{
-      if (await store.get("ventaglio3:radar")) {
-        const rc2 = $("radarCard");
-        if (rc2) { rc2.removeAttribute("hidden"); setTimeout(radarCalcola, 800); }
+      const scelta = await store.get("ventaglio3:radar");
+      const rc2 = $("radarCard");
+      if (rc2) {
+        if (scelta === "no") rc2.setAttribute("hidden", "");
+        else setTimeout(radarCalcola, 700);
       }
-    }catch(e){}
+    }catch(e){ setTimeout(radarCalcola, 700); }
     // v3.10.2 — la vista completa si salva come "" (falsy): il vecchio
     // fallback inApp()?"oggi" la scavalcava a ogni lancio dell'app
     // installata, rendendo impossibile fissare la modalità completa.
@@ -2748,6 +3321,29 @@ function oraInizio(d){
     dataLoc = l.toLocaleDateString("sv-SE"); oraLoc = l.getHours();
   }
   return S.giorni[0].data === dataLoc ? oraLoc : 0;
+}
+
+/* v3.43.0 — stessa logica di psumFinestra sulle raffiche. Alle 23 il
+   verdetto mostrava "raffica mediana 30 km/h" mentre il vento era di 4:
+   quel picco era successo nel pomeriggio. Vero, ma riferito a ore ormai
+   passate — l'ultimo superstite del difetto corretto su temperatura e
+   pioggia. */
+function raffFinestra(d){
+  const g = S.giorni[d]; if (!g) return [];
+  const da = oraInizio(d);
+  const mem = memDelGiorno(d);
+  const out = [];
+  for (const m of mem) {
+    if (!m.W) continue;
+    const v = [];
+    for (let hh = da; hh < 24; hh++) {
+      const x = m.W[hh];
+      if (x !== null && x !== undefined) v.push(x);
+    }
+    if (v.length >= 3) out.push(Math.max(...v));
+  }
+  // se le raffiche non arrivano dai membri si ripiega sull'aggregato
+  return out.length ? out : (g.raff || []);
 }
 
 function psumFinestra(d){
@@ -2941,6 +3537,98 @@ function iconaSvg(code){
 }
 
 /* dati di supporto alla scena: nuvolosit\u00E0 e CAPE dal best_match */
+/* ============================================================
+   v3.47.0 — LA NORMA STAGIONALE
+   "Fa caldo per il periodo?" e' la domanda che tutti si fanno guardando
+   il termometro, e nessuna app risponde: mostrano il numero e basta.
+   Qui si scaricano dieci anni di massime da ERA5 per questo punto — lo
+   stesso archivio gia' usato per la taratura — e si confronta la massima
+   prevista con quella dei giorni vicini nel calendario, negli anni
+   passati. Ne escono due cose: di quanti gradi ci si scosta, e quante
+   giornate di quel periodo sono state piu' fresche.
+   Lo scarico e' pesante ma si fa una volta sola e resta in memoria per
+   trenta giorni: la climatologia non cambia di settimana in settimana.
+   ============================================================ */
+const kNorma = l => "ventaglio3:norma:" + l.latitude.toFixed(2) + "," + l.longitude.toFixed(2);
+const ANNI_NORMA = 10, FINESTRA_NORMA = 7;   // giorni prima e dopo nel calendario
+
+async function normaCarica(){
+  S.norma = null;
+  if (!S.loc) return;
+  const chiave = kNorma(S.loc);
+  try {
+    const grezzo = await store.get(chiave);
+    if (grezzo) {
+      const c = JSON.parse(grezzo);
+      const eta = (Date.now() - new Date(c.scaricato).getTime()) / 864e5;
+      if (c.da && c.tmax && eta < 30) {
+        S.norma = c;
+        /* v3.47.1 — anche quando arriva dalla memoria bisogna ridisegnare:
+           normaCarica() gira in sottofondo e puo' concludersi dopo il primo
+           disegno della scheda. */
+        if (S.giorni.length) { try{ renderVerdetto(); }catch(e){} }
+        return;
+      }
+    }
+  } catch (e) {}
+  try {
+    const fine = new Date(Date.now() - 6 * 864e5);          // ERA5 arriva in ritardo
+    const inizio = new Date(fine.getTime() - ANNI_NORMA * 365.25 * 864e5);
+    const iso = d => d.toISOString().slice(0, 10);
+    const j = await jget("https://archive-api.open-meteo.com/v1/archive?latitude=" + S.loc.latitude
+      + "&longitude=" + S.loc.longitude + "&start_date=" + iso(inizio) + "&end_date=" + iso(fine)
+      + "&daily=temperature_2m_max&timezone=" + encodeURIComponent(S.tz));
+    const v = j.daily && j.daily.temperature_2m_max;
+    if (!v || !v.some(x => x !== null)) throw new Error("nessun dato storico");
+    S.norma = { da: j.daily.time[0], tmax: v, scaricato: new Date().toISOString() };
+    await store.set(chiave, JSON.stringify(S.norma));
+    S.diag.push({ n: "Norma stagionale", ok: true, msg: v.length + " giorni di archivio" });
+    /* v3.47.1 — IL DIFETTO: lo scarico e' in sottofondo per non rallentare
+       l'apertura, ma nessuno ridisegnava quando finiva. Dieci anni di dati
+       arrivano dopo il primo render, la riga usciva vuota e restava vuota.
+       Una funzione asincrona che non avvisa quando ha finito e' come non
+       averla chiamata. */
+    if (S.giorni.length) { try{ renderVerdetto(); }catch(e){} }
+  } catch (e) {
+    S.diag.push({ n: "Norma stagionale", ok: false, msg: String(e.message || e) });
+  }
+}
+
+/* confronta un valore con i giorni vicini nel calendario, negli anni passati */
+function normaPer(dataISO, valore){
+  const N = S.norma;
+  if (!N || !N.da || valore === null || valore === undefined) return null;
+  const giorno = d => {
+    const x = new Date(d + "T12:00:00");
+    return Math.floor((x - new Date(x.getFullYear(), 0, 0)) / 864e5);
+  };
+  const bersaglio = giorno(dataISO);
+  const inizio = new Date(N.da + "T12:00:00").getTime();
+  const dentro = [];
+  for (let i = 0; i < N.tmax.length; i++) {
+    const v = N.tmax[i];
+    if (v === null || v === undefined) continue;
+    const d = new Date(inizio + i * 864e5);
+    const g = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+    let diff = Math.abs(g - bersaglio);
+    if (diff > 182) diff = 365 - diff;              // a cavallo di capodanno
+    if (diff <= FINESTRA_NORMA) dentro.push(v);
+  }
+  if (dentro.length < 30) return null;              // campione troppo magro
+  /* v3.48.0 — la MEDIANA, non la media. Con la media si arrivava a dire
+     "2 gradi sotto la media" e insieme "piu' calda del 30% delle giornate",
+     due frasi che sembrano contraddirsi: sono compatibili solo se la
+     distribuzione e' storta, cosa che nessuno ha voglia di dedurre. Con la
+     mediana le due affermazioni sono coerenti per costruzione — sotto la
+     mediana vuol dire per forza sotto il cinquanta per cento — e per giunta
+     la mediana regge meglio alle ondate di calore isolate, che tirano su la
+     media senza rappresentare il periodo. */
+  const tip = quantile(dentro, .5);
+  const sotto = dentro.filter(x => x < valore).length;
+  return { media: tip, scarto: valore - tip, n: dentro.length,
+           pct: Math.round(100 * sotto / dentro.length) };
+}
+
 async function atmosfera(){
   S.atmo=null;
   try{
@@ -3025,7 +3713,12 @@ function membriGiorno(d){
       if(T.filter(v=>v!=null).length<12 || P.filter(v=>v!=null).length<12) continue;
       let A=null;
       if(E.A && E.A[m]){ A=[]; for(let h=0;h<24;h++) A.push(E.A[m][d*24+h]); if(!A.some(v=>v!=null)) A=null; }
-      out.push({T,A,P,mm:P.reduce((s,x)=>s+(x||0),0),col:e.col,mod:e.nome});
+      /* v3.43.0 — le raffiche ora per ora, non solo il massimo del giorno:
+         servono per limitare la finestra alle ore che restano, come gia'
+         per pioggia e temperatura. */
+      let W=null;
+      if(E.W && E.W[m]){ W=[]; for(let h=0;h<24;h++) W.push(E.W[m][d*24+h]); if(!W.some(v=>v!=null)) W=null; }
+      out.push({T,A,P,W,mm:P.reduce((s,x)=>s+(x||0),0),col:e.col,mod:e.nome});
     }
   }
   return out;
@@ -3388,6 +4081,12 @@ function agganciaScroll(){
   $("tuttoIlGiorno").onclick=()=>{ S.ora=null; aggiornaOra(); };
 }
 
+/* v3.53.0 — ogni volta che cambia l'ora selezionata va ridisegnato ANCHE il
+   verdetto, non solo la scena. Senza, cambiando giorno succedeva questo:
+   l'ora si azzera, la scheda si disegna con la massima del giorno, poi la
+   striscia si riposiziona e imposta l'ora 11 avvisando solo il cielo. Il
+   risultato erano due parti della stessa schermata che dicevano cose
+   diverse — 32 gradi nella striscia, 33 di massima nel verdetto. */
 function aggiornaOra(){
   const attiva=S.ora!==null;
   $("tuttoIlGiorno").setAttribute("aria-pressed", !attiva);
@@ -3396,6 +4095,7 @@ function aggiornaOra(){
   $("striscia").querySelectorAll(".ora").forEach(el=>
     el.setAttribute("aria-current", +el.dataset.h===S.ora));
   renderCielo();
+  if (S.giorni.length) { try{ renderVerdetto(); }catch(e){} }   // v3.53.0
 }
 
 /* legge la scena per l'ora selezionata */
