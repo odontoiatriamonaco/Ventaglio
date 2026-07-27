@@ -1,9 +1,43 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.36.0 — il radar dice anche quanto dura
+  VENTAGLIO v3.41.0 — la vista compatta allineata al verdetto
   File  : ventaglio-v3.html
-  Build : 2026-07-29 09:50 CEST
+  Build : 2026-07-29 15:30 CEST
+  v3.41.0: revisione completa del codice. Unico difetto reale trovato:
+           renderWidget calcolava le probabilita' di pioggia su g.psum
+           grezzo, quindi senza la finestra oraria del giorno in corso
+           (v3.37.0) e senza il fattore pioggia della taratura (v3.27.0).
+           Le viste compatte mostravano numeri diversi dal verdetto.
+           Tutto il resto risulta pulito: nessuna dichiarazione duplicata,
+           nessuna funzione morta, nessun id orfano, nessun uso prima
+           della definizione, struttura e versioni coerenti.
+  v3.40.0: trovato rileggendo. psumFinestra usava DUE popolazioni di
+           simulazioni a seconda del giorno: l'aggregato di tutti i
+           gruppi per le giornate intere, i soli membri filtrati per
+           quota per il giorno in corso. Passando da 'oggi' a 'domani'
+           la percentuale cambiava anche per questo. Stessa incoerenza
+           corretta in v3.15.0 sulle ore e reintrodotta in v3.37.0 sui
+           giorni: ora una fonte sola per tutti.
+  v3.39.0: 'nettezza' era sopravvissuta nell'etichetta sotto il giudizio
+           di attendibilita', ed e' un termine che non esiste fuori da
+           questo codice. Il giudizio ora dice che farne ('puoi fidarti')
+           invece di come e' venuto il calcolo. E il riquadro del
+           confronto spiega perche' due parti della stessa app possono
+           dire cose diverse senza che sia un difetto.
+  v3.38.0: radar e previsioni messi a confronto sulle prossime due ore.
+           Restano fonti separate — il radar non corregge i modelli e
+           non entra in nessun calcolo — ma quando dicono cose diverse
+           l'app lo scrive, invece di lasciare a chi guarda il compito
+           di accorgersene confrontando due schede. Se la misura radar
+           e' poco netta non arbitra e lo dichiara.
+  v3.37.0: BUG di sostanza. Sul giorno in corso il verdetto sommava
+           tutte e 24 le ore, comprese quelle passate: alle 11 del
+           mattino annunciava '81% di pioggia' contando il rovescio
+           delle 3 di notte, con il cielo limpido fuori. Ora la
+           finestra parte dall'ora attuale e l'app dichiara su quante
+           ore calcola. Vale anche per la scena e per l'icona del
+           giorno.
   v3.36.0: la scheda rispondeva solo a 'quando arriva'. Ora campiona la
            linea del tempo minuto per minuto e ne ricava anche la durata
            e l'ora in cui smette — sia per la pioggia in arrivo sia per
@@ -811,7 +845,8 @@
     <h2>Verdetto probabilistico</h2>
     <div class="verdict" id="verdict"><span class="note">Scarico le simulazioni&hellip;</span></div>
     <p id="comfort"></p>
-    <div class="azioni" style="margin-top:18px">
+    <p id="finestraNota" class="note" style="margin-top:16px"></p>
+    <div class="azioni" style="margin-top:14px">
       <button class="ghost" id="spiegaBtn" aria-expanded="false" aria-controls="spiegaVerdetto">
         <svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         Come funziona
@@ -973,7 +1008,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.36.0 &middot; build 2026-07-29<br>
+v3.41.0 &middot; build 2026-07-29<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1384,13 +1419,15 @@ function renderVerdetto(){
   }
 
   const kP = fattoreP();   // v3.27.0
-  const p = s => Math.round(100*g.psum.filter(x=>x*kP>=s).length/g.psum.length);
+  const daOra = oraInizio(S.dayIdx);                 // v3.37.0
+  const PS = psumFinestra(S.dayIdx);
+  const p = s => PS.length ? Math.round(100*PS.filter(x=>x*kP>=s).length/PS.length) : 0;
   const p02=p(0.2), p1=p(1), p5=p(5), p15=p(15);
   // v3.12.0 — raffiche: probabilita' vere, contate sulle simulazioni
   const R = (g.raff||[]).map(x=>x*fattoreW());   // v3.27.0
   const pRaff = s => R.length ? Math.round(100*R.filter(x=>x>=s).length/R.length) : null;
   const raffMed = R.length ? quantile(R,.5) : null;
-  const mediana=quantile(g.psum,.5)*kP, q90=quantile(g.psum,.9)*kP;   // v3.27.0
+  const mediana=quantile(PS,.5)*kP, q90=quantile(PS,.9)*kP;   // v3.37.0
   const cls=v=>v>60?"coral":v>30?"amber":"teal";
 
   // percepita: mediana fra le simulazioni se disponibile, altrimenti modello singolo
@@ -1446,13 +1483,24 @@ function renderVerdetto(){
     : "un diluvio";
   const nCentriS = ENSEMBLES.filter(e=>S.ens[e.id].ok).length;
 
+  /* v3.37.0 — dichiarare la finestra: "81% oggi" alle undici del mattino
+     significa un'altra cosa rispetto a "81% da adesso a mezzanotte" */
+  const perTit = daOra > 0 ? `da adesso alle 24 (${24-daOra} ore)`
+                           : nomeGiorno(S.dayIdx, g.data).toLowerCase();
+  const fin = $("finestraNota");
+  if (fin) fin.innerHTML = daOra > 0
+    ? `Le probabilit&agrave; qui sopra valgono <b>da adesso a mezzanotte</b>, `
+      + `${24-daOra} ore. Quello che &egrave; gi&agrave; caduto stanotte non conta.`
+    : `Probabilit&agrave; sull'intera giornata di <b>`
+      + nomeGiorno(S.dayIdx, g.data).toLowerCase() + `</b>.`;
+
   $("subVerdict").innerHTML=
     "<b>Come nasce questo numero.</b> "+nCentriS+" centri meteorologici europei e americani "
     +"non fanno una previsione sola: la rifanno <b>"+N+" volte</b>, ognuna partendo da una "
     +"versione appena diversa del tempo di adesso, perch&eacute; nessuno sa com'&egrave; "
     +"l'atmosfera fino all'ultimo decimale. Le percentuali qui sopra sono semplicemente "
     +"<b>quante di quelle "+N+" prove finiscono in un modo o nell'altro.</b>"
-    +"<br><br>Riportate a 100 per comodit&agrave;, per "+nomeGiorno(S.dayIdx,g.data).toLowerCase()
+    +"<br><br>Riportate a 100 per comodit&agrave;, "+perTit
     +": <b>"+su100(p1)+"</b> vedono almeno un po' di pioggia, <b>"+su100(p5)
     +"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
     +"Nel caso pi&ugrave; probabile cadono <b>"+mediana.toFixed(0)+" mm</b> d'acqua, cio&egrave; "
@@ -2097,6 +2145,62 @@ async function radarCalcola() {
   renderRadar();
 }
 
+/* ============================================================
+   v3.38.0 — CONFRONTO fra radar e previsioni
+   Le due fonti restano separate: il radar NON corregge i modelli e non
+   entra in nessun calcolo del verdetto. Qui si limitano a essere messe
+   una accanto all'altra sulle prossime due ore, dove il radar e' piu'
+   affidabile perche' non indovina — segue una cosa che c'e' gia'.
+   Quando dicono cose diverse lo si scrive, invece di lasciare a chi
+   guarda il compito di accorgersene confrontando due schede.
+   Un confronto vale solo se il radar e' misurato bene: con attendibilita'
+   scarsa non arbitra niente e lo dichiara.
+   ============================================================ */
+function confrontoRadar(r) {
+  if (!r || r.stato !== "ok" || !S.giorni.length) return null;
+  const ora = oraInizio(0);
+  // il confronto ha senso solo guardando oggi: il radar parla di adesso
+  if (S.dayIdx !== 0) return null;
+
+  // probabilita' oraria dei modelli sulle prossime due ore
+  const q = [];
+  for (let k = 0; k <= 2; k++) {
+    const hh = ora + k;
+    if (hh > 23) break;
+    const v = oraStat(0, hh).pioggia;
+    if (v !== null && v !== undefined) q.push(v);
+  }
+  if (!q.length) return null;
+  const modello = Math.round(Math.max(...q));
+
+  const radarBagna = r.sopra || (r.arrivo !== null && r.arrivo <= 120);
+  const fidati = r.nettezza > 0.18;
+
+  if (!fidati) return {
+    tono: "amber",
+    testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
+         + `Il radar stavolta non &egrave; misurato abbastanza bene per dire la sua: `
+         + `non lo usare per smentirle.`
+  };
+  if (modello >= 50 && !radarBagna) return {
+    tono: "teal",
+    testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
+         + `ma il radar <b>non vede nulla in avvicinamento</b>. Su questo intervallo `
+         + `conta di pi&ugrave; il radar: non sta indovinando, sta guardando.`
+  };
+  if (modello <= 25 && radarBagna) return {
+    tono: "coral",
+    testo: `Le previsioni danno solo <b>${modello}%</b> nelle prossime due ore, `
+         + `ma il radar <b>la vede arrivare</b>. Succede: i modelli non azzeccano `
+         + `sempre dove finisce una cella gi&agrave; formata. Qui darei retta al radar.`
+  };
+  return {
+    tono: "teal",
+    testo: `Radar e previsioni <b>concordano</b>: modelli al ${modello}% nelle prossime `
+         + `due ore, e il radar ${radarBagna ? "conferma" : "non vede pioggia in arrivo"}.`
+  };
+}
+
 function renderRadar() {
   const el = $("radarOut"); if (!el) return;
   const r = S.radar;
@@ -2156,9 +2260,13 @@ function renderRadar() {
       : `La pioggia pi&ugrave; vicina &egrave; a <b>${r.vicino.toFixed(0)} km</b> e non viene da questa parte.`;
   }
 
-  const giudizio = fidati ? ["teal", "misura affidabile"]
-                 : dubbio ? ["amber", "misura incerta"]
-                          : ["coral", "misura da non usare"];
+  /* v3.39.0 — "nettezza" era sopravvissuta nell'etichetta sotto il giudizio:
+     e' una parola che ho inventato io e non dice niente a nessuno. E il
+     giudizio parlava della qualita' del calcolo ("misura affidabile")
+     invece di dire a chi legge che cosa farne. */
+  const giudizio = fidati ? ["teal", "puoi fidarti", "il calcolo &egrave; solido"]
+                 : dubbio ? ["amber", "prendilo con le molle", "il calcolo &egrave; incerto"]
+                          : ["coral", "non fidarti", "il calcolo non regge"];
 
   el.innerHTML =
     `<div class="num ${colore}" style="font-size:clamp(24px,6.5vw,32px);font-weight:800;`
@@ -2178,8 +2286,26 @@ function renderRadar() {
           + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
         : "")
     + `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
-      + `<div class="k">attendibilit&agrave;</div></div></div>`
+      + `<div class="k">${giudizio[2]}</div></div></div>`
 
+    + (() => {
+        const c = confrontoRadar(r);
+        if (!c) return "";
+        const bordo = c.tono === "coral" ? "var(--corallo)"
+                    : c.tono === "amber" ? "var(--ottone)" : "var(--verderame)";
+        return `<div style="margin-top:20px;padding:14px 16px;border-radius:12px;`
+             + `border:1px solid ${bordo};background:rgba(255,255,255,.03)">`
+             + `<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;`
+             + `letter-spacing:.16em;text-transform:uppercase;color:var(--nebbia);`
+             + `margin-bottom:7px">radar contro previsioni</div>`
+             + `<p class="note" style="margin:0">${c.testo}</p>`
+             /* v3.39.0 — che due parti della stessa app dicano cose diverse
+                sembra un difetto se non si spiega perche' non lo e'. */
+             + `<p class="note" style="margin:9px 0 0;opacity:.75">Non &egrave; un errore `
+             + `dell'app: sono due strumenti diversi. Le previsioni <b>calcolano</b> cosa `
+             + `succeder&agrave;, il radar <b>guarda</b> cosa c'&egrave; adesso. Sulle `
+             + `prossime due ore ha ragione quasi sempre chi guarda.</p></div>`;
+      })()
     + `<p class="note" style="margin-top:18px"><b>Come funziona.</b> Il radar non prevede: `
       + `<b>guarda</b>. Manda impulsi nell'aria e le gocce li rimandano indietro, cos&igrave; si `
       + `vede dove sta piovendo <i>adesso</i>. Confrontando due immagini a `
@@ -2546,11 +2672,57 @@ const PALETTE = {
   pioggia_forse:  { cielo:["#1F4150","#5C7684"], nuvola:"#9BAEB8", sole:0, pioggia:7,  fulmini:0, tinta:"#0C2029", nome:"Pioggia possibile" },
 };
 
+/* v3.37.0 — l'81% di pioggia comprendeva le ore gia' passate.
+   Alle 11 del mattino il verdetto sommava anche il rovescio delle 3 di
+   notte e lo presentava come previsione: un numero che parlava del passato
+   con l'aria di parlare del futuro. Nessuno apre un'app meteo per sapere
+   se stanotte e' piovuto. Sul giorno in corso la finestra parte dall'ora
+   attuale; sugli altri giorni resta l'intera giornata. */
+function oraInizio(d){
+  if (d !== 0 || !S.giorni[0]) return 0;
+  let dataLoc, oraLoc;
+  if (typeof S.utcoff === "number") {
+    const l = new Date(Date.now() + S.utcoff * 1000);
+    dataLoc = l.toISOString().slice(0, 10); oraLoc = l.getUTCHours();
+  } else {
+    const l = new Date();
+    dataLoc = l.toLocaleDateString("sv-SE"); oraLoc = l.getHours();
+  }
+  return S.giorni[0].data === dataLoc ? oraLoc : 0;
+}
+
+function psumFinestra(d){
+  /* v3.40.0 — POPOLAZIONI DIVERSE FRA UN GIORNO E L'ALTRO.
+     Con "da === 0" si restituiva g.psum, l'aggregato costruito al
+     caricamento su TUTTI i gruppi; con "da > 0" si risommava da
+     memDelGiorno, che esclude i modelli la cui cella cade troppo lontano
+     dalla quota reale. Risultato: nel pomeriggio "oggi" era calcolato su
+     una popolazione e "domani" su un'altra, e passando da una scheda
+     all'altra la percentuale cambiava anche per questo, non solo per il
+     tempo. E' la stessa incoerenza corretta in v3.15.0 sulle ore, che
+     avevo appena reintrodotto sui giorni.
+     Ora si passa sempre dagli stessi membri; g.psum resta solo come
+     rete di salvataggio se non ce n'e' nessuno. */
+  const g = S.giorni[d]; if (!g) return [];
+  const da = oraInizio(d);
+  const out = [];
+  for (const m of memDelGiorno(d)) {
+    let s = 0, n = 0;
+    for (let hh = da; hh < 24; hh++) {
+      const v = m.P[hh];
+      if (v !== null && v !== undefined) { s += v; n++; }
+    }
+    if (n) out.push(s);
+  }
+  return out.length ? out : g.psum;
+}
+
 function condizione(idx){
   const g = S.giorni[idx===undefined?S.dayIdx:idx];
   if(!g) return null;
   const d = idx===undefined?S.dayIdx:idx;
-  const p = s => 100*g.psum.filter(x=>x>=s).length/g.psum.length;
+  const ps = psumFinestra(d).map(x=>x*fattoreP());   // v3.37.0
+  const p = s => ps.length ? 100*ps.filter(x=>x>=s).length/ps.length : 0;
   const p1=p(1), p5=p(5), p15=p(15);
   let cloud=null, cape=null;
   if(S.atmo){
@@ -3281,7 +3453,15 @@ function renderWidget(){
   const cond = S.ora!==null ? condizioneOra(d,S.ora) : null;
   const P = cond ? PALETTE[cond.code] : PALETTE[condizione().code];
   const tmax = quantile(g.tmax,.5) - (S.cal?S.cal.bias:0);
-  const p = s => Math.round(100*g.psum.filter(x=>x>=s).length/g.psum.length);
+  /* v3.41.0 — la vista compatta era rimasta indietro di due correzioni:
+     sommava tutte e 24 le ore anche sul giorno in corso, e ignorava il
+     fattore pioggia della taratura. Chi apre l'app direttamente su una
+     vista compatta vedeva percentuali diverse da quelle del verdetto,
+     senza alcun modo di capire perche'. Ora passa dalle stesse funzioni. */
+  const kPw = fattoreP();
+  const PSw = psumFinestra(d);
+  const p = s => PSw.length
+    ? Math.round(100*PSw.filter(x=>x*kPw>=s).length/PSw.length) : 0;
 
   let app=null; const la=[];
   for(const e of ENSEMBLES){

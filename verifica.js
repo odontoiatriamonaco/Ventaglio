@@ -244,6 +244,12 @@ regola("radar: lo zoom si sceglie, non si fissa", "for (const z of [8, 7, 6, 5])
 regola("radar: il punto si legge a piena risoluzione", "const SOG = 60",
   "sulla griglia ridotta un pixel copre 5 km e 'piove qui' perde significato");
 
+regola("il giorno in corso conta solo le ore che restano", "function psumFinestra",
+  "sommare le 24 ore fa annunciare a mezzogiorno la pioggia caduta di notte");
+
+regola("gli accumuli passano sempre dagli stessi membri", "for (const m of memDelGiorno(d))",
+  "restituire g.psum per i giorni interi cambiava popolazione fra oggi e domani");
+
 /* ============================================================
    5. FUNZIONI DI CALCOLO
    ============================================================ */
