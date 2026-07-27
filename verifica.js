@@ -235,6 +235,15 @@ regola("la pagella annota il fattore pioggia in vigore", "kp:+kp.toFixed(3)",
 regola("il rapporto pioggia si conserva anche se non applicato", "fPgrezzo",
   "serve come termine di paragone alla taratura successiva");
 
+regola("radar: l'offset si applica a B, non ad A", "B[(y + dy) * n + (x + dx)]",
+  "applicarlo ad A restituisce l'inverso del movimento, cioe' direzioni opposte");
+
+regola("radar: lo zoom si sceglie, non si fissa", "for (const z of [8, 7, 6, 5])",
+  "a zoom fisso si finisce a leggere riquadri vuoti credendoli dati");
+
+regola("radar: il punto si legge a piena risoluzione", "const SOG = 60",
+  "sulla griglia ridotta un pixel copre 5 km e 'piove qui' perde significato");
+
 /* ============================================================
    5. FUNZIONI DI CALCOLO
    ============================================================ */

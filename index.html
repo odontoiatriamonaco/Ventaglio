@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.33.0 — la striscia mostra l'intensita', non solo il tipo
+  VENTAGLIO v3.35.0 — la scheda radar parla italiano
   File  : ventaglio-v3.html
-  Build : 2026-07-28 10:15 CEST
+  Build : 2026-07-28 19:25 CEST
+  v3.35.0: la scheda radar diceva 'eco sopra il punto', 'nettezza 59%',
+           'sotto i 17 km/h lo spostamento e' meno di un pixel': tutto
+           vero e tutto incomprensibile a chi non ha scritto il codice.
+           Verdetto in una frase sola, 'eco' diventa 'pioggia', la
+           nettezza diventa un giudizio in parole, e due paragrafi
+           spiegano che cos'e' un radar e quando sbaglia.
+  v3.34.0: portato nell'app il motore radar del file di prova, dopo le
+           cinque correzioni che quel file e' servito a scoprire. Sta
+           dietro tre tocchi sul titolo 'Quando piove' perche' il metodo
+           e' stato verificato su un solo caso reale, per giunta il piu'
+           facile: un numero che sembra autorevole senza esserlo fa piu'
+           danno della sua assenza. Una volta scoperto resta attivo.
   v3.33.0: due difetti visivi degli stati 'possibile'. Il disco solare
            restava visibile mentre cadeva la pioggia (sole 0.10 e 0.26):
            azzerato. E nella striscia dieci ore consecutive mostravano
@@ -806,10 +818,23 @@
 
 
   <section class="card full">
-    <h2>Quando piove &mdash; su 100 simulazioni, quante bagnano</h2>
+    <h2 id="titQuando" style="cursor:default;user-select:none">Quando piove &mdash; su 100 simulazioni, quante bagnano</h2>
     <div id="bars"></div>
     <div class="hscale"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
     <p id="bestWin"></p>
+  </section>
+
+  <!-- v3.34.0 — scheda radar, nascosta: si scopre con tre tocchi sul titolo
+       qui sopra. Sta dietro un gesto perche' il metodo e' stato verificato
+       su un caso solo, e un numero che sembra autorevole senza esserlo fa
+       piu' danni della sua assenza. -->
+  <section class="card full" id="radarCard" hidden>
+    <h2>Radar &mdash; sperimentale</h2>
+    <div id="radarOut"><p class="note">in attesa&hellip;</p></div>
+    <div class="azioni" style="margin-top:14px">
+      <button class="ghost" id="radarAgg">Ricalcola</button>
+      <button class="ghost" id="radarOff">Nascondi</button>
+    </div>
   </section>
 
   <section class="card full">
@@ -941,7 +966,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.33.0 &middot; build 2026-07-28<br>
+    v3.35.0 &middot; build 2026-07-28<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1253,6 +1278,8 @@ async function carica(loc){
     }
     if(S.giorni[0].data===dataLoc) S.ora=oraLoc;
   }
+  // v3.34.0 — cambiando localita' il radar va rifatto, non riciclato
+  if (S.radar) { S.radar = null; renderRadar(); }
   await atmosfera();
   await registraPrevisione();
   await verifica();
@@ -1872,6 +1899,251 @@ function renderPagella(){
   el.innerHTML=out;
 }
 
+/* ============================================================
+   v3.34.0 — RADAR (sperimentale, nascosto)
+   Due immagini radar consecutive, lo spostamento fra l'una e l'altra,
+   i minuti d'arrivo sul punto. Portato dal file di prova dopo cinque
+   correzioni: segno dello scostamento invertito, zoom fisso su riquadri
+   vuoti, lettura del punto su griglia troppo grossolana.
+
+   LIMITI, che restano scritti anche nell'interfaccia:
+   - sposta le celle, non le fa nascere ne' morire: una cella che si
+     forma sul posto non la vede arrivare;
+   - il radar misura le gocce in quota, non quelle che toccano terra;
+   - verificato finora su un solo caso reale, per giunta il piu' facile
+     (pioggia che si allontanava).
+   ============================================================ */
+const RV_MAPPE = "https://api.rainviewer.com/public/weather-maps.json";
+const R_LATO = 3, R_DIM = 256 * R_LATO, R_RID = 6;
+
+function rPixel(lat, lon, z) {
+  const n = 2 ** z * 256, r = lat * Math.PI / 180;
+  return { x: (lon + 180) / 360 * n,
+           y: (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n };
+}
+const rMpp = (lat, z) => 156543.03392 * Math.cos(lat * Math.PI / 180) / (2 ** z);
+const R_ROSA = ["nord","nord-est","est","sud-est","sud","sud-ovest","ovest","nord-ovest"];
+const rVerso = (dx, dy) => R_ROSA[Math.round(((Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360) / 45) % 8];
+
+async function rFirma(host, path, z, x, y) {
+  const b = new Uint8Array(await (await fetch(
+    `${host}${path}/256/${z}/${x}/${y}/4/1_1.png`)).arrayBuffer());
+  let s = 0; for (let i = 0; i < b.length; i++) s = (s * 31 + b[i]) >>> 0;
+  return s.toString(16);
+}
+
+/* si scende di zoom finche' i due istanti non danno file diversi: e' la
+   definizione operativa di "qui ci sono dati". A zoom 8 su Gaeta tornavano
+   riquadri vuoti da 1370 byte, identici a se stessi in ogni istante. */
+async function rZoom(host, p1, p2, lat, lon) {
+  for (const z of [8, 7, 6, 5]) {
+    const pg = rPixel(lat, lon, z);
+    const x = Math.floor(pg.x / 256), y = Math.floor(pg.y / 256);
+    try {
+      const [a, b] = await Promise.all([rFirma(host, p1, z, x, y), rFirma(host, p2, z, x, y)]);
+      if (a !== b) return z;
+    } catch (e) {}
+  }
+  return null;
+}
+
+async function rMosaico(host, path, z, cx, cy) {
+  const c = document.createElement("canvas");
+  c.width = c.height = R_DIM;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  let ok = 0;
+  await Promise.all([...Array(R_LATO * R_LATO)].map((_, k) => new Promise(ris => {
+    const i = k % R_LATO, j = (k / R_LATO) | 0;
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = () => { g.drawImage(im, i * 256, j * 256); ok++; ris(); };
+    im.onerror = () => ris();
+    im.src = `${host}${path}/256/${z}/${cx - 1 + i}/${cy - 1 + j}/4/1_1.png`;
+    setTimeout(ris, 15000);
+  })));
+  return { ctx: g, ok };
+}
+
+function rRidotta(ctx) {
+  const d = ctx.getImageData(0, 0, R_DIM, R_DIM).data, n = R_DIM / R_RID;
+  const o = new Float32Array(n * n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    let s = 0;
+    for (let j = 0; j < R_RID; j++) for (let i = 0; i < R_RID; i++)
+      s += d[((y * R_RID + j) * R_DIM + (x * R_RID + i)) * 4 + 3];
+    o[y * n + x] = s / (R_RID * R_RID);
+  }
+  return { m: o, n };
+}
+
+/* l'offset si applica a B: applicarlo ad A restituisce l'INVERSO del
+   movimento, difetto che nel file di prova dava direzioni opposte */
+function rScostamento(A, B, n, raggio) {
+  let best = null; const scarti = [];
+  for (let dy = -raggio; dy <= raggio; dy++)
+    for (let dx = -raggio; dx <= raggio; dx++) {
+      let s = 0, c = 0;
+      for (let y = raggio; y < n - raggio; y++)
+        for (let x = raggio; x < n - raggio; x++) {
+          s += Math.abs(A[y * n + x] - B[(y + dy) * n + (x + dx)]); c++;
+        }
+      const v = s / c; scarti.push(v);
+      if (!best || v < best.s) best = { dx, dy, s: v };
+    }
+  scarti.sort((a, b) => a - b);
+  const med = scarti[scarti.length >> 1];
+  return { ...best, nettezza: med > 0 ? (med - best.s) / med : 0 };
+}
+
+async function radarCalcola() {
+  if (!S.loc) return;
+  S.radar = { stato: "corso" }; renderRadar();
+  try {
+    const j = await (await fetch(RV_MAPPE)).json();
+    const pas = j.radar.past;
+    if (pas.length < 3) throw new Error("immagini insufficienti");
+    const f2 = pas[pas.length - 1], f1 = pas[pas.length - 3];
+    const dt = (f2.time - f1.time) / 60;
+    const lat = S.loc.latitude, lon = S.loc.longitude;
+
+    const z = await rZoom(j.host, f1.path, f2.path, lat, lon);
+    if (z === null) throw new Error("nessuna copertura radar utile su questo punto");
+
+    const pg = rPixel(lat, lon, z);
+    const cx = Math.floor(pg.x / 256), cy = Math.floor(pg.y / 256);
+    const px = pg.x - (cx - 1) * 256, py = pg.y - (cy - 1) * 256;
+    const [m1, m2] = await Promise.all([
+      rMosaico(j.host, f1.path, z, cx, cy), rMosaico(j.host, f2.path, z, cx, cy)]);
+    if (m1.ok < 5 || m2.ok < 5) throw new Error("troppi riquadri mancanti");
+
+    const A = rRidotta(m1.ctx), B = rRidotta(m2.ctx);
+    let div = 0;
+    for (let i = 0; i < A.m.length; i++) if (Math.abs(A.m[i] - B.m[i]) > 2) div++;
+    if (!div) throw new Error("le due immagini sono identiche");
+
+    const sc = rScostamento(A.m, B.m, A.n, 14);
+    const kmPx = rMpp(lat, z) / 1000;
+    const km = Math.hypot(sc.dx, sc.dy) * kmPx * R_RID;
+    const kmh = km / (dt / 60), errKmh = (kmPx * R_RID / 2) / (dt / 60);
+
+    // il punto si legge a piena risoluzione: sulla griglia ridotta un pixel
+    // copre 5,5 km e "piove qui" diventava un'affermazione senza base
+    const pieno = m2.ctx.getImageData(0, 0, R_DIM, R_DIM).data;
+    const alfa = (x, y) => {
+      let s = 0, c = 0;
+      for (let j2 = -1; j2 <= 1; j2++) for (let i = -1; i <= 1; i++) {
+        const xx = Math.round(x) + i, yy = Math.round(y) + j2;
+        if (xx < 0 || yy < 0 || xx >= R_DIM || yy >= R_DIM) continue;
+        s += pieno[(yy * R_DIM + xx) * 4 + 3]; c++;
+      }
+      return c ? s / c : 0;
+    };
+    const SOG = 60;
+    const sopra = alfa(px, py) > SOG;
+    let vicino = Infinity;
+    for (let y = 0; y < B.n; y++) for (let x = 0; x < B.n; x++)
+      if (B.m[y * B.n + x] > 40) {
+        const d = Math.hypot(x - px / R_RID, y - py / R_RID) * kmPx * R_RID;
+        if (d < vicino) vicino = d;
+      }
+
+    let arrivo = null;
+    const fermo = sc.dx === 0 && sc.dy === 0;
+    if (!sopra && !fermo)
+      for (let t = 1; t <= 120; t++) {
+        const x = px - (sc.dx / dt) * R_RID * t, y = py - (sc.dy / dt) * R_RID * t;
+        if (x < 0 || y < 0 || x >= R_DIM || y >= R_DIM) break;
+        if (alfa(x, y) > SOG) { arrivo = t; break; }
+      }
+
+    S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo,
+                verso: fermo ? null : rVerso(sc.dx, sc.dy),
+                nettezza: sc.nettezza, sopra, vicino, arrivo, kmPx };
+  } catch (e) {
+    S.radar = { stato: "no", err: String(e.message || e) };
+  }
+  renderRadar();
+}
+
+function renderRadar() {
+  const el = $("radarOut"); if (!el) return;
+  const r = S.radar;
+  if (!r) { el.innerHTML = '<p class="note">non ancora calcolato</p>'; return; }
+  if (r.stato === "corso") { el.innerHTML = '<p class="note">guardo le immagini radar\u2026</p>'; return; }
+  if (r.stato === "no") { el.innerHTML = '<p class="note">Non riuscito: ' + esc(r.err) + '</p>'; return; }
+
+  /* v3.35.0 — riscritta senza gergo. Prima diceva "eco sopra il punto",
+     "nettezza 59%", "sotto i 17 km/h lo spostamento e' meno di un pixel":
+     tutte cose vere e tutte incomprensibili a chi non ha scritto il codice.
+     Il verdetto e' ora una frase sola, i numeri stanno sotto, e l'affidabilita'
+     e' un giudizio in parole invece di una percentuale inventata da me. */
+
+  const fidati = r.nettezza > 0.18;
+  const dubbio = r.nettezza > 0.08 && !fidati;
+
+  let tit, sot, colore = "teal";
+  if (r.sopra) {
+    tit = "Sta piovendo qui attorno";
+    colore = "amber";
+    sot = `Il radar vede pioggia sopra la zona. A questa distanza distingue aree di circa `
+        + `<b>un chilometro</b>, quindi pu&ograve; darsi che stia cadendo poco pi&ugrave; in l&agrave; `
+        + `e non proprio sulla tua testa.`;
+  } else if (r.arrivo !== null) {
+    tit = `Pioggia in arrivo fra ${r.arrivo} minuti`;
+    colore = r.arrivo <= 30 ? "coral" : "amber";
+    const q = new Date(Date.now() + r.arrivo * 60000)
+      .toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    sot = `Verso le <b>${q}</b>, se continua a muoversi cos&igrave;. `
+        + (fidati ? "" : "Il calcolo per&ograve; &egrave; poco sicuro: prendilo con le molle. ");
+  } else if (r.fermo) {
+    tit = "Pioggia troppo lenta per capire dove va";
+    colore = "amber";
+    sot = `Fra le due immagini si &egrave; spostata cos&igrave; poco che non si riesce a `
+        + `stabilire una direzione.`;
+  } else if (r.vicino !== Infinity && r.vicino < 40) {
+    tit = `Piove a ${r.vicino.toFixed(0)} km, ma si allontana`;
+    sot = `C'&egrave; pioggia poco distante e si sta muovendo <b>verso ${r.verso}</b>, `
+        + `quindi non passer&agrave; di qui.`;
+  } else {
+    tit = "Niente pioggia in avvicinamento";
+    sot = r.vicino === Infinity
+      ? `Nessuna pioggia nel raggio di qualche centinaio di chilometri.`
+      : `La pioggia pi&ugrave; vicina &egrave; a <b>${r.vicino.toFixed(0)} km</b> e non viene da questa parte.`;
+  }
+
+  const giudizio = fidati ? ["teal", "misura affidabile"]
+                 : dubbio ? ["amber", "misura incerta"]
+                          : ["coral", "misura da non usare"];
+
+  el.innerHTML =
+    `<div class="num ${colore}" style="font-size:clamp(24px,6.5vw,32px);font-weight:800;`
+      + `letter-spacing:-.02em;line-height:1.1">${tit}</div>`
+    + `<p class="note" style="margin-top:10px">${sot}</p>`
+
+    + `<div class="verdict" style="margin-top:20px">`
+    + `<div class="metric"><div class="v">${r.vicino === Infinity ? "\u2014" : r.vicino.toFixed(0)}`
+      + `<small> km</small></div><div class="k">pioggia pi&ugrave; vicina</div></div>`
+    + `<div class="metric"><div class="v" style="font-size:22px">`
+      + `${r.fermo ? "ferma" : "verso " + r.verso}</div><div class="k">si sposta</div></div>`
+    + `<div class="metric"><div class="v">${r.kmh.toFixed(0)}<small> km/h</small></div>`
+      + `<div class="k">velocit&agrave;</div></div>`
+    + `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
+      + `<div class="k">attendibilit&agrave;</div></div></div>`
+
+    + `<p class="note" style="margin-top:18px"><b>Come funziona.</b> Il radar non prevede: `
+      + `<b>guarda</b>. Manda impulsi nell'aria e le gocce li rimandano indietro, cos&igrave; si `
+      + `vede dove sta piovendo <i>adesso</i>. Confrontando due immagini a `
+      + `${r.dt} minuti di distanza si capisce da che parte si sta spostando la pioggia, `
+      + `e da l&igrave; fra quanto arriva.</p>`
+
+    + `<p class="note" style="margin-top:10px;opacity:.8"><b>Quando sbaglia.</b> Segue la pioggia `
+      + `che c'&egrave; gi&agrave;, ma non sa prevedere quella che nasce dal nulla &mdash; e d'estate `
+      + `sul mare i temporali si formano sul posto in mezz'ora. Inoltre il radar vede le gocce `
+      + `in alto nel cielo: a volte le vede e a terra non arriva niente, perch&eacute; evaporano `
+      + `prima. Vale per le prossime due ore, non oltre. `
+      + `Immagini delle ${new Date(r.ora*1000).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}.</p>`;
+}
+
 function renderTutto(){
   const passi=[["cielo",renderCielo],["blocco",renderBlocco],["giorni",renderGiorni],
                ["verdetto",renderVerdetto],["grafico",renderGrafico],
@@ -2102,6 +2374,32 @@ window.addEventListener("resize", ()=>{
     s.setAttribute("aria-expanded", apri);
     s.lastChild.textContent = apri ? " Nascondi" : " Come funziona";
   };
+  /* v3.34.0 — tre tocchi sul titolo "Quando piove" scoprono la scheda radar.
+     Sta dietro un gesto perche' il metodo e' verificato su un caso solo:
+     finche' non regge anche su pioggia in avvicinamento, non deve stare
+     davanti a chi apre l'app per sapere se prendere l'ombrello. */
+  const tq = $("titQuando"), rc = $("radarCard");
+  if (tq && rc) {
+    let colpi = 0, ultimo = 0;
+    tq.onclick = async () => {
+      const ora = Date.now();
+      colpi = (ora - ultimo < 1200) ? colpi + 1 : 1;
+      ultimo = ora;
+      if (colpi >= 3) {
+        colpi = 0;
+        rc.removeAttribute("hidden");
+        await store.set("ventaglio3:radar", "1");
+        rc.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (!S.radar) radarCalcola();
+      }
+    };
+    $("radarAgg").onclick = () => radarCalcola();
+    $("radarOff").onclick = async () => {
+      rc.setAttribute("hidden", "");
+      await store.set("ventaglio3:radar", "");
+    };
+  }
+
   const c=$("comeBtn"), i=$("installaInfo");
   if(c&&i) c.onclick=()=>{
     const apri = i.hasAttribute("hidden");
@@ -2151,6 +2449,13 @@ window.addEventListener("unhandledrejection", e=>segnalaGuasto(e.reason));
   const salvata = await store.get("ventaglio3:vista");
   if(last){
     await carica(last);
+    // v3.34.0 — se la scheda radar era stata scoperta, resta scoperta
+    try{
+      if (await store.get("ventaglio3:radar")) {
+        const rc2 = $("radarCard");
+        if (rc2) { rc2.removeAttribute("hidden"); setTimeout(radarCalcola, 800); }
+      }
+    }catch(e){}
     // v3.10.2 — la vista completa si salva come "" (falsy): il vecchio
     // fallback inApp()?"oggi" la scavalcava a ogni lancio dell'app
     // installata, rendendo impossibile fissare la modalità completa.
