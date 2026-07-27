@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.35.0 — la scheda radar parla italiano
+  VENTAGLIO v3.36.0 — il radar dice anche quanto dura
   File  : ventaglio-v3.html
-  Build : 2026-07-28 19:25 CEST
+  Build : 2026-07-29 09:50 CEST
+  v3.36.0: la scheda rispondeva solo a 'quando arriva'. Ora campiona la
+           linea del tempo minuto per minuto e ne ricava anche la durata
+           e l'ora in cui smette — sia per la pioggia in arrivo sia per
+           quella gia' in corso. Due minuti asciutti non contano come
+           fine: uno squarcio dentro un fronte non e' la fine della
+           pioggia. Quando la fascia e' piu' larga dello sguardo lo
+           dichiara invece di inventare un numero.
   v3.35.0: la scheda radar diceva 'eco sopra il punto', 'nettezza 59%',
            'sotto i 17 km/h lo spostamento e' meno di un pixel': tutto
            vero e tutto incomprensibile a chi non ha scritto il codice.
@@ -966,7 +973,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-    v3.35.0 &middot; build 2026-07-28<br>
+    v3.36.0 &middot; build 2026-07-29<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2047,18 +2054,43 @@ async function radarCalcola() {
         if (d < vicino) vicino = d;
       }
 
-    let arrivo = null;
+    /* v3.36.0 — non piu' solo "quando arriva" ma la linea del tempo intera.
+       Si campiona minuto per minuto il punto della nube che al tempo t si
+       trovera' sopra le coordinate: da quella sequenza escono l'arrivo, la
+       durata e il momento in cui smette. Costa un ciclo in piu' e risponde
+       alla domanda vera, che non e' "arriva?" ma "quanto mi becco". */
     const fermo = sc.dx === 0 && sc.dy === 0;
-    if (!sopra && !fermo)
-      for (let t = 1; t <= 120; t++) {
+    let arrivo = null, durata = null, smette = null, troncata = false;
+    if (!fermo) {
+      const serie = [];
+      for (let t = 0; t <= 120; t++) {
         const x = px - (sc.dx / dt) * R_RID * t, y = py - (sc.dy / dt) * R_RID * t;
-        if (x < 0 || y < 0 || x >= R_DIM || y >= R_DIM) break;
-        if (alfa(x, y) > SOG) { arrivo = t; break; }
+        if (x < 0 || y < 0 || x >= R_DIM || y >= R_DIM) { troncata = true; break; }
+        serie.push(alfa(x, y) > SOG);
       }
+      const fineDa = (i) => {
+        // tollera due minuti asciutti: uno squarcio dentro il fronte non
+        // e' la fine della pioggia
+        for (let t = i; t < serie.length; t++)
+          if (!serie[t] && !serie[t + 1] && !serie[t + 2]) return t;
+        return null;
+      };
+      if (serie[0]) {
+        smette = fineDa(1);
+      } else {
+        const i = serie.indexOf(true);
+        if (i > 0) {
+          arrivo = i;
+          const f = fineDa(i + 1);
+          if (f !== null) { durata = f - i; smette = f; }
+        }
+      }
+    }
 
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo,
                 verso: fermo ? null : rVerso(sc.dx, sc.dy),
-                nettezza: sc.nettezza, sopra, vicino, arrivo, kmPx };
+                nettezza: sc.nettezza, sopra, vicino, arrivo,
+                durata, smette, troncata, kmPx };   // v3.36.0
   } catch (e) {
     S.radar = { stato: "no", err: String(e.message || e) };
   }
@@ -2082,19 +2114,32 @@ function renderRadar() {
   const dubbio = r.nettezza > 0.08 && !fidati;
 
   let tit, sot, colore = "teal";
+  // v3.36.0 — l'ora del giorno serve piu' volte
+  const orario = (min) => new Date(Date.now() + min * 60000)
+    .toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+  const quanto = (m) => m >= 60
+    ? `${Math.floor(m/60)} or${Math.floor(m/60)>1?"e":"a"}${m%60?" e "+(m%60)+" minuti":""}`
+    : `${m} minuti`;
+
   if (r.sopra) {
     tit = "Sta piovendo qui attorno";
     colore = "amber";
     sot = `Il radar vede pioggia sopra la zona. A questa distanza distingue aree di circa `
         + `<b>un chilometro</b>, quindi pu&ograve; darsi che stia cadendo poco pi&ugrave; in l&agrave; `
-        + `e non proprio sulla tua testa.`;
+        + `e non proprio sulla tua testa. `
+        + (r.smette !== null
+            ? `Dovrebbe smettere fra <b>${quanto(r.smette)}</b>, verso le <b>${orario(r.smette)}</b>.`
+            : r.fermo ? "" : `Guardando avanti non si vede la fine: potrebbe durare oltre le due ore.`);
   } else if (r.arrivo !== null) {
     tit = `Pioggia in arrivo fra ${r.arrivo} minuti`;
     colore = r.arrivo <= 30 ? "coral" : "amber";
-    const q = new Date(Date.now() + r.arrivo * 60000)
-      .toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-    sot = `Verso le <b>${q}</b>, se continua a muoversi cos&igrave;. `
-        + (fidati ? "" : "Il calcolo per&ograve; &egrave; poco sicuro: prendilo con le molle. ");
+    sot = `Verso le <b>${orario(r.arrivo)}</b>, se continua a muoversi cos&igrave;. `
+        + (r.durata !== null
+            ? `Dovrebbe durare <b>${quanto(r.durata)}</b> e finire verso le `
+              + `<b>${orario(r.smette)}</b>.`
+            : `Non si riesce a vedere dove finisce: la fascia di pioggia &egrave; pi&ugrave; larga `
+              + `di quanto arrivi lo sguardo, quindi metti in conto che duri parecchio.`)
+        + (fidati ? "" : ` Il calcolo per&ograve; &egrave; poco sicuro: prendilo con le molle.`);
   } else if (r.fermo) {
     tit = "Pioggia troppo lenta per capire dove va";
     colore = "amber";
@@ -2127,6 +2172,11 @@ function renderRadar() {
       + `${r.fermo ? "ferma" : "verso " + r.verso}</div><div class="k">si sposta</div></div>`
     + `<div class="metric"><div class="v">${r.kmh.toFixed(0)}<small> km/h</small></div>`
       + `<div class="k">velocit&agrave;</div></div>`
+    + (r.durata !== null || (r.sopra && r.smette !== null)
+        ? `<div class="metric"><div class="v">${r.sopra ? r.smette : r.durata}`
+          + `<small> min</small></div><div class="k">`
+          + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
+        : "")
     + `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
       + `<div class="k">attendibilit&agrave;</div></div></div>`
 
