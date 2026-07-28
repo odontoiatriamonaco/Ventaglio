@@ -2,8 +2,25 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.0.1
-   Build   : 2026-07-28 00:20 CEST
+   Versione: v1.3.1
+   Build   : 2026-07-30 08:55 CEST
+
+   v1.3.0 — quattro controlli mirati alla classe di errore ricorrente:
+   pezzi che non si parlano. Valori calcolati e mai usati, chiavi di stato
+   scritte con un nome e lette con un altro, caselle toccabili senza il
+   loro testo, glifi richiamati e inesistenti. Nessuno di questi produce
+   un errore visibile: l'app continua a girare mostrando meno di quanto
+   dovrebbe.
+
+   v1.2.0 — aggiunto il controllo su const e let letti prima della loro
+   dichiarazione. E' la seconda volta in due giorni che l'app si rompe
+   cosi': sintassi valida, ReferenceError a ogni caricamento.
+
+   v1.1.0 — aggiunto il controllo dei nomi chiamati e mai definiti. Mancava,
+   e l'app ha girato mezza giornata con una chiamata a una funzione rimossa:
+   sintassi valida, ReferenceError a ogni caricamento, verdetto fermo sul
+   messaggio d'attesa. Nessuno degli altri trentatre' controlli poteva
+   vederlo.
 
    v1.0.1 — quattro difetti del collaudo stesso, trovati al primo giro:
      · le ridichiarazioni venivano cercate anche dentro le funzioni,
@@ -247,8 +264,179 @@ regola("radar: il punto si legge a piena risoluzione", "const SOG = 60",
 regola("il giorno in corso conta solo le ore che restano", "function psumFinestra",
   "sommare le 24 ore fa annunciare a mezzogiorno la pioggia caduta di notte");
 
+regola("anche le raffiche seguono la finestra oraria", "function raffFinestra",
+  "il massimo di giornata alle 23 e' un picco del pomeriggio, non una previsione");
+
+regola("la norma stagionale richiede un campione minimo", "dentro.length < 30",
+  "sotto i trenta giorni il confronto con la media di periodo e' rumore");
+
 regola("gli accumuli passano sempre dagli stessi membri", "for (const m of memDelGiorno(d))",
   "restituire g.psum per i giorni interi cambiava popolazione fra oggi e domani");
+
+prova("nessun nome chiamato e mai definito", () => {
+  /* v1.1.0 — il controllo che mancava. La v3.42.0 dell'app chiamava
+     mediaPesata(), funzione di un'architettura precedente rimossa da
+     tempo: sintassi valida, ReferenceError a ogni caricamento, e nessuno
+     dei controlli esistenti se ne accorgeva. Scritto un nome a memoria,
+     l'unico modo di beccarlo e' confrontarlo con quelli che esistono. */
+  /* v1.1.1 — vanno tolte anche le stringhe, non solo i commenti: dentro ci
+     sono funzioni CSS (translateY, rgba, var) e un'icona in base64 che
+     sembrano chiamate a codice. Dei letterali con backtick si conserva
+     pero' il contenuto di ${...}, che e' codice vero. */
+  const senzaCommenti = js
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:"'])\/\/.*$/gm, "$1")
+    .replace(/`(?:[^`\\]|\\.)*`/g, (t) => (t.match(/\$\{[^}]*\}/g) || []).join(" "))
+    .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""');
+  const definiti = new Set([
+    ...senzaCommenti.matchAll(/function\s+([A-Za-z_$][\w$]*)/g),
+    ...senzaCommenti.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g),
+    ...senzaCommenti.matchAll(/([A-Za-z_$][\w$]*)\s*:\s*(?:async\s*)?(?:function|\()/g),
+  ].map(m => m[1]));
+  // v1.1.1 — anche le frecce a parametro singolo senza parentesi, tipo
+  // "new Promise(ris => ...)": erano finite fra i falsi allarmi
+  for (const m of senzaCommenti.matchAll(/(?:^|[(,=\s])([A-Za-z_$][\w$]*)\s*=>/g))
+    definiti.add(m[1]);
+  // parametri di funzione e destrutturazioni
+  for (const m of senzaCommenti.matchAll(/\(([^)]{0,200})\)\s*(?:=>|\{)/g))
+    m[1].split(",").forEach(x => {
+      const n = x.trim().split(/[\s=:{}\[\]]/)[0];
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) definiti.add(n);
+    });
+  const noti = new Set(("if for while switch catch return function typeof await async new "
+    + "Math Number String Array Object JSON Date Set Map Image Promise Error RegExp "
+    + "parseInt parseFloat isNaN isFinite console fetch setTimeout setInterval clearTimeout "
+    + "requestAnimationFrame matchMedia encodeURIComponent decodeURIComponent alert eval "
+    + "Uint8Array Float32Array Blob navigator document window localStorage caches self "
+    + "String Boolean Symbol structuredClone queueMicrotask").split(" "));
+  const chiamati = new Set([...senzaCommenti.matchAll(/(?<![.\w$])([a-zA-Z_$][\w$]*)\s*\(/g)]
+    .map(m => m[1]));
+  const fantasmi = [...chiamati].filter(n =>
+    // sopra i 40 caratteri non e' un nome: e' un dato incollato nel codice
+    !definiti.has(n) && !noti.has(n) && n.length > 2 && n.length < 40 &&
+    !/^(then|catch|filter|map|forEach|push|slice|join|split|replace|toFixed|sort|reduce|some|every|find|includes|indexOf|padStart|toISOString|charAt|toUpperCase|toLowerCase|trim|abs|max|min|round|floor|ceil|sqrt|exp|pow|sin|cos|atan2|hypot|random|from|keys|values|entries|stringify|parse|test|match|matchAll|animate|scrollIntoView|getBoundingClientRect|preventDefault|json|arrayBuffer|register|open|addAll|waitUntil|skipWaiting|of|assign|repeat|startsWith|endsWith|bind|call|apply|concat|reverse|fill|setProperty|remove|contains|blur|focus|hasAttribute|removeAttribute|setAttribute|getAttribute|querySelector|querySelectorAll|createElement|appendChild|addEventListener|getContext|getImageData|drawImage|toLocaleDateString|toLocaleTimeString|toLocaleString|getHours|getUTCHours|getTime|clear|delete|has|get|set|add|toggle|arc|beginPath|stroke|resize|save|item)$/.test(n));
+  return fantasmi.length ? "mai definiti: " + fantasmi.join(", ") : true;
+});
+
+prova("nessun const o let letto prima di essere dichiarato", () => {
+  /* v1.2.0 — due volte in due giorni la stessa rovina: un "let" costruito
+     piu' in basso di dove viene usato. A differenza delle funzioni, const e
+     let non vengono sollevati: la sintassi resta valida e l'app si spacca a
+     ogni caricamento. Qui si guarda dentro ogni funzione, ma solo al livello
+     principale del suo corpo: le letture annidate dentro un'altra funzione
+     avvengono piu' tardi e sarebbero falsi allarmi. */
+  const testo = js
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:"'])\/\/.*$/gm, "$1")
+    .replace(/`(?:[^`\\]|\\.)*`/g, (t) => (t.match(/\$\{[^}]*\}/g) || []).join(" "))
+    .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""');
+
+  const guai = [];
+  for (const m of testo.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g)) {
+    // il corpo della funzione, fino alla graffa che la chiude
+    let d = 1, i = m.index + m[0].length;
+    const inizio = i;
+    while (i < testo.length && d > 0) {
+      if (testo[i] === "{") d++;
+      else if (testo[i] === "}") d--;
+      i++;
+    }
+    const corpo = testo.slice(inizio, i - 1);
+
+    // profondita' di graffe carattere per carattere: 0 = livello principale
+    const liv = new Array(corpo.length);
+    let p = 0;
+    for (let k = 0; k < corpo.length; k++) {
+      if (corpo[k] === "}") p--;
+      liv[k] = p;
+      if (corpo[k] === "{") p++;
+    }
+    for (const dec of corpo.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=/g)) {
+      if (liv[dec.index] !== 0) continue;              // dichiarato in un blocco interno
+      /* v1.2.1 — i contatori dei cicli non contano: "for (let h = 0 ...)"
+         sta a livello zero perche' le parentesi tonde non sono graffe, e
+         un h di un ciclo precedente lo faceva risultare letto in anticipo. */
+      if (/for\s*\(\s*$/.test(corpo.slice(Math.max(0, dec.index - 8), dec.index))) continue;
+      const nome = dec[1];
+      const re = new RegExp("(?<![.\\w$])" + nome + "(?![\\w$])", "g");
+      for (const uso of corpo.matchAll(re)) {
+        if (uso.index >= dec.index) break;
+        if (liv[uso.index] !== 0) continue;            // letto dentro una funzione annidata
+        guai.push(m[1] + "(): " + nome);
+        break;
+      }
+    }
+  }
+  return guai.length ? guai.join(" \u00B7 ") : true;
+});
+
+/* ------------------------------------------------------------
+   v1.3.0 — quattro controlli mirati alla classe di errore che si
+   ripresenta: pezzi che non si parlano fra loro. Un valore calcolato e
+   mai usato, una chiave scritta da una parte e letta con un altro nome,
+   un pannello agganciato a un testo che non esiste.
+   ------------------------------------------------------------ */
+const nudo = js
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/(^|[^:"'])\/\/.*$/gm, "$1");
+
+prova("nessun valore calcolato e mai usato", () => {
+  /* un const che nessuno legge di solito e' un collegamento dimenticato:
+     e' cosi' che era nato bloccoMassima, costruito e mai inserito. */
+  const guai = [];
+  for (const m of nudo.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g)) {
+    let d = 1, i = m.index + m[0].length; const inizio = i;
+    while (i < nudo.length && d > 0) { if (nudo[i] === "{") d++; else if (nudo[i] === "}") d--; i++; }
+    const corpo = nudo.slice(inizio, i - 1);
+    for (const dec of corpo.matchAll(/(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=/g)) {
+      const nome = dec[1];
+      if (nome.length < 3) continue;
+      if (/for\s*\(\s*$/.test(corpo.slice(Math.max(0, dec.index - 8), dec.index))) continue;
+      const usi = (corpo.match(new RegExp("(?<![.\\w$])" + nome + "(?![\\w$])", "g")) || []).length;
+      if (usi <= 1) guai.push(m[1] + "(): " + nome);
+    }
+  }
+  return guai.length ? guai.join(" \u00B7 ") : true;
+});
+
+prova("le chiavi di S vengono scritte e lette con lo stesso nome", () => {
+  /* un "S.norma" scritto e un "S.normaDati" letto non danno nessun errore:
+     restituiscono undefined e il pezzo smette di funzionare in silenzio. */
+  /* v1.3.1 — l'espressione precedente usava una negazione in coda al nome,
+     e per soddisfarla accorciava il nome stesso: "S.loc" diventava "S.lo".
+     Ora il nome si cattura per intero e solo dopo si guarda che cosa segue. */
+  const scritte = new Set(), lette = new Set();
+  for (const m of nudo.matchAll(/(?<![.\w$])S\.([A-Za-z_$][\w$]*)/g)) {
+    const dopo = nudo.slice(m.index + m[0].length);
+    (/^\s*=[^=]/.test(dopo) ? scritte : lette).add(m[1]);
+  }
+  [...nudo.matchAll(/S\s*=\s*\{([\s\S]*?)\};/g)].forEach(m =>
+    [...m[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)].forEach(x => scritte.add(x[1])));
+  const orfane = [...lette].filter(k => !scritte.has(k));
+  return orfane.length ? "lette ma mai scritte: " + orfane.join(", ") : true;
+});
+
+prova("ogni valore toccabile ha la sua spiegazione", () => {
+  /* se una casella porta data-sp="pressione" ma nessun testo la produce,
+     toccarla non fa niente e sembra che l'app sia rotta. */
+  const usate = new Set([...js.matchAll(/data-sp="(\w+)"/g)].map(m => m[1]));
+  const prodotte = new Set([...nudo.matchAll(/\bt\.(\w+)\s*=\s*\{/g)].map(m => m[1]));
+  const senza = [...usate].filter(k => !prodotte.has(k));
+  const inutili = [...prodotte].filter(k => !usate.has(k));
+  if (senza.length) return "caselle senza testo: " + senza.join(", ");
+  return inutili.length ? { avviso: "testi mai raggiungibili: " + inutili.join(", ") } : true;
+});
+
+prova("ogni glifo richiamato esiste", () => {
+  const bloc = nudo.match(/const GLIFI\s*=\s*\{[\s\S]*?\n\};/);
+  if (!bloc) return "dizionario GLIFI non trovato";
+  const definiti = new Set([...bloc[0].matchAll(/^\s{2}(\w+):/gm)].map(m => m[1]));
+  const usati = new Set([...nudo.matchAll(/GLIFI\.(\w+)/g)].map(m => m[1]));
+  const mancanti = [...usati].filter(g => !definiti.has(g));
+  return mancanti.length ? "richiamati ma inesistenti: " + mancanti.join(", ") : true;
+});
 
 /* ============================================================
    5. FUNZIONI DI CALCOLO

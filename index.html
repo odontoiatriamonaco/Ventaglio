@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.56.1 — accenti nelle spiegazioni nuove
+  VENTAGLIO v3.58.0 — via due valori calcolati e mai usati
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.58.0: p02 e nCentri venivano ricalcolati a ogni disegno senza che
+           nessuno li leggesse: resti di due riscritture dei testi.
+           Trovati dal controllo nuovo sui valori mai usati, lo stesso
+           modo in cui era nato bloccoMassima.
+  v3.57.0: nella spiegazione della temperatura la coppia reale/percepita
+           veniva da due ore diverse: il termometro dall'ora selezionata,
+           la percepita dal massimo della giornata. Alle otto del mattino
+           usciva '25 gradi ma il corpo ne sente 39', accostando le otto
+           alle quindici. Due numeri veri e un confronto privo di senso.
   v3.56.0: le spiegazioni davano per scontati mare e agosto — ombrelloni,
            spiaggia, barche — e a Milano in gennaio erano comiche. Ora due
            strati: uno fisico che vale ovunque (che cosa fa quel numero al
@@ -1169,7 +1178,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.56.1 &middot; build 2026-07-29<br>
+v3.58.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1782,7 +1791,7 @@ function renderVerdetto(){
   const daOra = oraInizio(S.dayIdx);                 // v3.37.0
   const PS = psumFinestra(S.dayIdx);
   const p = s => PS.length ? Math.round(100*PS.filter(x=>x*kP>=s).length/PS.length) : 0;
-  const p02=p(0.2), p1=p(1), p5=p(5), p15=p(15);
+  const p1=p(1), p5=p(5), p15=p(15);   // v3.58.0 — p02 non lo leggeva piu' nessuno
   /* v3.54.0 — le tre soglie sono ANNIDATE: chi supera i 15 mm ha gia'
      superato i 5 e l'1. Tre riquadri affiancati le facevano sembrare tre
      eventi distinti, e con tre "esclusa" in fila occupavano mezza scheda per
@@ -1987,8 +1996,13 @@ function renderVerdetto(){
   S.spiega = testiSpiegazione({
     ur: adesso ? urOra : urGiorno,
     rug: (S.atmo && S.atmo.rug) ? S.atmo.rug[S.dayIdx*24 + (oraSel !== null ? oraSel : 14)] : null,
+    /* v3.57.0 — la coppia reale/percepita deve venire dalla STESSA ora.
+       Prima la temperatura era quella dell'ora selezionata e la percepita il
+       massimo del giorno: alle otto del mattino usciva "il termometro segna
+       25 gradi ma il corpo ne sente 39", accostando le otto alle quindici.
+       Due numeri veri, un confronto senza senso. */
     t: tAdesso !== null ? tAdesso : corretta,
-    app: appMax,
+    app: (adesso && adesso.a !== null && adesso.a !== undefined) ? adesso.a : appMax,
     uv: (() => { const u = S.atmo && S.atmo.uv; if (!u) return null;
           let mx = null; for (let k=0;k<24;k++){ const x=u[S.dayIdx*24+k];
             if (x!==null && x!==undefined && (mx===null||x>mx)) mx=x; } return mx; })(),
@@ -2141,7 +2155,6 @@ function renderVerdetto(){
       ?' <span style="opacity:.6">percepita da un solo modello, senza intervallo</span>':"");
   }
 
-  const nCentri = g.centri || ENSEMBLES.filter(e=>S.ens[e.id].ok).length;
   const avvisoLungo = oltreCal
     ? "<b>Nessun intervallo a questa scadenza.</b> Bias e copertura sono stati "
       + "misurati sul giorno successivo, e l'errore cresce molto pi&ugrave; che "
