@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.63.0 — il radar si riassume in una riga
+  VENTAGLIO v3.64.0 — la finestra informativa dice quello che l'app fa oggi
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.64.0: la finestra 'i' descriveva l'app di due settimane fa: non
+           nominava la norma stagionale, il radar, le spiegazioni che si
+           aprono toccando un valore, ne' la pagella. Riscritta: dieci
+           voci, quelle nuove aggiunte e le vecchie aggiornate, con
+           l'ultima che resta la dichiarazione dei limiti.
   v3.63.0: la scheda radar restava spalancata, un muro di testo per una
            risposta che sta in una riga. Ora il pulsante porta gia' la
            risposta — 'Niente pioggia in avvicinamento', 'Pioggia in
@@ -1258,37 +1263,94 @@
 
       <div class="voce">
         <h3>Il &laquo;40% di pioggia&raquo;, finalmente spiegato</h3>
-        <p>Nessuno sa com&apos;&egrave; l&apos;atmosfera adesso fino all&apos;ultimo decimale. Allora i grandi centri meteorologici &mdash; l&apos;europeo, l&apos;americano, il tedesco, il canadese &mdash; non fanno una previsione sola: la rifanno <b>oltre cento volte</b>, ognuna partendo da un&apos;ipotesi appena diversa su com&apos;&egrave; il tempo in questo momento. Quando qui leggi &laquo;47 su 100&raquo; vuol dire semplicemente che quarantasette di quelle prove finiscono con la pioggia. Niente di misterioso.</p>
+        <p>Nessuno sa com&apos;&egrave; l&apos;atmosfera fino all&apos;ultimo decimale. Allora i grandi centri
+           meteorologici &mdash; l&apos;europeo, l&apos;americano, il tedesco, il canadese &mdash; non fanno una
+           previsione sola: la rifanno <b>oltre cento volte</b>, ognuna partendo da un&apos;ipotesi appena
+           diversa su com&apos;&egrave; il tempo in questo momento. Quando qui leggi &laquo;47 su 100&raquo;
+           vuol dire semplicemente che quarantasette di quelle prove finiscono con la pioggia.
+           Niente di misterioso.</p>
       </div>
 
       <div class="voce">
-        <h3>Impara i difetti del tuo paese</h3>
-        <p>I modelli dividono il mondo in caselle larghe chilometri. Un paese sul mare, una casa in fondo a una valle, un giardino all&apos;ombra di una collina: in posti cos&igrave; sbagliano quasi sempre <b>nello stesso verso</b>. Con un tocco l&apos;app va a riprendersi tre mesi di previsioni passate proprio l&igrave;, le confronta con il tempo che ha fatto davvero, e da quel momento corregge da sola.</p>
+        <h3>Fa caldo per il periodo?</h3>
+        <p>&Egrave; la domanda che tutti si fanno guardando il termometro, e nessun&apos;altra app la
+           affronta. L&apos;app confronta la giornata con <b>dieci anni di storia dello stesso punto</b>,
+           negli stessi giorni del calendario, e ne ricava una frase: <i>due gradi sopra la norma di
+           fine luglio qui, pi&ugrave; calda dell&apos;ottantaquattro per cento delle giornate di questo
+           periodo</i>. Non un numero in pi&ugrave;: un numero <b>messo in prospettiva</b>.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Impara i difetti della tua citt&agrave;</h3>
+        <p>I modelli dividono il mondo in caselle larghe chilometri. La nebbia che a Milano resta
+           incollata alla pianura, la conca che d&apos;estate cuoce Firenze, la brezza che sul lungomare
+           di Napoli raffredda una previsione tarata sull&apos;entroterra: sono errori che si ripetono
+           <b>sempre uguali</b>. Con un tocco l&apos;app si riprende <b>tre mesi di previsioni passate</b>
+           per il tuo punto esatto, le confronta con il tempo che ha fatto davvero, e da l&igrave;
+           corregge da sola: temperatura, pioggia e raffiche.</p>
       </div>
 
       <div class="voce">
         <h3>Il &plusmn; accanto ai gradi dice la verit&agrave;</h3>
-        <p>Le prove tendono a somigliarsi fra loro pi&ugrave; di quanto la realt&agrave; poi le confermi: promettono una precisione che non hanno. L&apos;app va a vedere di quanto hanno toppato in passato in questo punto e allarga la fascia di conseguenza. Cos&igrave; quando leggi <b>28 &plusmn; 1,5 gradi</b>, in otto casi su dieci la temperatura ci finisce dentro sul serio.</p>
+        <p>Le prove tendono a somigliarsi fra loro pi&ugrave; di quanto la realt&agrave; poi le confermi:
+           promettono una precisione che non hanno. L&apos;app va a vedere di quanto hanno toppato in
+           passato in questo punto e allarga la fascia di conseguenza. Cos&igrave; quando leggi
+           <b>28 &plusmn; 1,5 gradi</b>, in otto casi su dieci la temperatura ci finisce dentro sul serio.</p>
       </div>
 
       <div class="voce">
-        <h3>Controlla che il modello guardi casa tua</h3>
-        <p>Se la casella di un modello cade duecento metri pi&ugrave; in alto, sta descrivendo un altro posto: pi&ugrave; freddo la notte, senza la brezza del mare. L&apos;app se ne accorge, lo mette da parte e te lo scrive. &Egrave; un errore che nessun&apos;altra app segnala, e intanto sporca il risultato in silenzio.</p>
+        <h3>Il radar: non prevede, guarda</h3>
+        <p>Le previsioni dicono che tempo far&agrave; domani. Il radar risponde a un&apos;altra domanda,
+           quella che ti fai davvero alzando gli occhi al cielo: <b>ce la faccio a rientrare?</b>
+           Manda impulsi nell&apos;aria e le gocce li rimandano indietro, cos&igrave; si vede dove sta
+           piovendo <i>adesso</i>. Confrontando due immagini a venti minuti di distanza l&apos;app capisce
+           da che parte si sposta la pioggia e ti dice <b>fra quanto arriva e quanto dura</b>. Nella
+           prossima ora e mezza batte qualsiasi previsione, perch&eacute; non sta indovinando: sta
+           seguendo una cosa che c&apos;&egrave; gi&agrave;.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Ogni numero si pu&ograve; toccare</h3>
+        <p>Sfiori l&apos;umidit&agrave; e ti spiega perch&eacute; con quel punto di rugiada il sudore non
+           evapora. Sfiori l&apos;indice UV e ti dice in quanti minuti ci si scotta, e che l&apos;ombrellone
+           ferma solo met&agrave; della radiazione. E le spiegazioni <b>cambiano con la stagione e con
+           il luogo</b>: d&apos;inverno a Milano l&apos;umidit&agrave; non &egrave; afa, &egrave; freddo che
+           penetra, e il vento non riguarda gli ombrelloni ma come ti vesti.</p>
       </div>
 
       <div class="voce">
         <h3>Se ci sono due giornate possibili, te le fa vedere tutte e due</h3>
-        <p>Certi pomeriggi le prove si spaccano: met&agrave; tengono il sole, met&agrave; fanno scoppiare il temporale. Farne la media racconta una giornata che non succeder&agrave; in nessuno dei due casi &mdash; come dire che una moneta cade a met&agrave; fra testa e croce. Quando l&apos;app riconosce che le strade sono due, invece di mediarle <b>te le mostra separate</b>, con quante prove stanno da una parte e quante dall&apos;altra.</p>
+        <p>Certi pomeriggi le prove si spaccano: met&agrave; tengono il sole, met&agrave; fanno scoppiare
+           il temporale. Farne la media racconta una giornata che non succeder&agrave; in nessuno dei
+           due casi &mdash; come dire che una moneta cade a met&agrave; fra testa e croce. Quando l&apos;app
+           riconosce che le strade sono due, invece di mediarle <b>te le mostra separate</b>, con
+           quante prove stanno da una parte e quante dall&apos;altra.</p>
       </div>
 
       <div class="voce">
-        <h3>Niente parole da addetti ai lavori</h3>
-        <p>Conteggi su cento invece di percentuali astratte. I millimetri tradotti in &laquo;una pioggerella&raquo; o &laquo;una pioggia da ombrello&raquo;, perch&eacute; <i>7,2 mm</i> non dice niente a nessuno. E una frase che spiega perch&eacute; ventotto gradi se ne fanno sentire trentatr&eacute;.</p>
+        <h3>Controlla che il modello guardi casa tua</h3>
+        <p>Se la casella di un modello cade duecento metri pi&ugrave; in alto, sta descrivendo un altro
+           posto: pi&ugrave; freddo la notte, senza la brezza del mare. L&apos;app se ne accorge, lo mette
+           da parte e te lo scrive. &Egrave; un errore che nessun&apos;altra app segnala, e intanto sporca
+           il risultato in silenzio.</p>
+      </div>
+
+      <div class="voce">
+        <h3>Si d&agrave; i voti da sola</h3>
+        <p>Archivia ogni previsione che emette e, quando quel giorno arriva, la confronta con quello
+           che &egrave; successo davvero. Dopo qualche settimana ti dice quanto &egrave; stata brava
+           &mdash; <b>anche quando la risposta &egrave; &laquo;male&raquo;</b>. La trovi sotto
+           <i>Dettagli</i>, e non conosciamo altre app che si espongano cos&igrave;.</p>
       </div>
 
       <div class="voce onesta">
         <h3>E quello che non fa</h3>
-        <p>Non indovina il tempo meglio dei centri meteorologici: usa <b>gli stessi identici dati</b> che stanno sotto a tutte le altre app, senza modelli segreti n&eacute; scorciatoie. La differenza sta tutta in come tratta l&apos;incertezza &mdash; la misura, la corregge, e te la mette davanti invece di nasconderla dietro un numero solo. Dentro l&apos;app, sotto <i>Dettagli</i>, c&apos;&egrave; una scheda che elenca per esteso i suoi limiti: vale la pena leggerla.</p>
+        <p>Non indovina il tempo meglio degli altri: usa <b>gli stessi identici dati</b> che stanno
+           sotto a tutte le altre app, senza modelli segreti n&eacute; scorciatoie. La differenza sta
+           tutta in come tratta l&apos;incertezza &mdash; la misura, la corregge, e te la mette davanti
+           invece di nasconderla dietro un numero solo. Il radar segue la pioggia che c&apos;&egrave;, ma
+           non sa prevedere quella che nasce dal nulla. Dentro l&apos;app, sotto <i>Dettagli</i>, c&apos;&egrave;
+           una scheda che elenca per esteso i suoi limiti: &egrave; la prima che vale la pena leggere.</p>
       </div>
 
       <p class="modale-firma">un software del <b>Dr. Maurizio Monaco</b><br>
@@ -1302,7 +1364,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.63.0 &middot; build 2026-07-30<br>
+v3.64.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
