@@ -1,9 +1,21 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.61.0 — massima e minima dentro i riquadri dei giorni
+  VENTAGLIO v3.63.0 — il radar si riassume in una riga
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.63.0: la scheda radar restava spalancata, un muro di testo per una
+           risposta che sta in una riga. Ora il pulsante porta gia' la
+           risposta — 'Niente pioggia in avvicinamento', 'Pioggia in
+           arrivo fra 25 minuti' — colorata secondo la situazione e con
+           l'icona giusta; il dettaglio si apre solo a chi lo chiede.
+  v3.62.0: due difetti visivi. Il sole usciva dal riquadro: ingrandendo la
+           scena il disegno viene scalato e ritagliato ai lati, e l'alone
+           finiva oltre il bordo destro. Ora l'ascissa di sole e luna si
+           calcola all'indietro dal bordo, cosi' resta corretta a
+           qualunque altezza invece di essere ritoccata a mano. E i nomi
+           dei giorni venivano tagliati: ora non vanno a capo e il
+           riquadro si allarga quanto serve.
   v3.61.0: la fila dei giorni mostrava solo nome, data e icona: per sapere
            che temperature facesse giovedi' bisognava toccarlo. Serviva a
            scegliere, non a confrontare, che e' il motivo per cui una fila
@@ -488,12 +500,17 @@
   .days{display:flex;gap:8px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;
     scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
   .days::-webkit-scrollbar{display:none}
-  .day{flex:0 0 auto;min-width:92px;cursor:pointer;background:var(--scafo);border:1px solid var(--linea);
+  .day{flex:0 0 auto;min-width:92px;width:max-content;cursor:pointer;background:var(--scafo);border:1px solid var(--linea);
     border-radius:var(--r);padding:11px 12px;text-align:left;color:var(--nebbia);
     font-family:"Inter Tight",sans-serif;font-size:13px;transition:.15s}
   .day:hover{border-color:var(--verderame)}
   .day[aria-pressed="true"]{background:var(--scafo-alto);border-color:var(--verderame);color:var(--schiuma)}
-  .day b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:16px;font-weight:700}
+  /* v3.62.0 — "Dopodomani" e "Domenica" venivano tagliati: il riquadro aveva
+     una larghezza minima ma il testo non ci stava. Ora non va a capo e il
+     riquadro si allarga quanto serve. */
+  .day b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:16px;
+    font-weight:700;white-space:nowrap}
+  .day span{white-space:nowrap}
   .day span{font-family:"IBM Plex Mono",monospace;font-size:10.5px}
   /* v3.61.0 — le due temperature nel riquadro del giorno */
   .day .daytemp{display:block;margin-top:7px;font-family:"Bricolage Grotesque",sans-serif;
@@ -597,6 +614,26 @@
   .spiega-corpo i{color:var(--sp-tinta,var(--verderame));font-style:normal}
 
   /* v3.50.0 — la parola sotto il numero: dice cosa farne */
+  /* v3.63.0 — il pulsante che riassume il radar */
+  .compatta-radar{padding:14px 16px}
+  .radarbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:transparent;border:0;color:var(--schiuma);cursor:pointer;padding:4px 2px;
+    font-family:"Inter Tight",sans-serif}
+  .radarbtn .ico{flex:0 0 auto;display:flex;width:26px;height:26px}
+  .radarbtn .ico svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;
+    stroke-linecap:round;stroke-linejoin:round}
+  .radarbtn .ico svg .p{fill:currentColor;stroke:none}
+  .radarbtn .txt{flex:1;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
+    font-size:clamp(16px,4.2vw,20px);letter-spacing:-.015em;line-height:1.2}
+  .radarbtn .txt.teal{color:var(--verderame)}
+  .radarbtn .txt.amber{color:var(--ottone)}
+  .radarbtn .txt.coral{color:var(--corallo)}
+  .radarbtn .frecciolina{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:var(--nebbia);
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
+  .radarbtn[aria-expanded="true"] .frecciolina{transform:rotate(180deg)}
+  .radarbtn[data-tono="coral"] .ico{color:var(--corallo)}
+  .radarbtn[data-tono="amber"] .ico{color:var(--ottone)}
+  .radarbtn[data-tono="teal"]  .ico{color:var(--verderame)}
   .dida{font-size:12px;color:var(--schiuma);opacity:.72;margin-top:4px;line-height:1.3}
   .rng{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--nebbia);
     margin-top:5px;letter-spacing:.02em}
@@ -1092,10 +1129,18 @@
        il caso che conta di piu'. Il pulsante "Nascondi" resta, e i tre
        tocchi sul titolo la fanno riapparire: chi la chiude ha una via di
        ritorno. -->
-  <section class="card full" id="radarCard">
-    <h2>Radar &mdash; sperimentale</h2>
-    <div id="radarOut"><p class="note">in attesa&hellip;</p></div>
-    <div class="azioni" style="margin-top:14px">
+  <!-- v3.63.0 — la scheda radar era sempre spalancata: un muro di testo per
+       una risposta che sta in una riga. Ora il pulsante porta gia' la
+       risposta, colorata secondo la situazione, e il dettaglio si apre solo
+       a chi lo chiede. -->
+  <section class="card full compatta-radar" id="radarCard">
+    <button id="radarBtn" class="radarbtn" aria-expanded="false">
+      <span class="ico" id="radarIco"></span>
+      <span class="txt" id="radarSint">Radar&hellip;</span>
+      <svg class="frecciolina" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div id="radarOut" hidden><p class="note">in attesa&hellip;</p></div>
+    <div class="azioni" id="radarAzioni" hidden style="margin-top:14px">
       <button class="ghost" id="radarAgg">Ricalcola</button>
       <button class="ghost" id="radarOff">Nascondi</button>
     </div>
@@ -1257,7 +1302,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.61.0 &middot; build 2026-07-30<br>
+v3.63.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2909,9 +2954,17 @@ function confrontoRadar(r) {
 function renderRadar() {
   const el = $("radarOut"); if (!el) return;
   const r = S.radar;
-  if (!r) { el.innerHTML = '<p class="note">non ancora calcolato</p>'; return; }
-  if (r.stato === "corso") { el.innerHTML = '<p class="note">guardo le immagini radar\u2026</p>'; return; }
-  if (r.stato === "no") { el.innerHTML = '<p class="note">Non riuscito: ' + esc(r.err) + '</p>'; return; }
+  const scriviSint = (t, tono) => {
+    const s = $("radarSint"), b = $("radarBtn");
+    if (s) { s.textContent = t; s.className = "txt " + (tono || ""); }
+    if (b) b.dataset.tono = tono || "";
+  };
+  if (!r) { el.innerHTML = '<p class="note">non ancora calcolato</p>';
+            scriviSint("Radar \u2014 non ancora calcolato"); return; }
+  if (r.stato === "corso") { el.innerHTML = '<p class="note">guardo le immagini radar\u2026</p>';
+            scriviSint("Radar \u2014 sto guardando\u2026"); return; }
+  if (r.stato === "no") { el.innerHTML = '<p class="note">Non riuscito: ' + esc(r.err) + '</p>';
+            scriviSint("Radar non disponibile qui"); return; }
 
   /* v3.35.0 — riscritta senza gergo. Prima diceva "eco sopra il punto",
      "nettezza 59%", "sotto i 17 km/h lo spostamento e' meno di un pixel":
@@ -2972,6 +3025,18 @@ function renderRadar() {
   const giudizio = fidati ? ["teal", "puoi fidarti", "il calcolo &egrave; solido"]
                  : dubbio ? ["amber", "prendilo con le molle", "il calcolo &egrave; incerto"]
                           : ["coral", "non fidarti", "il calcolo non regge"];
+
+  /* v3.63.0 — la riga che finisce sul pulsante: la stessa risposta del
+     titolo, senza il contorno */
+  const sint = $("radarSint"), ico = $("radarIco");
+  if (sint) {
+    sint.textContent = tit;
+    sint.className = "txt " + colore;
+    if (ico) ico.innerHTML = r.sopra ? GLIFI.rovescio
+      : (r.arrivo !== null ? GLIFI.goccia : GLIFI.vento);
+    const btn = $("radarBtn");
+    if (btn) btn.dataset.tono = colore;
+  }
 
   el.innerHTML =
     `<div class="num ${colore}" style="font-size:clamp(24px,6.5vw,32px);font-weight:800;`
@@ -3312,6 +3377,14 @@ window.addEventListener("resize", ()=>{
         if (!S.radar) radarCalcola();
       }
     };
+    /* v3.63.0 — il dettaglio si apre a richiesta */
+    const rb = $("radarBtn"), ro = $("radarOut"), ra = $("radarAzioni");
+    if (rb && ro) rb.onclick = () => {
+      const apri = ro.hasAttribute("hidden");
+      if (apri) { ro.removeAttribute("hidden"); if (ra) ra.removeAttribute("hidden"); }
+      else { ro.setAttribute("hidden", ""); if (ra) ra.setAttribute("hidden", ""); }
+      rb.setAttribute("aria-expanded", apri);
+    };
     $("radarAgg").onclick = () => radarCalcola();
     $("radarOff").onclick = async () => {
       rc.setAttribute("hidden", "");
@@ -3572,6 +3645,14 @@ function renderCielo(){
      sole e orizzonte restano identiche a prima. */
   const W=700, H=altezzaScena();
   const f=H/250, dx=(W-W*f)/2;
+  /* v3.62.0 — il sole usciva dal riquadro. Ingrandendo la scena il disegno
+     viene scalato di f e ritagliato ai lati di dx, quindi tutto cio' che sta
+     a destra si sposta fuori: con f alto l'alone finiva oltre il bordo e si
+     vedeva mezza palla tagliata. Invece di spostarlo a mano, l'ascissa si
+     calcola all'indietro dal bordo, cosi' resta giusta a ogni altezza. */
+  const dentroX = (raggio) => Math.min(548, (W - 8 - raggio * f - dx) / f);
+  const solX = dentroX(96);      // il sole con il suo alone
+  const lunX = dentroX(64);      // la luna con il suo
   $("scene").setAttribute("viewBox","0 0 "+W+" "+H);
   let s='<defs>'
     +'<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">'
@@ -3589,14 +3670,14 @@ function renderCielo(){
   if(P.notturno){
     const stelle=[[92,44],[168,30],[246,58],[330,36],[404,66],[478,28],[556,52],[628,40],[130,74],[300,86],[520,80]];
     stelle.forEach((s2,i)=>{ s+='<circle cx="'+s2[0]+'" cy="'+s2[1]+'" r="'+(1.2+(i%3)*0.5)+'" fill="#EAF2FF" opacity="'+(0.35+(i%4)*0.15)+'"/>'; });
-    s+='<g opacity=".92"><circle cx="556" cy="62" r="64" fill="url(#glow)" opacity=".28"/>'
-      +'<circle cx="556" cy="62" r="24" fill="#E8EEF7"/>'
-      +'<circle cx="546" cy="56" r="21" fill="'+P.cielo[0]+'"/></g>';
+    s+='<g opacity=".92"><circle cx="'+lunX.toFixed(1)+'" cy="62" r="64" fill="url(#glow)" opacity=".28"/>'
+      +'<circle cx="'+lunX.toFixed(1)+'" cy="62" r="24" fill="#E8EEF7"/>'
+      +'<circle cx="'+(lunX-10).toFixed(1)+'" cy="56" r="21" fill="'+P.cielo[0]+'"/></g>';
   }
   // sole
   if(P.sole>0.02){
-    s+='<g opacity="'+P.sole+'"><circle cx="548" cy="72" r="96" fill="url(#glow)"/>'
-      +'<circle cx="548" cy="72" r="30" fill="#FFDD92"/></g>';
+    s+='<g opacity="'+P.sole+'"><circle cx="'+solX.toFixed(1)+'" cy="72" r="96" fill="url(#glow)"/>'
+      +'<circle cx="'+solX.toFixed(1)+'" cy="72" r="30" fill="#FFDD92"/></g>';
   }
 
   // nuvole su tre piani, con deriva
