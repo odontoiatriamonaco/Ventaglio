@@ -1,9 +1,35 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.58.0 — via due valori calcolati e mai usati
+  VENTAGLIO v3.61.0 — massima e minima dentro i riquadri dei giorni
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.61.0: la fila dei giorni mostrava solo nome, data e icona: per sapere
+           che temperature facesse giovedi' bisognava toccarlo. Serviva a
+           scegliere, non a confrontare, che e' il motivo per cui una fila
+           di giorni esiste. Ora ogni riquadro porta massima e minima.
+           La minima viene calcolata in aggregazione insieme alla massima,
+           quindi anche renderVerdetto smette di ricavarla dai membri a
+           ogni disegno.
+  v3.60.1: il nome sopra il cielo era ancora troppo grande. Ridotto da
+           28-42 px a 23-32 e alleggerito di peso: nella scena il
+           protagonista e' il tempo, il nome dice solo dove sei.
+  v3.60.0: rifatta la testata. L'occhiello elencava funzioni dell'app nel
+           punto in cui l'occhio arriva per primo: ora dice chi l'ha
+           fatta. Nome della localita' e regione entrano nella scena, che
+           si alza per ospitarli; via le coordinate, che interessano a chi
+           verifica e restano nella diagnostica. Via la firma ripetuta. I
+           pulsanti delle viste scendono accanto alla scheda che li
+           spiega, ma restano fuori da .full: in vista compatta tutto il
+           resto sparisce e senza di loro non ci sarebbe modo di tornare
+           indietro.
+  v3.59.0: la spiegazione di un valore si apriva in coda alla scheda, dove
+           finiva sotto il pollice, spingeva giu' il resto e costringeva a
+           ritrovare il punto in cui si stava leggendo. Ora si apre al
+           centro dello schermo, con la tinta dell'argomento: rosso per la
+           temperatura, azzurro per acqua e pioggia, verde per il vento,
+           giallo per il sole. Si chiude col tasto, toccando fuori o con
+           Esc, e lo sfondo non scorre mentre e' aperta.
   v3.58.0: p02 e nCentri venivano ricalcolati a ogni disegno senza che
            nessuno li leggesse: resti di due riscritture dei testi.
            Trovati dal controllo nuovo sui valori mai usati, lo stesso
@@ -469,6 +495,11 @@
   .day[aria-pressed="true"]{background:var(--scafo-alto);border-color:var(--verderame);color:var(--schiuma)}
   .day b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:16px;font-weight:700}
   .day span{font-family:"IBM Plex Mono",monospace;font-size:10.5px}
+  /* v3.61.0 — le due temperature nel riquadro del giorno */
+  .day .daytemp{display:block;margin-top:7px;font-family:"Bricolage Grotesque",sans-serif;
+    font-size:15px;letter-spacing:-.01em}
+  .day .daytemp b{color:var(--schiuma);font-weight:700}
+  .day .daytemp i{font-style:normal;font-size:13px;color:var(--nebbia)}
   /* v3.13.0 — profondita': velatura chiara sul bordo alto, perche' la luce
      viene dall'alto, e ombra ampia e morbida sotto. La separazione fra le
      schede la fa l'ombra, non una linea piu' marcata. */
@@ -550,15 +581,21 @@
     transition:background .15s}
   .metric[data-sp]:hover{background:rgba(255,255,255,.04)}
   .metric[data-sp][aria-expanded="true"]{background:rgba(79,191,168,.09)}
-  .spiegaval{margin-top:18px;padding:16px 18px;border-radius:12px;
-    border:1px solid var(--verderame);background:rgba(79,191,168,.06)}
-  .spiegaval h4{margin:0 0 9px;font-family:"Bricolage Grotesque",sans-serif;
-    font-size:17px;font-weight:700;letter-spacing:-.012em;color:var(--schiuma)}
-  .spiegaval p{margin:0;font-size:13.5px;line-height:1.62;color:var(--nebbia)}
-  .spiegaval p b{color:var(--schiuma);font-weight:600}
-  .spiegaval .chiudi-sp{margin-top:12px;font-family:"IBM Plex Mono",monospace;
-    font-size:11px;color:var(--nebbia);background:transparent;border:1px solid var(--linea);
-    border-radius:99px;padding:6px 14px;cursor:pointer}
+  /* v3.59.0 — finestra della spiegazione, con la tinta dell'argomento */
+  .spiega-carta{overflow:hidden;padding-top:30px;
+    border-color:var(--sp-tinta,var(--verderame))}
+  .spiega-banda{position:absolute;top:0;left:0;right:0;height:5px;
+    background:linear-gradient(90deg,var(--sp-tinta,var(--verderame)),transparent 92%)}
+  .spiega-occhio{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--sp-tinta,var(--verderame));
+    margin:0 0 8px}
+  .spiega-tit{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(26px,7vw,36px);line-height:1.02;letter-spacing:-.025em;
+    color:var(--schiuma);margin:0 0 18px}
+  .spiega-corpo{font-size:15px;line-height:1.7;color:var(--nebbia)}
+  .spiega-corpo b{color:var(--schiuma);font-weight:600}
+  .spiega-corpo i{color:var(--sp-tinta,var(--verderame));font-style:normal}
+
   /* v3.50.0 — la parola sotto il numero: dice cosa farne */
   .dida{font-size:12px;color:var(--schiuma);opacity:.72;margin-top:4px;line-height:1.3}
   .rng{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--nebbia);
@@ -581,6 +618,20 @@
   #fiducia b{color:var(--schiuma)}
 
   /* ---------- scena atmosferica ---------- */
+  /* v3.60.0 — nome e regione sovrapposti al cielo. L'ombreggiatura del testo
+     non e' un vezzo: la scena cambia colore con il tempo e senza quella il
+     titolo sparirebbe su un cielo sereno. */
+  .cielo-testa{position:absolute;top:0;left:0;right:0;display:flex;gap:12px;
+    align-items:flex-start;padding:16px 16px 0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(4,12,18,.42),transparent)}
+  .cielo-testa .ct-testo{flex:1;min-width:0}
+  /* v3.60.1 — il nome scende ancora: sopra il cielo non deve gridare, deve
+     dire dove sei. Il protagonista della scena e' il tempo, non l'etichetta. */
+  .cielo-testa h1{margin:0;font-size:clamp(23px,5.8vw,32px);line-height:1;
+    font-weight:700;letter-spacing:-.022em;text-shadow:0 2px 14px rgba(0,0,0,.55)}
+  .cielo-testa .coord{margin:2px 0 0;font-size:10.5px;letter-spacing:.07em;
+    color:rgba(220,232,230,.78);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+  .cielo-testa .stella{pointer-events:auto;flex:0 0 auto}
   .cielo{position:relative;border-radius:var(--r);overflow:hidden;
     border:1px solid rgba(34,72,90,.6);
     box-shadow:0 30px 64px -34px rgba(0,0,0,.95), 0 1px 0 rgba(255,255,255,.06) inset;
@@ -687,7 +738,7 @@
   .striscia:focus-visible{outline:2px solid var(--verderame);outline-offset:3px;border-radius:12px}
 
   /* ---------- selettore vista e riquadro compatto ---------- */
-  .viste-app{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 20px}
+  .viste-app{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 16px}   /* v3.60.0 */
   .viste-app button{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;
     background:transparent;color:var(--nebbia);border:1px solid var(--linea);border-radius:99px;
     padding:6px 12px;cursor:pointer;transition:.15s}
@@ -947,7 +998,10 @@
 </head>
 <body>
 <div class="wrap">
-  <p class="eyebrow">Ventaglio v3.8 &middot; installabile, con viste compatte</p>
+  <!-- v3.60.0 — l'occhiello elencava funzioni ("installabile, con viste
+       compatte"): informazioni sull'app, non sul tempo, nel punto in cui
+       l'occhio arriva per primo. Ora dice chi l'ha fatta e basta. -->
+  <p class="eyebrow">software meteo del <b>Dr. Maurizio Monaco</b></p>
   <div class="search">
     <input id="q" type="search" autocomplete="off" placeholder="Cerca una localit&agrave;&hellip;" aria-label="Cerca una localit&agrave;">
     <button id="gps" title="Usa la mia posizione" aria-label="Usa la mia posizione">&#9678;</button>
@@ -966,25 +1020,23 @@
     <p class="bv-nota">La scelta viene ricordata: al prossimo avvio l&apos;app riparte da qui.</p>
   </section>
 
-  <div class="titolo-riga">
-    <h1 id="locName">&hellip;</h1>
-    <button id="stella" class="stella" aria-pressed="false"
-            aria-label="Salva fra le preferite" title="Salva fra le preferite">&#9733;</button>
-  </div>
-  <p class="coord" id="locMeta"></p>
-  <p class="firma">un software del <b>Dr. Maurizio Monaco</b></p>
-
-  <div class="viste-app">
-    <button id="w_completa" aria-pressed="true">Completa</button>
-    <button id="w_essenziale" aria-pressed="false">Essenziale</button>
-    <button id="w_oggi" aria-pressed="false">Oggi</button>
-    <button id="w_prossime" aria-pressed="false">Prossime ore</button>
-  </div>
   <div id="widget" class="widget"></div>
   <div id="blocco"></div>
 
+  <!-- v3.60.0 — il nome della localita' entra nella scena: e' li' che uno
+       guarda per capire dove si trova, e sopra il cielo prende senso invece
+       di stare in cima come un'etichetta. Via le coordinate: interessano a
+       chi verifica, non a chi guarda il tempo, e restano nella diagnostica. -->
   <div class="cielo full">
     <svg class="scene" id="scene" viewBox="0 0 700 250" role="img" aria-label="Condizioni previste"></svg>
+    <div class="cielo-testa">
+      <div class="ct-testo">
+        <h1 id="locName">&hellip;</h1>
+        <p class="coord" id="locMeta"></p>
+      </div>
+      <button id="stella" class="stella" aria-pressed="false"
+              aria-label="Salva fra le preferite" title="Salva fra le preferite">&#9733;</button>
+    </div>
     <div class="legenda"><p id="condNome"></p><p id="condSub"></p></div>
   </div>
 
@@ -1009,7 +1061,7 @@
     <h2>Verdetto probabilistico</h2>
     <div class="verdict" id="verdict"><span class="note">Scarico le simulazioni&hellip;</span></div>
     <p id="comfort"></p>
-    <div id="spiegaValore" class="spiegaval" hidden></div>
+
     <p id="finestraNota" class="note" style="margin-top:16px"></p>
     <div class="azioni" style="margin-top:14px">
       <button class="ghost" id="spiegaBtn" aria-expanded="false" aria-controls="spiegaVerdetto">
@@ -1059,6 +1111,18 @@
   </section>
 
 
+
+  <!-- v3.60.0 — i pulsanti delle viste stavano in cima, dove chi apre l'app
+       vuole il tempo e non le impostazioni. Scendono qui, accanto alla
+       scheda che li spiega. Fuori da .full di proposito: in vista compatta
+       tutto il resto sparisce, e se sparissero anche loro non ci sarebbe
+       modo di tornare indietro. -->
+  <div class="viste-app">
+    <button id="w_completa" aria-pressed="true">Completa</button>
+    <button id="w_essenziale" aria-pressed="false">Essenziale</button>
+    <button id="w_oggi" aria-pressed="false">Oggi</button>
+    <button id="w_prossime" aria-pressed="false">Prossime ore</button>
+  </div>
 
   <section class="card full">
     <h2>Tienilo sul telefono</h2>
@@ -1124,6 +1188,21 @@
 
   <button id="fabInfo" class="fab" aria-label="Perch&eacute; questa app &egrave; diversa">i</button>
 
+  <!-- v3.59.0 — la spiegazione di un valore si apre in primo piano invece
+       che in coda alla scheda: li' finiva sotto il pollice, spingeva giu' il
+       resto e costringeva a ritrovare il punto in cui si stava leggendo.
+       Ogni argomento ha la sua tinta, cosi' si capisce a colpo d'occhio di
+       che numero si sta parlando. -->
+  <div id="spiegaModale" class="modale" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modale-carta spiega-carta">
+      <div class="spiega-banda"></div>
+      <button class="chiudi" id="spiegaChiudi" aria-label="Chiudi">&times;</button>
+      <p class="spiega-occhio"></p>
+      <h2 class="spiega-tit"></h2>
+      <div class="spiega-corpo"></div>
+    </div>
+  </div>
+
   <div id="infoModale" class="modale" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="infoTitolo">
     <div class="modale-carta">
       <button id="chiudiInfo" class="chiudi" aria-label="Chiudi">&times;</button>
@@ -1178,7 +1257,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.58.0 &middot; build 2026-07-30<br>
+v3.61.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -1391,8 +1470,7 @@ async function carica(loc){
   S.loc=loc; S.ens={}; S.giorni=[]; S.diag=[]; S.cal=null; S.ora=null; invalidaOre();
   S.tz = loc.timezone || "auto";
   $("locName").textContent=loc.name;
-  $("locMeta").textContent=[loc.admin1,loc.country].filter(Boolean).join(" \u00B7 ")+"  "
-    +loc.latitude.toFixed(4)+"\u00B0N "+loc.longitude.toFixed(4)+"\u00B0E";
+  $("locMeta").textContent=[loc.admin1,loc.country].filter(Boolean).join(" \u00B7 ");   // v3.60.0
   $("verdict").innerHTML='<span class="note">Scarico le simulazioni\u2026</span>';
   $("blocco").innerHTML="";
 
@@ -1439,7 +1517,7 @@ async function carica(loc){
   const nGiorni=Math.min(7,Math.floor(time.length/24));
   S.giorni=[];
   for(let d=0; d<nGiorni; d++){
-    const tmax=[], psum=[], raff=[], oraria=[], centri=new Set();
+    const tmax=[], tmin=[], psum=[], raff=[], oraria=[], centri=new Set();
     for(let h=0;h<24;h++) oraria.push({wet:0,tot:0,mm:[]});
     for(const e of vivi){
       const E=S.ens[e.id];
@@ -1456,6 +1534,7 @@ async function carica(loc){
         // asciutte: a giorno 6 i 40 membri di ICON-EU falserebbero tutto.
         if(tt.length<12 || pp.filter(v=>v!==null).length<12) continue;
         tmax.push(Math.max(...tt));
+        tmin.push(Math.min(...tt));   // v3.61.0 — serve ai riquadri dei giorni
         psum.push(pp.reduce((s,x)=>s+(x||0),0));
         if(E.W && E.W[m]){
           const ww=[];
@@ -1471,7 +1550,7 @@ async function carica(loc){
       }
     }
     if(!tmax.length) break;   // nessun centro arriva fin qui
-    S.giorni.push({ data:time[d*24].slice(0,10), tmax, psum, raff, oraria, centri:centri.size });
+    S.giorni.push({ data:time[d*24].slice(0,10), tmax, tmin, psum, raff, oraria, centri:centri.size });
   }
   if(S.dayIdx>=S.giorni.length) S.dayIdx=0;   // v3.12.0 — oggi
   /* v3.14.0 — "adesso" deve voler dire adesso. Senza ora selezionata la
@@ -1521,8 +1600,21 @@ function renderGiorni(){
     const dt=new Date(g.data+"T12:00:00"), b=document.createElement("button");
     b.className="day"; b.setAttribute("aria-pressed",i===S.dayIdx);
     const cc=condizione(i);
+    /* v3.61.0 — massima e minima dentro il riquadro. Prima bisognava
+       toccare un giorno per sapere che temperature facesse: la fila serviva
+       solo a scegliere, non a confrontare. Con i due numeri si legge la
+       settimana a colpo d'occhio, che e' il motivo per cui una fila di
+       giorni esiste. */
+    const bs = S.cal ? S.cal.bias : 0;
+    const mx = (g.tmax && g.tmax.length) ? quantile(g.tmax, .5) - bs : null;
+    const mn = (g.tmin && g.tmin.length) ? quantile(g.tmin, .5) - bs : null;
     b.innerHTML='<span class="dayico">'+(cc?iconaSvg(cc.code):"")+'</span>'
-      +"<b>"+nomeGiorno(i,g.data)+"</b><span>"+dt.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})+"</span>";
+      +"<b>"+nomeGiorno(i,g.data)+"</b><span>"
+      +dt.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})+"</span>"
+      +(mx!==null
+        ? '<span class="daytemp"><b>'+Math.round(mx)+'\u00B0</b>'
+          +(mn!==null?' <i>'+Math.round(mn)+'\u00B0</i>':'')+'</span>'
+        : "");
     b.onclick=()=>{S.dayIdx=i; S.ora=null; invalidaOre(); renderTutto();};
     $("days").appendChild(b);
   });
@@ -1927,11 +2019,9 @@ function renderVerdetto(){
         ? ' <span class="giu">\u2193</span>' + Math.round(min) + (u || '') : '')
       + '</div>';
 
-  const minimi = memDelGiorno(S.dayIdx).map(m => {
-    const v = m.T.filter(x => x !== null && x !== undefined);
-    return v.length ? Math.min(...v) : null;
-  }).filter(x => x !== null);
-  const tMin = minimi.length ? quantile(minimi, .5) - bias : null;
+  /* v3.61.0 — la minima ora si calcola con la massima, in fase di
+     aggregazione: non serve piu' ricavarla dai membri a ogni disegno. */
+  const tMin = (g.tmin && g.tmin.length) ? quantile(g.tmin, .5) - bias : null;
 
   const bloccoPercepita = appMax === null ? "" :
     '<div class="metric wide"><div class="v ' + clsApp(appMax) + '">'
@@ -3171,27 +3261,39 @@ window.addEventListener("resize", ()=>{
      davanti a chi apre l'app per sapere se prendere l'ombrello. */
   /* v3.55.0 — un solo aggancio sulla griglia, cosi' vale anche per le
      caselle ricostruite a ogni disegno */
-  const griglia = $("verdict"), pann = $("spiegaValore");
-  if (griglia && pann) {
+  /* v3.59.0 — un solo aggancio sulla griglia, e la finestra al centro */
+  const griglia = $("verdict"), mod = $("spiegaModale");
+  const TINTE = { temperatura:"#E8563C", umidita:"#5AB3E8", pioggia:"#5AB3E8",
+                  vento:"#7FD8C6", uv:"#F0C56F" };
+  const OCCHI = { temperatura:"che aria fa", umidita:"quanta acqua c'\u00E8 nell'aria",
+                  pioggia:"come si legge una percentuale", vento:"raffiche e sensazione",
+                  uv:"raggi solari" };
+  function chiudiSpiega(){
+    if (!mod) return;
+    mod.classList.remove("aperto");
+    mod.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+  if (griglia && mod) {
     griglia.addEventListener("click", (e) => {
       const cella = e.target.closest(".metric[data-sp]");
       if (!cella) return;
       const chi = cella.dataset.sp;
       const testo = S.spiega && S.spiega[chi];
-      griglia.querySelectorAll(".metric[data-sp]").forEach(x => x.removeAttribute("aria-expanded"));
-      if (!testo || pann.dataset.chi === chi) {
-        pann.setAttribute("hidden", ""); pann.dataset.chi = "";
-        return;
-      }
-      cella.setAttribute("aria-expanded", "true");
-      pann.dataset.chi = chi;
-      pann.innerHTML = "<h4>" + testo.titolo + "</h4><p>" + testo.corpo + "</p>"
-        + '<button class="chiudi-sp">chiudi</button>';
-      pann.removeAttribute("hidden");
-      pann.querySelector(".chiudi-sp").onclick = () => {
-        pann.setAttribute("hidden", ""); pann.dataset.chi = "";
-        griglia.querySelectorAll(".metric[data-sp]").forEach(x => x.removeAttribute("aria-expanded"));
-      };
+      if (!testo) return;
+      const carta = mod.querySelector(".spiega-carta");
+      carta.style.setProperty("--sp-tinta", TINTE[chi] || "var(--verderame)");
+      mod.querySelector(".spiega-occhio").textContent = OCCHI[chi] || "";
+      mod.querySelector(".spiega-tit").innerHTML = testo.titolo;
+      mod.querySelector(".spiega-corpo").innerHTML = testo.corpo;
+      mod.classList.add("aperto");
+      mod.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";   // niente scorrimento dietro
+    });
+    $("spiegaChiudi").onclick = chiudiSpiega;
+    mod.addEventListener("click", (e) => { if (e.target === mod) chiudiSpiega(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && mod.classList.contains("aperto")) chiudiSpiega();
     });
   }
 
@@ -3440,11 +3542,14 @@ function nuvola(cx,cy,k,fill,op){
 /* v3.16.0 — piu' alta dove c'e' spazio verticale in abbondanza e ne manca
    in orizzontale, cioe' sul telefono in verticale. */
 function altezzaScena(){
+  /* v3.60.0 — piu' alta: ora ospita anche il nome della localita', e le
+     proporzioni precedenti erano tarate su un riquadro che conteneva solo
+     il cielo. */
   const w = Math.min(window.innerWidth || 700, 900);
-  if(w < 420) return 380;
-  if(w < 560) return 340;
-  if(w < 760) return 300;
-  return 276;
+  if(w < 420) return 470;
+  if(w < 560) return 430;
+  if(w < 760) return 380;
+  return 340;
 }
 
 function renderCielo(){
