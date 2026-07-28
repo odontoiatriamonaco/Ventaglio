@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!--
+  Ventaglio — brochure
+  v3.0.0 · 2026-07-30
+  Una pagina. Si guarda nel browser, si stampa in PDF con Ctrl+P, si manda
+  com'e'. Illustrazioni vettoriali disegnate qui dentro: nessuna immagine
+  esterna, nessun diritto di terzi, funziona anche senza rete.
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventaglio — un meteo che ammette di non sapere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--abisso:#08171F;--linea:#22485A;--schiuma:#DCE8E6;--nebbia:#8AA5AE;
+    --verderame:#4FBFA8;--ottone:#E2A33C;--corallo:#E0603F}
+  *{box-sizing:border-box}
+  body{margin:0;background:#040D13;color:var(--schiuma);
+    font-family:"Inter Tight",system-ui,sans-serif;line-height:1.55;
+    display:flex;justify-content:center;padding:20px 14px 56px}
+  .foglio{width:100%;max-width:860px;
+    background:radial-gradient(120% 58% at 50% -6%,#12333F 0%,var(--abisso) 56%);
+    border:1px solid var(--linea);border-radius:20px;padding:42px 40px 32px;
+    box-shadow:0 40px 90px -50px #000}
+
+  .testa{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap;margin-bottom:26px}
+  .testa .t{flex:1 1 300px}
+  .occhiello{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--verderame);margin:0 0 10px}
+  h1{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(40px,8vw,62px);line-height:.9;letter-spacing:-.037em;margin:0 0 10px}
+  .paglia{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
+    font-size:clamp(17px,3.4vw,21px);color:var(--nebbia);margin:0 0 18px;letter-spacing:-.012em}
+  .apre{font-size:15.5px;border-left:3px solid var(--ottone);padding:3px 0 3px 16px;margin:0}
+  .apre b{color:var(--ottone)}
+  .testa figure{flex:0 0 300px;margin:0}
+  .testa svg{width:100%;height:auto;display:block}
+
+  .numeroni{display:flex;gap:20px;flex-wrap:wrap;margin:0 0 30px;padding:18px 0;
+    border-top:1px solid var(--linea);border-bottom:1px solid var(--linea)}
+  .n{min-width:78px}
+  .n .g{font-family:"Bricolage Grotesque",sans-serif;font-weight:800;font-size:28px;
+    line-height:1;letter-spacing:-.03em}
+  .n .e{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--nebbia);margin-top:5px}
+  .teal{color:var(--verderame)} .amb{color:var(--ottone)} .cor{color:var(--corallo)}
+
+  .blocco{display:flex;gap:24px;align-items:flex-start;margin:0 0 26px;flex-wrap:wrap}
+  .blocco .txt{flex:1 1 300px}
+  .blocco figure{flex:0 0 290px;margin:0}
+  .blocco svg{width:100%;height:auto;display:block;border:1px solid var(--linea);border-radius:12px}
+  h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:20px;
+    margin:0 0 6px;letter-spacing:-.015em}
+  .blocco p,.v p{margin:0 0 8px;font-size:14px;color:var(--nebbia)}
+  .blocco p b,.v p b{color:var(--schiuma);font-weight:600}
+  .v{margin:0 0 24px}
+
+  .due{display:flex;gap:26px;flex-wrap:wrap;margin:0 0 26px}
+  .due>div{flex:1 1 260px}
+
+  .onesta{background:rgba(79,191,168,.07);border:1px solid rgba(79,191,168,.32);
+    border-radius:14px;padding:18px 20px;margin:4px 0 26px}
+  .onesta h2{color:var(--verderame)}
+
+  .piede{display:flex;gap:20px;align-items:center;flex-wrap:wrap;
+    border-top:1px solid var(--linea);padding-top:20px}
+  .piede img{width:88px;height:88px;border-radius:9px;flex:0 0 auto}
+  .piede .t{flex:1;min-width:210px}
+  .piede .url{font-family:"IBM Plex Mono",monospace;font-size:15px;color:var(--ottone);
+    margin:0 0 4px;font-weight:500}
+  .piede .f{font-size:12.5px;color:var(--nebbia);margin:0}
+  .piede .f a{color:var(--verderame);text-decoration:none}
+
+  @media print{
+    body{background:#fff;padding:0}
+    .foglio{border:0;box-shadow:none;border-radius:0;max-width:none;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .blocco,.onesta,.due{break-inside:avoid}
+    @page{size:A4;margin:7mm}
+  }
+</style>
+</head>
+<body>
+<div class="foglio">
+
+  <div class="testa">
+    <div class="t">
+      <p class="occhiello">un meteo che ammette di non sapere</p>
+      <h1>Ventaglio</h1>
+      <p class="paglia">Quanto fidarti della previsione di oggi.</p>
+      <p class="apre">Tutte le app meteo ti danno un numero e via. Questa ti fa vedere
+         <b>da dove arriva</b> quel numero &mdash; e quanto vale, anche quando la risposta
+         &egrave; &laquo;poco&raquo;.</p>
+    </div>
+    <figure><svg viewBox="0 0 340 268" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="La scheda principale dell'app"><rect width="340" height="268" rx="16" fill="#0F2531" stroke="#22485A"/><text x="22" y="30" fill="#7E9AA4" font-family="monospace" font-size="8" letter-spacing="2.2">VERDETTO PROBABILISTICO</text><text x="20" y="76" fill="#DCE8E6" font-family="Bricolage Grotesque,sans-serif" font-size="42" font-weight="800" letter-spacing="-1.6">26&#176;</text><text x="92" y="74" fill="#8AA5AE" font-family="Inter Tight,sans-serif" font-size="16">31&#176; percepiti</text><text x="22" y="96" font-family="monospace" font-size="11"><tspan fill="#E0603F">&#8593;</tspan><tspan fill="#8AA5AE">29&#176; </tspan><tspan fill="#7FB3D9">&#8595;</tspan><tspan fill="#8AA5AE">22&#176;</tspan></text><text x="22" y="115" fill="#7E9AA4" font-family="monospace" font-size="8" letter-spacing="1.6">ADESSO, ORE 19:00</text><circle cx="25" cy="137" r="3.2" fill="#E2A33C"/><text x="35" y="140" fill="#8AA5AE" font-family="Inter Tight,sans-serif" font-size="10.5">La massima di 29&#176; &#232; <tspan fill="#DCE8E6" font-weight="600">2&#176; sopra</tspan> la norma di</text><text x="35" y="154" fill="#8AA5AE" font-family="Inter Tight,sans-serif" font-size="10.5">fine luglio qui. Pi&#249; calda del <tspan fill="#DCE8E6" font-weight="600">84%</tspan> delle</text><text x="35" y="168" fill="#8AA5AE" font-family="Inter Tight,sans-serif" font-size="10.5">giornate di questo periodo.</text><text x="20" y="205" fill="#DCE8E6" font-family="Bricolage Grotesque,sans-serif" font-size="21" font-weight="800">5<tspan font-size="11" fill="#8AA5AE">km/h</tspan></text><text x="20" y="219" fill="#DCE8E6" font-family="Inter Tight,sans-serif" font-size="9" opacity=".72">aria calma</text><text x="118" y="205" fill="#DCE8E6" font-family="Bricolage Grotesque,sans-serif" font-size="21" font-weight="800">78<tspan font-size="11" fill="#8AA5AE">%</tspan></text><text x="118" y="219" fill="#DCE8E6" font-family="Inter Tight,sans-serif" font-size="9" opacity=".72">afosa</text><text x="216" y="205" fill="#4FBFA8" font-family="Bricolage Grotesque,sans-serif" font-size="21" font-weight="800">4<tspan font-size="11" fill="#8AA5AE">%</tspan></text><text x="216" y="219" fill="#DCE8E6" font-family="Inter Tight,sans-serif" font-size="9" opacity=".72">molto improb.</text><rect x="20" y="234" width="300" height="22" rx="11" fill="none" stroke="#4FBFA8" stroke-width="1.1"/><circle cx="36" cy="245" r="5.5" fill="none" stroke="#4FBFA8" stroke-width="1.6"/><text x="50" y="249" fill="#4FBFA8" font-family="Bricolage Grotesque,sans-serif" font-size="11" font-weight="700">Niente pioggia in avvicinamento</text></svg></figure>
+  </div>
+
+  <div class="numeroni">
+    <div class="n"><div class="g teal">143</div><div class="e">simulazioni</div></div>
+    <div class="n"><div class="g amb">4</div><div class="e">centri mondiali</div></div>
+    <div class="n"><div class="g">7</div><div class="e">giorni</div></div>
+    <div class="n"><div class="g cor">10</div><div class="e">anni di storia</div></div>
+    <div class="n"><div class="g teal">0</div><div class="e">pubblicit&agrave;</div></div>
+  </div>
+
+  <div class="blocco">
+    <div class="txt">
+      <h2>Il &laquo;40% di pioggia&raquo;, finalmente spiegato</h2>
+      <p>Nessuno sa com'&egrave; l'atmosfera fino all'ultimo decimale. Allora i grandi centri
+         meteorologici la previsione la rifanno <b>oltre cento volte</b>, ognuna partendo da
+         un'ipotesi appena diversa su com'&egrave; il tempo adesso.</p>
+      <p>Quel 40% &egrave; semplicemente <b>quante di quelle prove finiscono bagnate</b>.
+         E quando si spaccano a met&agrave;, l'app scrive &laquo;temporale possibile&raquo;
+         invece di annunciarlo.</p>
+    </div>
+    <figure><svg viewBox="0 0 320 132" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cento previsioni che divergono"><rect width="320" height="132" rx="12" fill="#0B1E29"/><polyline points="24.0,66.0 27.1,66.2 30.1,66.4 33.2,66.6 36.2,66.8 39.3,66.9 42.3,67.0 45.4,67.1 48.4,67.2 51.5,67.2 54.6,67.2 57.6,67.2 60.7,67.2 63.7,67.1 66.8,67.1 69.8,66.9 72.9,66.8 76.0,66.6 79.0,66.4 82.1,66.2 85.1,65.9 88.2,65.6 91.2,65.3 94.3,65.0 97.3,64.6 100.4,64.2 103.5,63.8 106.5,63.3 109.6,62.8 112.6,62.3 115.7,61.8 118.7,61.2 121.8,60.6 124.9,60.0 127.9,59.4 131.0,58.7 134.0,58.1 137.1,57.4 140.1,56.7 143.2,56.0 146.2,55.3 149.3,54.6 152.4,53.9 155.4,53.1 158.5,52.4 161.5,51.7 164.6,50.9 167.6,50.2 170.7,49.4 173.8,48.7 176.8,47.9 179.9,47.2 182.9,46.5 186.0,45.7 189.0,45.0 192.1,44.3 195.1,43.6 198.2,42.9 201.3,42.2 204.3,41.5 207.4,40.9 210.4,40.2 213.5,39.6 216.5,38.9 219.6,38.3 222.7,37.7 225.7,37.1 228.8,36.5 231.8,35.9 234.9,35.3 237.9,34.7 241.0,34.1 244.0,33.5 247.1,33.0 250.2,32.4 253.2,31.8 256.3,31.2 259.3,30.7 262.4,30.1 265.4,29.5 268.5,28.9 271.6,28.3 274.6,27.7 277.7,27.0 280.7,26.4 283.8,25.7 286.8,25.1 289.9,24.4 292.9,23.7 296.0,23.0" fill="none" stroke="#F0C56F" stroke-width="1.8" opacity=".82"/><polyline points="24.0,68.5 27.1,68.6 30.1,68.7 33.2,68.8 36.2,68.8 39.3,68.8 42.3,68.8 45.4,68.7 48.4,68.6 51.5,68.5 54.6,68.3 57.6,68.2 60.7,68.0 63.7,67.8 66.8,67.5 69.8,67.2 72.9,67.0 76.0,66.6 79.0,66.3 82.1,65.9 85.1,65.6 88.2,65.2 91.2,64.8 94.3,64.4 97.3,63.9 100.4,63.5 103.5,63.0 106.5,62.5 109.6,62.1 112.6,61.6 115.7,61.1 118.7,60.6 121.8,60.1 124.9,59.7 127.9,59.2 131.0,58.7 134.0,58.2 137.1,57.7 140.1,57.3 143.2,56.8 146.2,56.4 149.3,55.9 152.4,55.5 155.4,55.1 158.5,54.7 161.5,54.3 164.6,53.9 167.6,53.5 170.7,53.1 173.8,52.8 176.8,52.4 179.9,52.1 182.9,51.8 186.0,51.5 189.0,51.2 192.1,50.9 195.1,50.7 198.2,50.4 201.3,50.1 204.3,49.9 207.4,49.6 210.4,49.4 213.5,49.2 216.5,48.9 219.6,48.7 222.7,48.5 225.7,48.2 228.8,48.0 231.8,47.7 234.9,47.5 237.9,47.2 241.0,46.9 244.0,46.6 247.1,46.3 250.2,46.0 253.2,45.7 256.3,45.3 259.3,45.0 262.4,44.6 265.4,44.2 268.5,43.8 271.6,43.3 274.6,42.9 277.7,42.4 280.7,41.9 283.8,41.3 286.8,40.8 289.9,40.2 292.9,39.6 296.0,39.0" fill="none" stroke="#E2A33C" stroke-width="1.8" opacity=".82"/><polyline points="24.0,68.7 27.1,68.6 30.1,68.5 33.2,68.3 36.2,68.2 39.3,68.0 42.3,67.7 45.4,67.5 48.4,67.3 51.5,67.0 54.6,66.7 57.6,66.5 60.7,66.2 63.7,65.9 66.8,65.6 69.8,65.3 72.9,65.0 76.0,64.7 79.0,64.3 82.1,64.0 85.1,63.7 88.2,63.4 91.2,63.1 94.3,62.8 97.3,62.5 100.4,62.3 103.5,62.0 106.5,61.8 109.6,61.5 112.6,61.3 115.7,61.1 118.7,60.9 121.8,60.7 124.9,60.5 127.9,60.3 131.0,60.2 134.0,60.1 137.1,60.0 140.1,59.9 143.2,59.8 146.2,59.7 149.3,59.7 152.4,59.6 155.4,59.6 158.5,59.6 161.5,59.6 164.6,59.6 167.6,59.6 170.7,59.6 173.8,59.6 176.8,59.7 179.9,59.7 182.9,59.7 186.0,59.8 189.0,59.8 192.1,59.8 195.1,59.8 198.2,59.9 201.3,59.9 204.3,59.9 207.4,59.9 210.4,59.9 213.5,59.9 216.5,59.8 219.6,59.8 222.7,59.7 225.7,59.6 228.8,59.5 231.8,59.4 234.9,59.2 237.9,59.1 241.0,58.9 244.0,58.7 247.1,58.5 250.2,58.2 253.2,58.0 256.3,57.7 259.3,57.4 262.4,57.1 265.4,56.7 268.5,56.3 271.6,55.9 274.6,55.5 277.7,55.1 280.7,54.7 283.8,54.2 286.8,53.7 289.9,53.3 292.9,52.7 296.0,52.2" fill="none" stroke="#4FBFA8" stroke-width="1.8" opacity=".82"/><polyline points="24.0,66.4 27.1,66.2 30.1,66.0 33.2,65.7 36.2,65.5 39.3,65.3 42.3,65.0 45.4,64.8 48.4,64.6 51.5,64.4 54.6,64.2 57.6,64.0 60.7,63.8 63.7,63.7 66.8,63.5 69.8,63.4 72.9,63.3 76.0,63.2 79.0,63.1 82.1,63.1 85.1,63.0 88.2,63.0 91.2,63.0 94.3,63.0 97.3,63.0 100.4,63.1 103.5,63.2 106.5,63.3 109.6,63.4 112.6,63.5 115.7,63.6 118.7,63.8 121.8,63.9 124.9,64.1 127.9,64.3 131.0,64.5 134.0,64.7 137.1,64.9 140.1,65.1 143.2,65.4 146.2,65.6 149.3,65.8 152.4,66.1 155.4,66.3 158.5,66.5 161.5,66.8 164.6,67.0 167.6,67.2 170.7,67.4 173.8,67.6 176.8,67.8 179.9,68.0 182.9,68.2 186.0,68.3 189.0,68.5 192.1,68.6 195.1,68.7 198.2,68.8 201.3,68.9 204.3,68.9 207.4,69.0 210.4,69.0 213.5,69.0 216.5,69.0 219.6,69.0 222.7,68.9 225.7,68.8 228.8,68.7 231.8,68.6 234.9,68.5 237.9,68.4 241.0,68.2 244.0,68.1 247.1,67.9 250.2,67.7 253.2,67.5 256.3,67.3 259.3,67.1 262.4,66.9 265.4,66.6 268.5,66.4 271.6,66.2 274.6,65.9 277.7,65.7 280.7,65.5 283.8,65.2 286.8,65.0 289.9,64.8 292.9,64.6 296.0,64.4" fill="none" stroke="#7FD8C6" stroke-width="1.8" opacity=".82"/><polyline points="24.0,63.7 27.1,63.6 30.1,63.5 33.2,63.4 36.2,63.3 39.3,63.2 42.3,63.2 45.4,63.2 48.4,63.2 51.5,63.2 54.6,63.3 57.6,63.4 60.7,63.5 63.7,63.6 66.8,63.8 69.8,63.9 72.9,64.1 76.0,64.3 79.0,64.6 82.1,64.8 85.1,65.1 88.2,65.3 91.2,65.6 94.3,65.9 97.3,66.3 100.4,66.6 103.5,66.9 106.5,67.3 109.6,67.6 112.6,68.0 115.7,68.3 118.7,68.7 121.8,69.1 124.9,69.4 127.9,69.8 131.0,70.2 134.0,70.5 137.1,70.8 140.1,71.2 143.2,71.5 146.2,71.8 149.3,72.1 152.4,72.4 155.4,72.7 158.5,73.0 161.5,73.2 164.6,73.5 167.6,73.7 170.7,73.9 173.8,74.1 176.8,74.3 179.9,74.5 182.9,74.6 186.0,74.8 189.0,74.9 192.1,75.0 195.1,75.1 198.2,75.2 201.3,75.2 204.3,75.3 207.4,75.3 210.4,75.4 213.5,75.4 216.5,75.4 219.6,75.4 222.7,75.4 225.7,75.5 228.8,75.5 231.8,75.5 234.9,75.5 237.9,75.5 241.0,75.5 244.0,75.5 247.1,75.6 250.2,75.6 253.2,75.7 256.3,75.7 259.3,75.8 262.4,75.9 265.4,76.0 268.5,76.1 271.6,76.2 274.6,76.4 277.7,76.6 280.7,76.7 283.8,77.0 286.8,77.2 289.9,77.4 292.9,77.7 296.0,78.0" fill="none" stroke="#8FB4D9" stroke-width="1.8" opacity=".82"/><polyline points="24.0,63.1 27.1,63.2 30.1,63.3 33.2,63.5 36.2,63.6 39.3,63.8 42.3,64.1 45.4,64.3 48.4,64.6 51.5,64.9 54.6,65.2 57.6,65.5 60.7,65.8 63.7,66.2 66.8,66.5 69.8,66.9 72.9,67.3 76.0,67.7 79.0,68.1 82.1,68.5 85.1,68.9 88.2,69.3 91.2,69.7 94.3,70.1 97.3,70.5 100.4,70.9 103.5,71.3 106.5,71.7 109.6,72.1 112.6,72.5 115.7,72.9 118.7,73.2 121.8,73.6 124.9,73.9 127.9,74.3 131.0,74.6 134.0,74.9 137.1,75.2 140.1,75.5 143.2,75.7 146.2,76.0 149.3,76.2 152.4,76.5 155.4,76.7 158.5,76.9 161.5,77.1 164.6,77.3 167.6,77.5 170.7,77.7 173.8,77.9 176.8,78.0 179.9,78.2 182.9,78.4 186.0,78.6 189.0,78.7 192.1,78.9 195.1,79.1 198.2,79.3 201.3,79.5 204.3,79.7 207.4,79.9 210.4,80.1 213.5,80.3 216.5,80.6 219.6,80.9 222.7,81.1 225.7,81.4 228.8,81.8 231.8,82.1 234.9,82.4 237.9,82.8 241.0,83.2 244.0,83.6 247.1,84.1 250.2,84.6 253.2,85.1 256.3,85.6 259.3,86.1 262.4,86.7 265.4,87.3 268.5,87.9 271.6,88.5 274.6,89.2 277.7,89.9 280.7,90.6 283.8,91.3 286.8,92.0 289.9,92.8 292.9,93.6 296.0,94.4" fill="none" stroke="#E0603F" stroke-width="1.8" opacity=".82"/><polyline points="24.0,65.2 27.1,65.4 30.1,65.7 33.2,66.0 36.2,66.3 39.3,66.6 42.3,66.9 45.4,67.3 48.4,67.6 51.5,68.0 54.6,68.3 57.6,68.7 60.7,69.1 63.7,69.4 66.8,69.8 69.8,70.2 72.9,70.5 76.0,70.9 79.0,71.3 82.1,71.6 85.1,71.9 88.2,72.3 91.2,72.6 94.3,72.9 97.3,73.3 100.4,73.6 103.5,73.9 106.5,74.1 109.6,74.4 112.6,74.7 115.7,75.0 118.7,75.2 121.8,75.5 124.9,75.8 127.9,76.0 131.0,76.3 134.0,76.5 137.1,76.7 140.1,77.0 143.2,77.2 146.2,77.5 149.3,77.7 152.4,78.0 155.4,78.3 158.5,78.6 161.5,78.8 164.6,79.1 167.6,79.5 170.7,79.8 173.8,80.1 176.8,80.5 179.9,80.9 182.9,81.3 186.0,81.7 189.0,82.1 192.1,82.6 195.1,83.1 198.2,83.6 201.3,84.1 204.3,84.7 207.4,85.2 210.4,85.9 213.5,86.5 216.5,87.2 219.6,87.9 222.7,88.6 225.7,89.3 228.8,90.1 231.8,90.9 234.9,91.7 237.9,92.6 241.0,93.5 244.0,94.4 247.1,95.3 250.2,96.2 253.2,97.2 256.3,98.2 259.3,99.2 262.4,100.2 265.4,101.3 268.5,102.3 271.6,103.4 274.6,104.5 277.7,105.6 280.7,106.7 283.8,107.8 286.8,108.9 289.9,110.0 292.9,111.1 296.0,112.3" fill="none" stroke="#B9A6E8" stroke-width="1.8" opacity=".82"/><polyline points="24.0,66.0 27.1,66.2 30.1,66.3 33.2,66.5 36.2,66.6 39.3,66.8 42.3,66.9 45.4,67.0 48.4,67.2 51.5,67.3 54.6,67.4 57.6,67.5 60.7,67.6 63.7,67.7 66.8,67.8 69.8,67.8 72.9,67.9 76.0,67.9 79.0,68.0 82.1,68.0 85.1,68.0 88.2,68.0 91.2,68.0 94.3,67.9 97.3,67.9 100.4,67.8 103.5,67.8 106.5,67.7 109.6,67.6 112.6,67.5 115.7,67.4 118.7,67.3 121.8,67.2 124.9,67.0 127.9,66.9 131.0,66.8 134.0,66.6 137.1,66.5 140.1,66.3 143.2,66.1 146.2,66.0 149.3,65.8 152.4,65.7 155.4,65.5 158.5,65.4 161.5,65.2 164.6,65.1 167.6,64.9 170.7,64.8 173.8,64.7 176.8,64.6 179.9,64.5 182.9,64.4 186.0,64.3 189.0,64.2 192.1,64.1 195.1,64.1 198.2,64.1 201.3,64.0 204.3,64.0 207.4,64.0 210.4,64.0 213.5,64.0 216.5,64.1 219.6,64.1 222.7,64.2 225.7,64.2 228.8,64.3 231.8,64.4 234.9,64.5 237.9,64.6 241.0,64.7 244.0,64.8 247.1,65.0 250.2,65.1 253.2,65.3 256.3,65.4 259.3,65.5 262.4,65.7 265.4,65.9 268.5,66.0 271.6,66.2 274.6,66.3 277.7,66.5 280.7,66.6 283.8,66.8 286.8,66.9 289.9,67.1 292.9,67.2 296.0,67.3" fill="none" stroke="#DCE8E6" stroke-width="3"/><circle cx="24" cy="66" r="4.5" fill="#DCE8E6"/><text x="20" y="122" fill="#8AA5AE" font-family="monospace" font-size="8.5">oggi</text><text x="252" y="122" fill="#8AA5AE" font-family="monospace" font-size="8.5">fra 7 giorni</text></svg></figure>
+  </div>
+
+  <div class="blocco">
+    <figure><svg viewBox="0 0 320 132" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="La giornata di oggi confrontata con dieci anni di storia"><rect width="320" height="132" rx="12" fill="#0B1E29"/><rect x="22.0" y="92.8" width="8" height="7.2" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="32.8" y="90.4" width="8" height="9.6" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="43.6" y="87.1" width="8" height="12.9" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="54.4" y="82.7" width="8" height="17.3" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="65.2" y="77.0" width="8" height="23.0" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="76.0" y="70.1" width="8" height="29.9" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="86.8" y="62.2" width="8" height="37.8" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="97.6" y="53.6" width="8" height="46.4" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="108.4" y="44.7" width="8" height="55.3" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="119.2" y="36.4" width="8" height="63.6" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="130.0" y="29.3" width="8" height="70.7" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="140.8" y="24.1" width="8" height="75.9" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="151.6" y="21.4" width="8" height="78.6" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="162.4" y="21.4" width="8" height="78.6" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="173.2" y="24.1" width="8" height="75.9" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="184.0" y="29.3" width="8" height="70.7" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="194.8" y="36.4" width="8" height="63.6" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="205.6" y="44.7" width="8" height="55.3" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="216.4" y="53.6" width="8" height="46.4" rx="2" fill="#2E4A58" opacity="0.75"/><rect x="227.2" y="62.2" width="8" height="37.8" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="238.0" y="70.1" width="8" height="29.9" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="248.8" y="77.0" width="8" height="23.0" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="259.6" y="82.7" width="8" height="17.3" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="270.4" y="87.1" width="8" height="12.9" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="281.2" y="90.4" width="8" height="9.6" rx="2" fill="#E2A33C" opacity="0.95"/><rect x="292.0" y="92.8" width="8" height="7.2" rx="2" fill="#E2A33C" opacity="0.95"/><line x1="157" y1="16" x2="157" y2="104" stroke="#7E9AA4" stroke-width="1.2" stroke-dasharray="3 3"/><text x="120" y="13" fill="#7E9AA4" font-family="monospace" font-size="8.5">la norma</text><line x1="243" y1="10" x2="243" y2="104" stroke="#DCE8E6" stroke-width="2.2"/><text x="216" y="126" fill="#DCE8E6" font-family="monospace" font-size="9">oggi</text><text x="22" y="126" fill="#8AA5AE" font-family="monospace" font-size="8.5">10 anni di fine luglio, qui</text></svg></figure>
+    <div class="txt">
+      <h2>Fa caldo per il periodo?</h2>
+      <p>&Egrave; la domanda che tutti si fanno guardando il termometro, e nessuna app affronta.
+         Ventaglio confronta la giornata con <b>dieci anni di storia dello stesso punto</b>,
+         negli stessi giorni del calendario.</p>
+      <p>Ne esce una frase: <i>&laquo;2&deg; sopra la norma di fine luglio qui, pi&ugrave; calda
+         dell'84% delle giornate di questo periodo&raquo;</i>. Non un numero in pi&ugrave;: un
+         numero <b>messo in prospettiva</b>.</p>
+    </div>
+  </div>
+
+  <div class="due">
+    <div class="v">
+      <h2>Impara i difetti della tua citt&agrave;</h2>
+      <p>La nebbia che a <b>Milano</b> resta incollata alla pianura, la conca che d'estate cuoce
+         <b>Firenze</b>, la brezza che sul lungomare di <b>Napoli</b> raffredda una previsione
+         tarata sull'entroterra: errori che si ripetono sempre uguali. Con un tocco l'app
+         riprende tre mesi di previsioni passate per il tuo punto, le confronta con il tempo che
+         ha fatto davvero, e corregge da sola. Temperatura, pioggia e raffiche.</p>
+    </div>
+    <div class="v">
+      <h2>Ogni numero si pu&ograve; toccare</h2>
+      <p>Sfiori l'umidit&agrave; e ti spiega perch&eacute; con quel punto di rugiada il sudore
+         non evapora. Sfiori l'indice UV e ti dice in quanti minuti ci si scotta e che
+         l'ombrellone ferma solo met&agrave; della radiazione. Le spiegazioni cambiano con la
+         <b>stagione</b> e con il <b>luogo</b>: d'inverno a Milano l'umidit&agrave; non &egrave;
+         afa, &egrave; freddo che penetra.</p>
+    </div>
+  </div>
+
+  <div class="blocco">
+    <div class="txt">
+      <h2>E poi c'&egrave; il radar</h2>
+      <p>I modelli dicono che tempo far&agrave; domani. Il radar risponde alla domanda che ti
+         fai davvero guardando il cielo: <b>ce la faccio a rientrare?</b></p>
+      <p>Non prevede: <b>guarda</b>. Confrontando due immagini a venti minuti di distanza l'app
+         capisce da che parte si sposta la pioggia e ti dice <b>fra quanto arriva e quanto
+         dura</b>. Nella prossima ora e mezza batte qualsiasi previsione, perch&eacute; non sta
+         indovinando: sta seguendo una cosa che c'&egrave; gi&agrave;.</p>
+    </div>
+    <figure><svg viewBox="0 0 320 132" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Una cella di pioggia in avvicinamento"><rect width="320" height="132" rx="12" fill="#0B1E29"/><circle cx="248" cy="66" r="30" fill="none" stroke="#22485A" stroke-width="1" opacity=".6"/><circle cx="248" cy="66" r="52" fill="none" stroke="#22485A" stroke-width="1" opacity=".6"/><circle cx="248" cy="66" r="74" fill="none" stroke="#22485A" stroke-width="1" opacity=".6"/><circle cx="248" cy="66" r="96" fill="none" stroke="#22485A" stroke-width="1" opacity=".6"/><ellipse cx="82" cy="58" rx="40" ry="18" fill="#5AB3E8" opacity=".5"/><ellipse cx="92" cy="61" rx="22" ry="10" fill="#5AB3E8" opacity=".85"/><ellipse cx="100" cy="62" rx="10" ry="4.5" fill="#F0C56F" opacity=".95"/><path d="M134 64 L196 66" stroke="#DCE8E6" stroke-width="2" stroke-dasharray="7 6" opacity=".85"/><path d="M190 60 L198 66 L190 72" stroke="#DCE8E6" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="248" cy="66" r="6.5" fill="none" stroke="#4FBFA8" stroke-width="2.4"/><circle cx="248" cy="66" r="2.2" fill="#4FBFA8"/><text x="146" y="52" fill="#DCE8E6" font-family="monospace" font-size="10.5">fra 25 min</text><text x="239" y="92" fill="#4FBFA8" font-family="monospace" font-size="8.5">tu</text><text x="56" y="98" fill="#8AA5AE" font-family="monospace" font-size="8.5">pioggia adesso</text></svg></figure>
+  </div>
+
+  <div class="v">
+    <h2>Si d&agrave; i voti da sola</h2>
+    <p>Archivia ogni previsione che emette e, quando quel giorno arriva, la confronta con
+       l'accaduto. Dopo qualche settimana ti dice quanto &egrave; stata brava &mdash;
+       <b>anche quando la risposta &egrave; &laquo;male&raquo;</b>. Non conosciamo altre app che
+       si espongano cos&igrave;.</p>
+  </div>
+
+  <div class="onesta">
+    <h2>E quello che non fa</h2>
+    <p style="color:var(--nebbia);font-size:14px;margin:0">Non indovina il tempo meglio degli
+       altri: usa <b style="color:var(--schiuma)">gli stessi identici dati</b>, senza modelli
+       segreti. La differenza sta tutta in come tratta l'incertezza &mdash; la misura, la
+       corregge, e te la mette davanti invece di nasconderla dietro un numero solo. Il radar
+       segue la pioggia che c'&egrave;, ma non sa prevedere quella che nasce dal nulla. Dentro
+       l'app c'&egrave; una scheda che elenca per esteso i suoi limiti: &egrave; la prima che
+       vale la pena leggere.</p>
+  </div>
+
+  <div class="piede">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUoAAAFKAQMAAABB54RGAAAABlBMVEULGiTc6OaR/Qy7AAABpUlEQVR42u2bUW4DIQxErXKAPRJX3yNxgJUosT2G9CuVWmk+ho9oQ/y1T7bHA7H56bpNoQpV6K9Ch+XqvjXazKe18FNboV/28VLo/4Sa4wkyfdTefGyRLG5DtIhoefYgo56VZb53gWAXLUJaA6l21w+ixUxrZdQTvWzeyi3qvhVF0EGhHKpvsdEqTRil7+1DmpCM1l6eVk7mVQRfKuMU+3pZFLRcrVd7wuSFfMsOJlo0tM6nUBmp4EMdihZX3ypFgfr3JLyuSsin4EsJRiW0C6Bq8hItHgVf3SqRoQhiT7lF1beuhHIq+Hl+FS0mlYFJOJChg4XouDVv0XkZKH2Zatm8wo1SJWSbjjFvtcOIjzYmlUHmPDmUSLCWjqH7Te5vSMFT0YKXUdzCO1Ru8U7HIdQ3qH0u2ZVbjLl1nhj/vLAhWqQefMjB6luixaYykEKnZLdzThYtujtPdTkjTkza25mXXhbZvYxWXkb5uzicFC3KWzS7JpYRJS+Dkdbc153qyeBviBZf39rXnfJIUjfUaDVhHW1dW9DLeSKdt/QXD4Uq9M9CvwHSzR8heDs+IAAAAABJRU5ErkJggg==" alt="Codice QR per ventaglio.vercel.app">
+    <div class="t">
+      <p class="url">ventaglio.vercel.app</p>
+      <p class="f">Gratis, senza registrazione, si installa sulla schermata home e funziona
+         anche senza rete.<br>Un software del <b>Dr. Maurizio Monaco</b> &middot;
+         <a href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a></p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
