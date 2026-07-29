@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.64.0 — la finestra informativa dice quello che l'app fa oggi
+  VENTAGLIO v3.65.0 — la taratura vale su tutto lo schermo
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.65.0: la correzione della taratura si applicava al verdetto e ai
+           riquadri dei giorni, ma non alla striscia oraria ne' alla
+           scena: alle 14 la striscia diceva 37 gradi e il numero grande
+           35, con in mezzo esattamente i due gradi del bias. Ora entra
+           in oraStat, dove il dato orario nasce, e da li' vale per
+           tutti. Applicarla a valle, ricordandosene volta per volta,
+           era il modo sicuro di ritrovarsi due numeri diversi sulla
+           stessa schermata.
   v3.64.0: la finestra 'i' descriveva l'app di due settimane fa: non
            nominava la norma stagionale, il radar, le spiegazioni che si
            aprono toccando un valore, ne' la pagella. Riscritta: dieci
@@ -1364,7 +1372,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.64.0 &middot; build 2026-07-30<br>
+v3.65.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2057,7 +2065,7 @@ function renderVerdetto(){
   const oraSel = (S.ora !== null && S.ora !== undefined) ? S.ora
                : (S.dayIdx === 0 && oraOra > 0 ? oraOra : null);
   const adesso = (oraSel !== null) ? oraStat(S.dayIdx, oraSel) : null;
-  const tAdesso = adesso && adesso.t !== null ? adesso.t - bias : null;
+  const tAdesso = adesso && adesso.t !== null ? adesso.t : null;   // v3.65.0 — gia' corretta a monte
   const oraEtichetta = oraSel === null ? ""
     : (S.dayIdx === 0 && oraSel === oraOra)
       ? "adesso, ore " + String(oraSel).padStart(2, "0") + ":00"
@@ -4189,6 +4197,15 @@ function memDelGiorno(d){
 }
 function invalidaOre(){ _cacheOre={d:null,mem:null}; }
 
+/* v3.65.0 — LA CORREZIONE MANCAVA A META' SCHERMO.
+   Il verdetto sottraeva il bias della taratura, la striscia oraria e la
+   scena no: alle 14 la striscia diceva 37 gradi e il numero grande 35,
+   stessa ora e stesso dato, con in mezzo esattamente i due gradi della
+   correzione. Applicarla solo dove ci si ricorda di farlo e' il modo
+   sicuro di ritrovarsi due numeri diversi sulla stessa schermata: ora
+   entra qui, dove il dato orario nasce, e da li' vale per tutti. */
+function biasCal(){ return S.cal ? S.cal.bias : 0; }
+
 function oraStat(d,h){
   const mem=memDelGiorno(d), i=d*24+h;
   const T=mem.map(m=>m.T[h]).filter(v=>v!=null);
@@ -4203,8 +4220,10 @@ function oraStat(d,h){
   const bagnati=val.filter(m=>m.P[h]*kP>=0.1).map(m=>m.P[h]*kP);
   const mediaMm=bagnati.length?media(bagnati):null;
   return {
-    t: T.length?quantile(T,.5):null,
-    a: A.length?quantile(A,.5):(S.atmo&&S.atmo.app?S.atmo.app[i]:null),
+    // v3.65.0 — corrette qui, una volta sola, per tutti quelli che leggono
+    t: T.length?quantile(T,.5)-biasCal():null,
+    a: A.length?quantile(A,.5)-biasCal()
+       :(S.atmo&&S.atmo.app?S.atmo.app[i]-biasCal():null),
     pioggia: val.length?Math.round(100*wet/val.length):null,
     mediaMm,   // v3.32.0
     mm: mm.length?quantile(mm,.5):null,
