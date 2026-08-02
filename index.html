@@ -1,9 +1,141 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.65.0 — la taratura vale su tutto lo schermo
+  VENTAGLIO v3.76.0 — giorno, massima e minima anche sulla scena del giorno
   File  : ventaglio-v3.html
   Build : 2026-07-29 15:30 CEST
+  v3.76.0: la v3.75.0 aveva aggiunto il giorno solo al percorso con l'ora
+           selezionata; guardando un giorno futuro senza toccare la
+           striscia la riga tornava anonima. Ora dice 'lunedi' 3 agosto'
+           e soprattutto massima e minima, che per una giornata intera
+           sono il dato piu' utile. Via il CAPE, che non diceva niente a
+           nessuno: resta fra le voci tecniche.
+  v3.75.0: la riga sotto la scena diceva l'ora ma non il giorno.
+           Scorrendo i giorni la scena cambia e l'unico riferimento
+           restava il riquadro selezionato piu' sotto: guardando la scena
+           da sola non si capiva se fosse oggi o giovedi'. Ora c'e'
+           'adesso, ore 10:00' sul momento attuale e il nome del giorno
+           per esteso altrove.
+  v3.74.0: su fondo scuro il testo secondario era troppo tenue. I colori
+           di base reggevano il confronto, ma le opacita' applicate sopra
+           li affossavano: un grigio gia' attenuato portato al 65 o 70 per
+           cento scende sotto la soglia leggibile. Opacita' alzate su
+           tutto il testo e grigio di servizio schiarito da #8AA5AE a
+           #9DB6BE. Le opacita' restano solo dove servono davvero, sui
+           valori spenti e sugli elementi grafici.
+  v3.73.1: la scheda diceva 'nessuna pioggia nel raggio utile' e accanto
+           'verso nord-ovest, 328 km/h, puoi fidarti'. Spegnevo i valori
+           quando il calcolo era debole, ma non quando la pioggia sta
+           fuori portata: quel movimento era misurato su echi oltre i 200
+           km, il dato appena dichiarato inaffidabile. Ora una condizione
+           sola, e l'attendibilita' non si esprime affatto: non c'e'
+           niente di cui fidarsi o diffidare.
+  v3.73.0: '470 km' sembrava un'informazione e non lo era. Oltre i
+           duecento chilometri circa il dato radar non e' affidabile, e
+           non per colpa del nostro calcolo: il fascio parte orizzontale
+           ma la Terra e' curva, quindi lassu' scruta sopra i tremila
+           metri e vede le cime delle nubi invece della pioggia che tocca
+           terra. Ora oltre quella soglia si dice 'nessuna pioggia nel
+           raggio utile' con il perche', e la distanza non si stampa.
+  v3.72.0: la scheda dichiarava 'non fidarti' e intanto stampava 328 km/h
+           in grande, una direzione precisa e un titolo affermativo. Se il
+           calcolo del movimento non regge non reggono nemmeno velocita',
+           direzione e minuti d'arrivo, che ne discendono. Ora si dice
+           solo cio' che si osserva — dov'e' la pioggia adesso — e i
+           valori derivati si spengono, freccia sulla mappa compresa.
+  v3.71.1: quando la pioggia e' oltre il bordo del mosaico scaricato, la
+           mappa sparisce senza spiegazioni e sembra un guasto. Ora la
+           riga sotto il titolo lo dice: 'troppo lontana per la mappa'.
+  v3.71.0: con la pioggia a 470 km la mappa inquadrava 200 km di nulla:
+           due anelli e una mira su fondo blu, mezzo schermo per dire meno
+           della riga di testo sopra. Ora l'inquadratura si allarga quanto
+           serve perche' la pioggia rientri sempre nel campo, e se nemmeno
+           allargando ci sta, la mappa non si disegna affatto.
+  v3.70.5: il 'pi&ugrave;' e il 'verso null' sopravvivevano da cinque
+           versioni perche' correggevo la copia sbagliata: c'erano DUE
+           blocchi che scrivevano la stessa riga, e quello vecchio girava
+           dopo, sovrascrivendo il nuovo. Ora la riga si costruisce una
+           volta sola. E la freccia del movimento era enorme e ambigua:
+           ridotta, e spostata sul bersaglio dove punta verso di te,
+           cosi' dice da dove arriva invece di lasciarlo indovinare.
+  v3.70.4: il testo sulla mappa restava sproporzionato. Dentro un viewBox
+           le misure in 'px' sono unita' del sistema di coordinate, non
+           pixel dello schermo: portando il sistema da 100 a 160 unita' i
+           corpi sono diventati fuori scala, e la correzione precedente
+           non poteva bastare. Le scritte ora sono elementi HTML
+           posizionati in percentuale sopra la mappa: dimensione reale e
+           nessuna deformazione, qualunque sia il formato del riquadro.
+  v3.70.3: il disegno sulla mappa veniva stirato per riempire il riquadro
+           panoramico, e con esso il testo: '22 km' usciva con le lettere
+           allargate e lo spazio spaccato in mezzo, e la mira era
+           un'ellisse schiacciata. Sistema di coordinate portato a 160x90,
+           gia' panoramico: niente deformazione, distanze come cerchi veri
+           e testo proporzionato. La distanza della pioggia si scosta di
+           lato invece di finire sopra la nuvola.
+  v3.70.2: bastava che un anello sforasse in verticale perche' sparisse, e
+           in un riquadro panoramico sfora quasi sempre: restava un anello
+           solo e la scala perdeva senso. Un'ellisse tagliata sopra e sotto
+           si legge benissimo. L'etichetta ora scivola lungo la curva
+           invece di uscire dal bordo.
+  v3.70.1: quattro difetti della mappa nuova. La barra della scala in
+           basso diceva la stessa cosa degli anelli: tolta. Le etichette
+           dei chilometri stavano in cima all'anello, dove capita spesso
+           la pioggia, e la piu' esterna usciva dal riquadro: ora vanno
+           in basso a destra e si disegnano solo se ci stanno. Il
+           cerchietto sulla pioggia era grande quanto la mira e si
+           confondeva: ridotto, e accanto compare la distanza.
+  v3.70.0: la mappa mostrava una macchia colorata senza riferimenti: poteva
+           stare ovunque. Aggiunte le tre cose che il radar da solo non
+           da'. Gli anelli diventano una scala di distanza con l'etichetta
+           in chilometri, il punto centrale ha la sua targhetta 'tu', e un
+           filo tratteggiato collega te alla pioggia piu' vicina, cosi' si
+           vede da che parte sta. Le distanze tengono conto del formato
+           panoramico: in verticale i chilometri occupano piu' spazio.
+  v3.69.1: il radar falliva sempre. 'lar' era dichiarata dentro il try
+           della miniatura e letta subito dopo, fuori: ReferenceError a
+           ogni calcolo. Le graffe delimitano la visibilita' di const e
+           let, e spostare codice dentro un try taglia le gambe a chi lo
+           usa dopo. Il messaggio 'Radar non riuscito' aggiunto in
+           v3.69.0 ha permesso di capirlo in un colpo: prima avrebbe
+           detto 'non disponibile qui' e avremmo cercato altrove.
+  v3.69.0: 'Radar non disponibile qui' era la risposta a qualunque
+           fallimento: fonte irraggiungibile, zona scoperta, immagini
+           mancanti o difetto nel codice finivano tutti nella stessa
+           frase. Tre situazioni diverse che chiedono cose diverse — una
+           si risolve riprovando, un'altra no. Ora il pulsante dice il
+           genere del guasto e il dettaglio riporta il messaggio tecnico.
+  v3.68.1: la tela era quadrata dentro un riquadro 16:9, quindi
+           object-fit:cover avrebbe tagliato sopra e sotto portandosi via
+           la barra della scala. Ora si disegna gia' panoramica.
+  v3.68.0: la mappa era un francobollo di fianco al testo. E' l'unica
+           parte della scheda che si capisce senza leggere e teneva il
+           posto piu' piccolo: ora va a tutta larghezza sotto il titolo,
+           in formato panoramico. Inquadratura ristretta a un terzo del
+           mosaico — il calcolo del movimento ha bisogno del campo largo,
+           la mappa no, e a 550 km una cella era una macchiolina — con
+           una barra della scala in basso, senza la quale il colpo
+           d'occhio inganna sulle distanze.
+  v3.67.0: la miniatura era troppo piccola e troppo scura: la pioggia a
+           venti chilometri si perdeva. Ora e' larga fino a 116 px invece
+           di 74, disegnata a 360 px per reggere l'ingrandimento, con un
+           ritaglio piu' largo e un fondo azzurro cupo al posto del nero.
+           Gli echi vengono disegnati due volte, la seconda a meta'
+           opacita': il radar restituisce pixel semitrasparenti che su
+           nero sparivano. Freccia bianca con ombra, cosi' si stacca
+           anche sopra una macchia chiara.
+  v3.66.1: tre difetti nella scheda radar nuova. La riga di contesto usava
+           un'entita' HTML dentro textContent, che la stampa alla lettera:
+           si leggeva 'la pi&ugrave; vicina'. Con la pioggia ferma la
+           direzione e' null e usciva 'va verso null': ora si nomina solo
+           quando esiste. E il titolo compariva due volte, sul pulsante e
+           in testa al dettaglio.
+  v3.66.0: il radar si guarda invece di leggersi. I riquadri li
+           scaricavamo gia' per calcolare il movimento e poi li buttavamo:
+           ora l'ultimo mosaico diventa una miniatura dentro il pulsante,
+           con la mira sul punto e la freccia nella direzione misurata.
+           Sotto il titolo una riga di contesto — 'la piu' vicina a 12 km,
+           va verso est'. Nessun ornamento aggiunto: e' la mappa vera, e
+           l'enfasi cresce solo quando la pioggia sta arrivando davvero.
   v3.65.0: la correzione della taratura si applicava al verdetto e ai
            riquadri dei giorni, ma non alla striscia oraria ne' alla
            scena: alle 14 la striscia diceva 37 gradi e il numero grande
@@ -456,7 +588,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{--abisso:#08171F;--scafo:#0F2531;--scafo-alto:#173544;--linea:#22485A;
-    --schiuma:#DCE8E6;--nebbia:#7E9AA4;--verderame:#4FBFA8;--ottone:#E2A33C;
+    --schiuma:#DCE8E6;--nebbia:#9DB6BE;--verderame:#4FBFA8;--ottone:#E2A33C;
     --corallo:#E0603F;--r:14px;--tinta:#10303E}
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -488,7 +620,7 @@
   .chip-riga{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
   #recenti{margin-bottom:24px}
   .chip-eti{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--nebbia);opacity:.65;margin-right:2px}
+    text-transform:uppercase;color:var(--nebbia);opacity:.82;margin-right:2px}
   .chip.pref{border-color:rgba(226,163,60,.5);color:var(--schiuma)}
   .chip.pref:hover{border-color:var(--ottone)}
   .chip.pref .st{color:var(--ottone);margin-right:6px;font-size:12px;line-height:1}
@@ -564,7 +696,7 @@
   .metric .k svg{--vetro:#8FA8B8; --merc:#E8563C; --acqua:#5AB3E8;
     --nube:#8FA8B8; --nubescura:#6E8598; --lampo:#F0C56F; --aria:#7FD8C6}
   .metric .k svg .p{fill:currentColor;stroke:none}
-  .g-vetro{stroke:var(--vetro);opacity:.75}
+  .g-vetro{stroke:var(--vetro);opacity:.88}
   .g-merc,.g-bulbo{fill:var(--merc);stroke:none;transform-origin:12px 17.8px}
   .g-onda{stroke:var(--merc)} .g-onda.o1{stroke:var(--lampo);opacity:.85}
   .g-goccia{fill:var(--acqua);stroke:none;transform-origin:12px 14px}
@@ -629,30 +761,81 @@
   /* v3.50.0 — la parola sotto il numero: dice cosa farne */
   /* v3.63.0 — il pulsante che riassume il radar */
   .compatta-radar{padding:14px 16px}
-  .radarbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  .radarbtn{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;
     background:transparent;border:0;color:var(--schiuma);cursor:pointer;padding:4px 2px;
     font-family:"Inter Tight",sans-serif}
-  .radarbtn .ico{flex:0 0 auto;display:flex;width:26px;height:26px}
-  .radarbtn .ico svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;
-    stroke-linecap:round;stroke-linejoin:round}
-  .radarbtn .ico svg .p{fill:currentColor;stroke:none}
-  .radarbtn .txt{flex:1;font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
-    font-size:clamp(16px,4.2vw,20px);letter-spacing:-.015em;line-height:1.2}
+  .radarbtn .riga1{display:flex;align-items:center;gap:12px;width:100%}
+  /* v3.66.0 — la miniatura della mappa: quadrata, con la mira al centro e
+     la freccia della direzione. E' la parte che si capisce senza leggere. */
+  /* v3.68.0 — la mappa a tutta larghezza, in formato panoramico */
+  .radarbtn .mappona{position:relative;display:none;width:100%;aspect-ratio:16/9;
+    max-height:340px;border-radius:14px;overflow:hidden;background:#0D2632;
+    border:1px solid var(--linea);box-shadow:0 14px 34px -18px #000}
+  /* v3.67.0 — luminosita' e contrasto alzati: gli echi deboli devono
+     staccarsi dal fondo, non confondersi con esso */
+  .radarbtn .mappona img{width:100%;height:100%;object-fit:cover;display:block;
+    filter:saturate(1.35) contrast(1.22) brightness(1.28)}
+  .radarbtn .mappona .vuota{display:block;width:100%;height:100%;
+    background:repeating-linear-gradient(45deg,#0C1E28 0 6px,#0A1922 6px 12px)}
+  .radarbtn .mappona .sopra{position:absolute;inset:0;width:100%;height:100%}
+  /* v3.70.4 — le etichette escono dall'SVG. Dentro un viewBox le misure in
+     "px" sono unita' del sistema di coordinate, non pixel dello schermo:
+     portando il sistema da 100 a 160 unita' i corpi del testo sono diventati
+     fuori scala. Ora sono elementi HTML posizionati in percentuale sopra la
+     mappa: dimensione reale, nessuna deformazione, qualunque formato. */
+  /* v3.72.0 — un valore che non vale non si stampa come se valesse */
+  #radarOut .v.spento{color:var(--nebbia);opacity:.45}
+  .radarbtn .mappona .ets{position:absolute;inset:0;pointer-events:none}
+  .radarbtn .mappona .ets span{position:absolute;transform:translate(-50%,-50%);
+    white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:10px;
+    color:#DCE8E6;text-shadow:0 0 3px #08171F,0 0 3px #08171F,0 0 5px #08171F}
+  .radarbtn .mappona .ets .km{opacity:.9}
+  .radarbtn .mappona .ets .qui{font-family:"Inter Tight",sans-serif;font-size:12px;
+    font-weight:700;color:#4FBFA8}
+  .radarbtn .mappona .ets .dist{font-size:11.5px;font-weight:600}
+  .radarbtn .mappona .anello{fill:none;stroke:#DCE8E6;stroke-width:1;opacity:.5;
+    stroke-dasharray:3 2.6}
+  /* v3.70.0 — le etichette: senza, gli anelli sono decorazione */
+  /* v3.70.3 — corpi riferiti al sistema 160x90 */
+  .radarbtn .mappona .etkm{fill:#DCE8E6;font-size:4.4px;font-family:"IBM Plex Mono",monospace;
+    text-anchor:middle;opacity:.72;paint-order:stroke;stroke:#08171F;stroke-width:1.6px}
+  .radarbtn .mappona .ettu{fill:#4FBFA8;font-size:5.4px;font-weight:700;
+    font-family:"Inter Tight",sans-serif;text-anchor:middle;
+    paint-order:stroke;stroke:#08171F;stroke-width:1.8px}
+  .radarbtn .mappona .filo{stroke:#DCE8E6;stroke-width:1.1;opacity:.6;stroke-dasharray:3 2.5}
+  .radarbtn .mappona .bersaglio{fill:none;stroke:#DCE8E6;stroke-width:1.1;opacity:.95}
+  .radarbtn .mappona .etdist{fill:#DCE8E6;font-size:5px;font-weight:600;
+    font-family:"IBM Plex Mono",monospace;text-anchor:middle;
+    paint-order:stroke;stroke:#08171F;stroke-width:1.8px}
+  .radarbtn .mappona .mira{fill:#4FBFA8;stroke:#08171F;stroke-width:1.2}
+  .radarbtn .mappona .dir{fill:none;stroke:#FFFFFF;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;opacity:.9;
+    filter:drop-shadow(0 0 1.5px rgba(0,0,0,.9))}
+  .radarbtn .testi{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .radarbtn .txt{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;
+    font-size:clamp(15px,4vw,19px);letter-spacing:-.015em;line-height:1.18}
+  .radarbtn .sotto{font-size:12px;color:var(--nebbia);line-height:1.35}
   .radarbtn .txt.teal{color:var(--verderame)}
   .radarbtn .txt.amber{color:var(--ottone)}
   .radarbtn .txt.coral{color:var(--corallo)}
   .radarbtn .frecciolina{width:18px;height:18px;flex:0 0 auto;fill:none;stroke:var(--nebbia);
     stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s}
   .radarbtn[aria-expanded="true"] .frecciolina{transform:rotate(180deg)}
-  .radarbtn[data-tono="coral"] .ico{color:var(--corallo)}
-  .radarbtn[data-tono="amber"] .ico{color:var(--ottone)}
-  .radarbtn[data-tono="teal"]  .ico{color:var(--verderame)}
-  .dida{font-size:12px;color:var(--schiuma);opacity:.72;margin-top:4px;line-height:1.3}
+  .radarbtn[data-tono="coral"] .mappona{border-color:rgba(224,96,63,.55)}
+  .radarbtn[data-tono="amber"] .mappona{border-color:rgba(226,163,60,.5)}
+  .radarbtn[data-tono="teal"]  .mappona{border-color:rgba(79,191,168,.4)}
+  /* quando la pioggia arriva davvero, la mira pulsa: l'enfasi segue la
+     notizia invece di essere sempre accesa */
+  @media (prefers-reduced-motion:no-preference){
+    .radarbtn[data-tono="coral"] .mappona .mira{animation:battito 1.8s ease-in-out infinite}
+  }
+  @keyframes battito{0%,100%{r:2.6;opacity:1}50%{r:4.2;opacity:.55}}
+  .dida{font-size:12px;color:var(--schiuma);opacity:.9;margin-top:4px;line-height:1.3}
   .rng{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--nebbia);
     margin-top:5px;letter-spacing:.02em}
   .rng .su{color:var(--corallo);margin-right:1px}
   .rng .giu{color:#7FB3D9;margin:0 1px 0 4px}
-  .rng .err{color:var(--nebbia);opacity:.8}
+  .rng .err{color:var(--nebbia);opacity:.92}
   .metric.hero .rng{font-size:13px;margin-top:8px}
   .metric.piccola .v{font-size:21px;color:var(--nebbia)}
   .metric.piccola .v small{font-size:13px}
@@ -711,7 +894,7 @@
   @keyframes drift{from{transform:translateX(-240px)}to{transform:translateX(460px)}}
   .rain{transform-box:view-box;transform-origin:0 0;animation:fall linear infinite;opacity:0}
   @keyframes fall{0%{transform:translateY(0);opacity:0}12%{opacity:.85}
-    88%{opacity:.7}100%{transform:translateY(112px);opacity:0}}
+    88%{opacity:.85}100%{transform:translateY(112px);opacity:0}}
   .flash{opacity:0;animation:flash 7.5s linear infinite;mix-blend-mode:screen}
   @keyframes flash{0%,88%,100%{opacity:0}89%{opacity:.42}90.5%{opacity:0}92%{opacity:.3}93%{opacity:0}}
   .bolt{opacity:0;animation:bolt 7.5s linear infinite}
@@ -720,7 +903,7 @@
   .dayico{display:block;margin-bottom:4px;opacity:.95}
   @media (prefers-reduced-motion:reduce){
     .drift,.rain,.flash,.bolt{animation:none!important}
-    .rain{opacity:.7} .flash{opacity:0} .bolt{opacity:1}
+    .rain{opacity:.85} .flash{opacity:0} .bolt{opacity:1}
   }
 
   /* ---------- grafico a scenari ---------- */
@@ -784,7 +967,7 @@
     box-shadow:0 2px 10px rgba(0,0,0,.55)}
   #cursore:focus-visible::-webkit-slider-thumb{outline:2px solid var(--verderame);outline-offset:2px}
   .tacche{position:absolute;top:27px;left:0;right:0;display:flex;justify-content:space-between;
-    font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--nebbia);opacity:.8}
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--nebbia);opacity:.92}
   .striscia:focus-visible{outline:2px solid var(--verderame);outline-offset:3px;border-radius:12px}
 
   /* ---------- selettore vista e riquadro compatto ---------- */
@@ -815,7 +998,7 @@
   .wprob span{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;
     letter-spacing:.08em;text-transform:uppercase;color:var(--nebbia);margin-top:5px}
   .wnota{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--nebbia);
-    text-align:center;margin-top:8px;opacity:.8}
+    text-align:center;margin-top:8px;opacity:.92}
   .wore{display:flex;gap:5px;margin-top:18px;overflow-x:auto;scrollbar-width:none}
   .wore::-webkit-scrollbar{display:none}
   .wh{flex:0 0 52px;background:var(--scafo-alto);border-radius:11px;padding:8px 2px;
@@ -935,7 +1118,7 @@
     background:rgba(226,163,60,.07);border-radius:0 0 12px 12px;padding:16px 15px}
   .voce.onesta h3{color:var(--ottone)}
   .modale-firma{margin:22px 0 0;text-align:center;font-family:"IBM Plex Mono",monospace;
-    font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--nebbia);opacity:.75}
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--nebbia);opacity:.88}
   .modale-firma b{color:var(--verderame);font-weight:600}
   @media (max-width:560px){
     .fab{width:52px;height:52px;font-size:24px;right:14px}
@@ -1147,10 +1330,19 @@
        risposta, colorata secondo la situazione, e il dettaglio si apre solo
        a chi lo chiede. -->
   <section class="card full compatta-radar" id="radarCard">
+    <!-- v3.68.0 — la mappa non sta piu' in un francobollo di fianco al
+         testo: passa a tutta larghezza sotto il titolo, dove si guarda
+         davvero. E' l'unica parte della scheda che si capisce senza
+         leggere, e teneva il posto piu' piccolo. -->
     <button id="radarBtn" class="radarbtn" aria-expanded="false">
-      <span class="ico" id="radarIco"></span>
-      <span class="txt" id="radarSint">Radar&hellip;</span>
-      <svg class="frecciolina" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="riga1">
+        <span class="testi">
+          <span class="txt" id="radarSint">Radar&hellip;</span>
+          <span class="sotto" id="radarSotto"></span>
+        </span>
+        <svg class="frecciolina" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </span>
+      <span class="mappona" id="radarMappa" aria-hidden="true"></span>
     </button>
     <div id="radarOut" hidden><p class="note">in attesa&hellip;</p></div>
     <div class="azioni" id="radarAzioni" hidden style="margin-top:14px">
@@ -1372,7 +1564,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.65.0 &middot; build 2026-07-30<br>
+v3.76.0 &middot; build 2026-07-30<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2836,7 +3028,7 @@ async function rMosaico(host, path, z, cx, cy) {
     im.src = `${host}${path}/256/${z}/${cx - 1 + i}/${cy - 1 + j}/4/1_1.png`;
     setTimeout(ris, 15000);
   })));
-  return { ctx: g, ok };
+  return { ctx: g, canvas: c, ok };   // v3.66.0 — serve anche la tela
 }
 
 function rRidotta(ctx) {
@@ -2915,11 +3107,18 @@ async function radarCalcola() {
     };
     const SOG = 60;
     const sopra = alfa(px, py) > SOG;
-    let vicino = Infinity;
+    /* v3.70.0 — non basta sapere QUANTO e' lontana la pioggia: per disegnarla
+       serve anche DOVE. Si conserva la direzione dell'eco piu' vicino, in
+       gradi rispetto al nord, cosi' la mappa puo' indicarlo. */
+    let vicino = Infinity, vicinoAng = null;
     for (let y = 0; y < B.n; y++) for (let x = 0; x < B.n; x++)
       if (B.m[y * B.n + x] > 40) {
-        const d = Math.hypot(x - px / R_RID, y - py / R_RID) * kmPx * R_RID;
-        if (d < vicino) vicino = d;
+        const dxp = x - px / R_RID, dyp = y - py / R_RID;
+        const d = Math.hypot(dxp, dyp) * kmPx * R_RID;
+        if (d < vicino) {
+          vicino = d;
+          vicinoAng = (Math.atan2(dxp, -dyp) * 180 / Math.PI + 360) % 360;
+        }
       }
 
     /* v3.36.0 — non piu' solo "quando arriva" ma la linea del tempo intera.
@@ -2955,12 +3154,91 @@ async function radarCalcola() {
       }
     }
 
-    S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo,
+    /* v3.66.0 — la mappa si vede, non si legge. I riquadri li scarichiamo
+       gia' per calcolare il movimento e finora li buttavamo via: da qui in
+       poi l'ultimo mosaico diventa una miniatura, ridotta a 240 px e
+       convertita in immagine. Il punto sta al centro per costruzione, quindi
+       basta una mira in mezzo e una freccia nella direzione misurata. */
+    /* v3.69.1 — "lar" era dichiarata dentro il try della miniatura e letta
+       subito dopo, fuori: ReferenceError a ogni calcolo, e il radar falliva
+       sempre. Le graffe di un blocco delimitano la visibilita' di const e
+       let, e spostare codice dentro un try e' il modo piu' facile di
+       tagliarne le gambe a chi lo usa dopo. Ora vive dove serve. */
+    /* v3.71.0 — l'inquadratura si adatta a dove sta la pioggia. Prima era
+       fissa: con l'eco piu' vicino a 470 km la mappa mostrava 200 km di
+       nulla, due anelli e una mira su fondo blu. Ora si allarga quanto serve
+       perche' la pioggia rientri sempre nel campo, con un margine; e se
+       nemmeno allargando entra, la mappa non si disegna affatto — una mappa
+       vuota dice meno della riga di testo che sta sopra. */
+    const kmPerPx = rMpp(lat, z) / 1000;
+    let ritLar = R_DIM * (z <= 6 ? 0.16 : z === 7 ? 0.30 : 0.46) * 640 / 360;
+    if (vicino !== Infinity) {
+      // meta' larghezza necessaria perche' l'eco stia dentro con un margine
+      const serve = (vicino * 1.35) / kmPerPx * 2;
+      if (serve > ritLar) ritLar = Math.min(R_DIM, serve);
+    }
+    let ritAlt = ritLar * 360 / 640;
+    if (ritAlt > R_DIM) { ritAlt = R_DIM; ritLar = ritAlt * 640 / 360; }
+    // se la pioggia resta comunque fuori campo, la mappa non serve
+    const mappaUtile = vicino === Infinity ? false
+      : (vicino / kmPerPx) < (ritLar / 2) * 0.98;
+
+    let miniatura = null;
+    if (mappaUtile) try {
+      /* v3.67.0 — la miniatura era piccola e scura: la pioggia a venti
+         chilometri si perdeva nel fondo quasi nero del mosaico. Tre
+         correzioni. Risoluzione doppia, cosi' regge l'ingrandimento a
+         schermo. Ritaglio piu' largo (il 78% invece del 62%), per vedere
+         il contesto attorno al punto. E un fondo azzurro cupo al posto del
+         nero, con gli echi ridisegnati sopra a piena opacita': il radar
+         restituisce pixel semitrasparenti, e su nero sparivano. */
+      /* v3.68.0 — inquadratura ristretta. Il calcolo del movimento ha
+         bisogno del campo largo, la miniatura no: mostrare 550 km riduceva
+         una cella temporalesca a una macchiolina. Qui si guarda un terzo
+         del mosaico, e se lo zoom scelto e' grossolano si stringe ancora. */
+      /* v3.68.1 — la tela e' panoramica come il riquadro che la ospita.
+         Disegnandola quadrata, object-fit:cover avrebbe tagliato sopra e
+         sotto portandosi via la barra della scala. */
+      const LAR = 640, ALT = 360;
+      const mini = document.createElement("canvas");
+      mini.width = LAR; mini.height = ALT;
+      const mc = mini.getContext("2d");
+      mc.imageSmoothingEnabled = true;
+      mc.imageSmoothingQuality = "high";
+      mc.fillStyle = "#0D2632";
+      mc.fillRect(0, 0, LAR, ALT);
+      const alt = ritAlt, lar = ritLar;
+      // due passate: la seconda rinforza gli echi deboli senza bruciare i forti
+      mc.drawImage(m2.canvas, px - lar/2, py - alt/2, lar, alt, 0, 0, LAR, ALT);
+      mc.globalAlpha = 0.55;
+      mc.drawImage(m2.canvas, px - lar/2, py - alt/2, lar, alt, 0, 0, LAR, ALT);
+      mc.globalAlpha = 1;
+      /* v3.70.1 — via la barra della scala: dalla v3.70.0 gli anelli portano
+         gia' la distanza in chilometri, e due scale diverse nello stesso
+         riquadro sono una in piu'. Restava anche l'unico elemento disegnato
+         sull'immagine invece che in sovrimpressione, quindi non si poteva
+         posizionare rispetto agli altri. */
+      miniatura = mini.toDataURL("image/png");
+    } catch (e) {}
+
+    S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
+                kmVista: (rMpp(lat, z) * ritLar / 1000),
                 verso: fermo ? null : rVerso(sc.dx, sc.dy),
-                nettezza: sc.nettezza, sopra, vicino, arrivo,
+                nettezza: sc.nettezza, sopra, vicino, vicinoAng, arrivo,
                 durata, smette, troncata, kmPx };   // v3.36.0
   } catch (e) {
-    S.radar = { stato: "no", err: String(e.message || e) };
+    /* v3.69.0 — "Radar non disponibile qui" nascondeva la causa: puo' essere
+       una fonte irraggiungibile, un'area senza copertura, o un difetto nel
+       codice. Tre situazioni molto diverse che chiedono risposte diverse, e
+       il messaggio le appiattiva tutte. */
+    const msg = String(e && e.message || e);
+    S.radar = { stato: "no", err: msg,
+      genere: /Failed to fetch|NetworkError|Load failed/i.test(msg) ? "rete"
+            : /copertura/i.test(msg) ? "copertura"
+            : /riquadri mancanti/i.test(msg) ? "riquadri"
+            : /identiche|insufficienti/i.test(msg) ? "immagini"
+            : "altro" };
+    try { console.warn("[radar]", e); } catch (_) {}
   }
   renderRadar();
 }
@@ -2996,6 +3274,12 @@ function confrontoRadar(r) {
   const radarBagna = r.sopra || (r.arrivo !== null && r.arrivo <= 120);
   const fidati = r.nettezza > 0.18;
 
+  if (r.vicino === Infinity || r.vicino > 200) return {
+    tono: "teal",
+    testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
+         + `e il radar <b>non vede pioggia entro il suo raggio utile</b>. `
+         + `Su questo intervallo conta di pi&ugrave; il radar: non sta indovinando, sta guardando.`
+  };
   if (!fidati) return {
     tono: "amber",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
@@ -3024,17 +3308,36 @@ function confrontoRadar(r) {
 function renderRadar() {
   const el = $("radarOut"); if (!el) return;
   const r = S.radar;
-  const scriviSint = (t, tono) => {
-    const s = $("radarSint"), b = $("radarBtn");
+  const scriviSint = (t, tono, sotto) => {
+    const s = $("radarSint"), b = $("radarBtn"), so = $("radarSotto"), mp = $("radarMappa");
     if (s) { s.textContent = t; s.className = "txt " + (tono || ""); }
     if (b) b.dataset.tono = tono || "";
+    if (so) so.textContent = sotto || "";
+    if (mp && !mp.querySelector("img")) mp.innerHTML = '<span class="vuota"></span>';
   };
   if (!r) { el.innerHTML = '<p class="note">non ancora calcolato</p>';
             scriviSint("Radar \u2014 non ancora calcolato"); return; }
   if (r.stato === "corso") { el.innerHTML = '<p class="note">guardo le immagini radar\u2026</p>';
-            scriviSint("Radar \u2014 sto guardando\u2026"); return; }
-  if (r.stato === "no") { el.innerHTML = '<p class="note">Non riuscito: ' + esc(r.err) + '</p>';
-            scriviSint("Radar non disponibile qui"); return; }
+            scriviSint("Radar \u2014 sto guardando\u2026", "", "scarico le immagini"); return; }
+  if (r.stato === "no") {
+    const spieghe = {
+      rete:      ["Radar irraggiungibile",
+                  "la fonte non risponde, riprova fra poco"],
+      copertura: ["Radar non disponibile qui",
+                  "questa zona non \u00E8 coperta dalla rete radar"],
+      riquadri:  ["Mappa incompleta",
+                  "troppe immagini mancanti in questo momento"],
+      immagini:  ["Immagini radar non aggiornate",
+                  "la fonte non ha ancora pubblicato scatti nuovi"],
+      altro:     ["Radar non riuscito", "riprova, oppure guarda il dettaglio"]
+    };
+    const [t, s] = spieghe[r.genere] || spieghe.altro;
+    el.innerHTML = '<p class="note">' + s.charAt(0).toUpperCase() + s.slice(1)
+      + '.<br><span style="opacity:.6;font-family:monospace;font-size:11.5px">'
+      + esc(r.err) + '</span></p>';
+    scriviSint(t, "", s);
+    return;
+  }
 
   /* v3.35.0 — riscritta senza gergo. Prima diceva "eco sopra il punto",
      "nettezza 59%", "sotto i 17 km/h lo spostamento e' meno di un pixel":
@@ -3044,6 +3347,31 @@ function renderRadar() {
 
   const fidati = r.nettezza > 0.18;
   const dubbio = r.nettezza > 0.08 && !fidati;
+  /* v3.72.0 — quando il calcolo del movimento non regge, non reggono nemmeno
+     velocita', direzione e minuti d'arrivo, che ne discendono. Restava pero'
+     un titolo affermativo e un "328 km/h" stampato in grande accanto a "non
+     fidarti". Ora in quel caso si dice solo cio' che si osserva davvero:
+     dov'e' la pioggia adesso, che viene dall'immagine e non dal movimento. */
+  const scarto = !fidati && !dubbio;
+  /* v3.73.0 — oltre una certa distanza il dato radar non e' piu' affidabile,
+     e non per colpa del nostro calcolo. Il fascio parte orizzontale ma la
+     Terra e' curva: a cento chilometri scruta gia' a millecinquecento metri
+     di quota, a duecento sopra i tremila. Vede le cime delle nubi, non la
+     pioggia che tocca terra, e quello che trova puo' essere neve che evapora
+     prima di arrivare o un artefatto. In piu' il mosaico e' cucito da radar
+     diversi: lassu' potrebbe esserci un buco di copertura. Dare un numero al
+     chilometro su un dato del genere e' una precisione che non abbiamo. */
+  const PORTATA_UTILE = 200;
+  const oltrePortata = r.vicino !== Infinity && r.vicino > PORTATA_UTILE;
+  const nienteQui = r.vicino === Infinity || oltrePortata;
+  /* v3.73.1 — spegnevo velocita' e direzione quando il CALCOLO era debole,
+     ma non quando la pioggia sta FUORI PORTATA: cosi' la scheda diceva
+     "nessuna pioggia nel raggio utile" e accanto "verso nord-ovest, 328
+     km/h, puoi fidarti". Quel movimento e' misurato su echi oltre i 200 km,
+     cioe' sul dato appena dichiarato inaffidabile, e i 328 km/h lo
+     confermano: nessuna nube va a quella velocita'. Una condizione sola per
+     tutto cio' che dipende dal movimento. */
+  const senzaMoto = scarto || nienteQui;
 
   let tit, sot, colore = "teal";
   // v3.36.0 — l'ora del giorno serve piu' volte
@@ -3077,6 +3405,20 @@ function renderRadar() {
     colore = "amber";
     sot = `Fra le due immagini si &egrave; spostata cos&igrave; poco che non si riesce a `
         + `stabilire una direzione.`;
+  } else if (nienteQui) {
+    /* v3.73.0 — niente numeri quando non c'e' niente entro la portata utile:
+       il fatto e' l'assenza di pioggia, non la distanza di un eco lontano */
+    tit = "Nessuna pioggia nel raggio utile";
+    sot = `Entro <b>${PORTATA_UTILE} km</b> il radar non vede pioggia, e questa &egrave; `
+        + `la distanza dentro la quale i suoi dati sono affidabili. `
+        + `Pi&ugrave; lontano il fascio scruta troppo in alto: vede le cime delle nubi, `
+        + `non la pioggia che tocca terra.`
+        + (scarto ? "" : ` Nelle prossime due ore, da qui, non arriva nulla.`);
+  } else if (scarto) {
+    tit = `Pioggia a ${r.vicino.toFixed(0)} km, direzione incerta`;
+    sot = `Il radar la vede, ma da che parte si sta muovendo non si riesce a `
+        + `stabilirlo: le due immagini si somigliano troppo, e il calcolo della `
+        + `direzione non vale.`;
   } else if (r.vicino !== Infinity && r.vicino < 40) {
     tit = `Piove a ${r.vicino.toFixed(0)} km, ma si allontana`;
     sot = `C'&egrave; pioggia poco distante e si sta muovendo <b>verso ${r.verso}</b>, `
@@ -3098,35 +3440,174 @@ function renderRadar() {
 
   /* v3.63.0 — la riga che finisce sul pulsante: la stessa risposta del
      titolo, senza il contorno */
-  const sint = $("radarSint"), ico = $("radarIco");
+  const sint = $("radarSint");
   if (sint) {
     sint.textContent = tit;
     sint.className = "txt " + colore;
-    if (ico) ico.innerHTML = r.sopra ? GLIFI.rovescio
-      : (r.arrivo !== null ? GLIFI.goccia : GLIFI.vento);
     const btn = $("radarBtn");
     if (btn) btn.dataset.tono = colore;
+    /* v3.70.5 — QUI STAVA IL DIFETTO CHE NON MORIVA. Correggevo la riga in
+       un blocco piu' sotto, ma questo la riscriveva subito dopo: due
+       percorsi di codice per lo stesso testo, e vinceva sempre il vecchio.
+       Il "pi&ugrave;" e il "verso null" sopravvivevano a ogni correzione
+       perche' correggevo la copia sbagliata. Ora la riga si costruisce una
+       volta sola. */
+    const sot = $("radarSotto");
+    if (sot) {
+      // v3.73.0 — oltre la portata utile la distanza non si riporta
+      const dist = (r.vicino === Infinity || r.vicino > 200)
+        ? null : r.vicino.toFixed(0) + " km";
+      const dove = (r.fermo || !r.verso || r.nettezza <= 0.08) ? "" : ", va verso " + r.verso;
+      sot.textContent = r.sopra
+        ? "il radar vede pioggia sopra la zona"
+        : (r.arrivo !== null
+            ? (dist ? "a " + dist + (r.verso ? ", da " + r.verso : "") : "in avvicinamento")
+            : (dist
+                ? "la pi\u00F9 vicina a " + dist + dove
+                : "niente pioggia entro il raggio utile del radar"));
+    }
+
+    /* v3.66.0 — la miniatura: la mappa vera con il punto al centro e, se la
+       pioggia si muove, la freccia della direzione misurata. Chi guarda vede
+       dove sta la pioggia invece di leggere un numero in chilometri. */
+    /* v3.71.0 — senza mappa il riquadro sparisce invece di restare vuoto */
+    const mp = $("radarMappa");
+    if (mp && !r.miniatura) mp.style.display = "none";
+    if (mp && r.miniatura) {
+      // v3.72.0 — niente freccia se la direzione non e' attendibile
+      const ang = (r.fermo || r.nettezza <= 0.08) ? null : R_ROSA.indexOf(r.verso) * 45;
+      /* v3.70.0 — la mappa non si legge da sola: una macchia colorata senza
+         riferimenti puo' stare ovunque. Servono tre cose che il radar da
+         solo non da': dove sei TU, quanto e' lontana la pioggia in
+         chilometri, e da che parte sta. Gli anelli diventano una scala di
+         distanza etichettata, il punto ha il suo nome, e la pioggia piu'
+         vicina viene indicata da un segno che parte da te e arriva a lei. */
+      const kmMezza = (r.kmVista || 200) / 2;      // meta' larghezza inquadrata
+      const passi = [10, 20, 25, 50, 100, 150];
+      const rInt = passi.reduce((a, b) =>
+        Math.abs(b - kmMezza / 3) < Math.abs(a - kmMezza / 3) ? b : a);
+      const rEst = rInt * 2;
+      /* v3.70.3 — sistema di coordinate 160x90: un chilometro vale lo stesso
+         numero di unita' in orizzontale e in verticale, quindi le distanze
+         sono cerchi veri e il testo non si deforma. */
+      const U = 80 / kmMezza;                     // unita' per chilometro
+      const CX = 80, CY = 45;
+      const rr = k => k * U;
+
+      /* v3.70.3 — preserveAspectRatio="none" stirava l'intero disegno per
+         riempire il riquadro 16:9, e con esso il testo: "22 km" usciva con
+         le lettere allargate e lo spazio spaccato in mezzo. Ora il sistema
+         di coordinate e' gia' panoramico (160x90), quindi niente
+         deformazione: le ellissi si costruiscono a mano e il testo resta
+         proporzionato. */
+      const ets = [];      // v3.70.4 - le scritte, disegnate fuori dall'SVG
+      let g = '<img src="' + r.miniatura + '" alt="">'
+        + '<svg class="sopra" viewBox="0 0 160 90" aria-hidden="true">';
+      /* v3.70.1 — le etichette stavano in cima all'anello, dove capita
+         spesso la pioggia: finivano sovrapposte alla nuvola e la piu'
+         esterna usciva dal riquadro. Ora vanno in basso a destra lungo
+         l'anello, zona quasi sempre libera, e si disegnano solo se ci
+         stanno per intero. */
+      /* v3.70.2 — bastava che l'anello sforasse in verticale perche' sparisse
+         del tutto, e con un riquadro 16:9 sfora quasi sempre: restava un
+         anello solo e la scala perdeva senso. Un'ellisse tagliata sopra e
+         sotto si legge benissimo — e' il taglio orizzontale che la
+         renderebbe incomprensibile. */
+      [[rInt, .55], [rEst, .38]].forEach(([km, op]) => {
+        const raggio = rr(km);
+        if (raggio >= 76) return;
+        g += '<circle cx="' + CX + '" cy="' + CY + '" r="' + raggio.toFixed(1)
+          + '" class="anello" style="opacity:' + op + '"/>';
+        /* l'etichetta sull'anello, in basso a destra dove quasi sempre e'
+           libero; se laggiu' l'anello esce dal riquadro, si risale lungo la
+           curva fino a dove e' ancora visibile */
+        let tx = CX + raggio * 0.707, ty = CY + raggio * 0.707;
+        if (ty > 82) {
+          const c = Math.min(0.95, (82 - CY) / raggio);
+          tx = CX + raggio * Math.sqrt(Math.max(0, 1 - c * c));
+          ty = 82;
+        }
+        if (tx < 146) ets.push(["km", tx, ty, km + " km"]);
+      });
+
+      // il segno che collega te alla pioggia piu' vicina
+      let bx = null, by = null;      // v3.70.5 — dove sta la pioggia piu' vicina
+      if (!r.sopra && r.vicinoAng !== null && r.vicino !== Infinity && rr(r.vicino) < 74) {
+        const a = r.vicinoAng * Math.PI / 180;
+        const ex = CX + Math.sin(a) * rr(r.vicino);
+        const ey = CY - Math.cos(a) * rr(r.vicino);
+        bx = ex; by = ey;
+        /* v3.70.1 — il bersaglio era grande quanto la mira e si confondeva
+           con essa: qui e' piu' piccolo, e accanto compare la distanza,
+           che e' l'informazione per cui il filo esiste. */
+        /* v3.70.3 — la distanza stava a meta' del filo, sovrapposta alla
+           pioggia: ora si scosta di lato rispetto alla direzione, dove il
+           fondo e' quasi sempre libero. */
+        const nx = Math.cos(a), ny = Math.sin(a);       // perpendicolare al filo
+        const lx = Math.min(150, Math.max(10, ex + nx * 9));
+        const ly = Math.min(84, Math.max(8, ey + ny * 9));
+        g += '<line x1="' + CX + '" y1="' + CY + '" x2="' + ex.toFixed(1)
+          + '" y2="' + ey.toFixed(1) + '" class="filo"/>'
+          + '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1)
+          + '" r="2" class="bersaglio"/>'
+          ;
+        ets.push(["dist", lx, ly, r.vicino.toFixed(0) + " km"]);
+      }
+
+      g += '<circle cx="' + CX + '" cy="' + CY + '" r="2.4" class="mira"/>';
+      ets.push(["qui", CX, CY + 8, "tu"]);
+
+      // la freccia del movimento, solo se la pioggia si muove davvero
+      /* v3.70.5 — la freccia era enorme e ambigua: non si capiva se
+         indicasse dove va la pioggia o da dove arriva. Ora e' piccola,
+         parte dal bersaglio e punta verso di te: dice il verso del
+         movimento nel punto in cui il movimento conta. */
+      if (ang !== null && bx !== null) {
+        const ax = Math.sin(ang * Math.PI / 180), ay = -Math.cos(ang * Math.PI / 180);
+        const x1 = bx + ax * 5, y1 = by + ay * 5;
+        const x2 = bx + ax * 15, y2 = by + ay * 15;
+        g += '<g transform="translate(' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ') '
+          + 'rotate(' + ang + ')">'
+          + '<path d="M0 0 L0 10" class="dir"/>'
+          + '<path d="M-2.6 6.6 L0 10 L2.6 6.6" class="dir"/></g>';
+      }
+      mp.innerHTML = g + '</svg><span class="ets">'
+        + ets.map(function(e){
+            return '<span class="' + e[0] + '" style="left:'
+              + (e[1] / 160 * 100).toFixed(2) + '%;top:' + (e[2] / 90 * 100).toFixed(2) + '%">'
+              + e[3] + '</span>';
+          }).join("")
+        + '</span>';
+      mp.style.display = "block";
+    }
   }
 
+  /* v3.66.1 — il titolo era ripetuto: una volta sul pulsante e una in testa
+     al dettaglio, per giunta in corpo maggiore. Ora il dettaglio si apre
+     direttamente sulla spiegazione. */
   el.innerHTML =
-    `<div class="num ${colore}" style="font-size:clamp(24px,6.5vw,32px);font-weight:800;`
-      + `letter-spacing:-.02em;line-height:1.1">${tit}</div>`
-    + `<p class="note" style="margin-top:10px">${sot}</p>`
+    `<p class="note" style="margin-top:2px">${sot}</p>`
 
     + `<div class="verdict" style="margin-top:20px">`
-    + `<div class="metric"><div class="v">${r.vicino === Infinity ? "\u2014" : r.vicino.toFixed(0)}`
-      + `<small> km</small></div><div class="k">pioggia pi&ugrave; vicina</div></div>`
-    + `<div class="metric"><div class="v" style="font-size:22px">`
-      + `${r.fermo ? "ferma" : "verso " + r.verso}</div><div class="k">si sposta</div></div>`
-    + `<div class="metric"><div class="v">${r.kmh.toFixed(0)}<small> km/h</small></div>`
+    + `<div class="metric"><div class="v${nienteQui ? " spento" : ""}">`
+      + `${nienteQui ? "\u2014" : r.vicino.toFixed(0) + '<small> km</small>'}</div>`
+      + `<div class="k">pioggia pi&ugrave; vicina</div></div>`
+    + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}" style="font-size:22px">`
+      + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso)}</div>`
+      + `<div class="k">si sposta</div></div>`
+    + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}">`
+      + `${senzaMoto ? "\u2014" : r.kmh.toFixed(0) + '<small> km/h</small>'}</div>`
       + `<div class="k">velocit&agrave;</div></div>`
     + (r.durata !== null || (r.sopra && r.smette !== null)
         ? `<div class="metric"><div class="v">${r.sopra ? r.smette : r.durata}`
           + `<small> min</small></div><div class="k">`
           + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
         : "")
-    + `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
-      + `<div class="k">${giudizio[2]}</div></div></div>`
+    + (nienteQui
+        ? `<div class="metric"><div class="v spento" style="font-size:20px">\u2014</div>`
+          + `<div class="k">niente da misurare</div></div>`
+        : `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
+          + `<div class="k">${giudizio[2]}</div></div>`) + `</div>`
 
     + (() => {
         const c = confrontoRadar(r);
@@ -3141,7 +3622,7 @@ function renderRadar() {
              + `<p class="note" style="margin:0">${c.testo}</p>`
              /* v3.39.0 — che due parti della stessa app dicano cose diverse
                 sembra un difetto se non si spiega perche' non lo e'. */
-             + `<p class="note" style="margin:9px 0 0;opacity:.75">Non &egrave; un errore `
+             + `<p class="note" style="margin:9px 0 0;opacity:.92">Non &egrave; un errore `
              + `dell'app: sono due strumenti diversi. Le previsioni <b>calcolano</b> cosa `
              + `succeder&agrave;, il radar <b>guarda</b> cosa c'&egrave; adesso. Sulle `
              + `prossime due ore ha ragione quasi sempre chi guarda.</p></div>`;
@@ -3152,7 +3633,7 @@ function renderRadar() {
       + `${r.dt} minuti di distanza si capisce da che parte si sta spostando la pioggia, `
       + `e da l&igrave; fra quanto arriva.</p>`
 
-    + `<p class="note" style="margin-top:10px;opacity:.8"><b>Quando sbaglia.</b> Segue la pioggia `
+    + `<p class="note" style="margin-top:10px;opacity:.94"><b>Quando sbaglia.</b> Segue la pioggia `
       + `che c'&egrave; gi&agrave;, ma non sa prevedere quella che nasce dal nulla &mdash; e d'estate `
       + `sul mare i temporali si formano sul posto in mezz'ora. Inoltre il radar vede le gocce `
       + `in alto nel cielo: a volte le vede e a terra non arriva niente, perch&eacute; evaporano `
@@ -3702,9 +4183,30 @@ function renderCielo(){
   } else {
     const c = condizione();
     if(!c){ $("scene").innerHTML=""; return; }
+    /* v3.76.0 — questo e' il secondo percorso, quello senza ora selezionata:
+       la v3.75.0 aveva aggiunto il giorno solo all'altro, e guardando un
+       giorno futuro la riga tornava anonima. Qui in piu' mancava il dato
+       piu' utile in assoluto per una giornata intera: massima e minima.
+       "CAPE 3570 J/kg" invece diceva poco a chiunque e ora sta fra le voci
+       tecniche, dove qualcuno lo cerca. */
     P = PALETTE[c.code]; nome = P.nome; code = c.code;
-    sub = quandoPiove()+" \u00B7 copertura media "+Math.round(c.cloud)+"%"
-        + (c.cape!==null?" \u00B7 CAPE "+Math.round(c.cape)+" J/kg":"");
+    const g = S.giorni[S.dayIdx];
+    const quando = S.dayIdx === 0 ? "oggi" : nomeGiorno(S.dayIdx, g.data).toLowerCase();
+    const data = new Date(g.data + "T12:00:00")
+      .toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+    const bs = biasCal();
+    const tMax = g.tmax.length ? quantile(g.tmax, .5) - bs : null;
+    const minimi = memDelGiorno(S.dayIdx).map(m => {
+      const v = m.T.filter(x => x !== null && x !== undefined);
+      return v.length ? Math.min(...v) : null;
+    }).filter(x => x !== null);
+    const tMin = minimi.length ? quantile(minimi, .5) - bs : null;
+
+    const pezzi = [quando + " " + data];
+    if (tMax !== null) pezzi.push("massima " + tMax.toFixed(0) + "\u00B0"
+      + (tMin !== null ? ", minima " + tMin.toFixed(0) + "\u00B0" : ""));
+    pezzi.push(quandoPiove());
+    sub = pezzi.filter(Boolean).join(" \u00B7 ");
   }
   /* v3.16.0 — la scena era bloccata a 700x250, cioe' 2,8:1: su un telefono
      da 360 px diventava alta 129 px, una fessura. Le coordinate interne
@@ -4390,7 +4892,20 @@ function scenaOra(){
   if(o.pioggia!=null) pezzi.push(o.pioggia===0?"nessuna simulazione con pioggia"
     :"piove in "+o.pioggia+" simulazioni su 100");
   if(o.vento!=null) pezzi.push("vento "+Math.round(o.vento)+" km/h");
-  return {P, nome, code:c.code, sub:String(h).padStart(2,"0")+":00 \u00B7 "+pezzi.join(" \u00B7 ")};
+  /* v3.75.0 — la riga diceva l'ora ma non il giorno. Scorrendo i giorni la
+     scena cambia e l'unico riferimento restava il riquadro selezionato piu'
+     sotto: guardando la scena da sola non si sapeva se fosse oggi o giovedi'.
+     Sul giorno in corso e all'ora attuale si scrive "adesso", che e' la cosa
+     piu' utile da leggere; altrimenti il nome del giorno per esteso. */
+  const g = S.giorni[d];
+  let quando;
+  if (d === 0 && h === oraInizio(0)) {
+    quando = "adesso, ore " + String(h).padStart(2, "0") + ":00";
+  } else {
+    const nomeG = g ? nomeGiorno(d, g.data).toLowerCase() : "";
+    quando = (d === 0 ? "oggi" : nomeG) + " alle " + String(h).padStart(2, "0") + ":00";
+  }
+  return {P, nome, code:c.code, sub: quando + " \u00B7 " + pezzi.join(" \u00B7 ")};
 }
 
 /* ============================================================
