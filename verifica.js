@@ -2,8 +2,15 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.3.1
-   Build   : 2026-07-30 08:55 CEST
+   Versione: v1.4.0
+   Build   : 2026-08-12 CEST
+
+   v1.4.0 — un controllo sulla COERENZA fra pezzi lontani: che la massima
+   del giorno non venga riassunta con la media in un punto e con la mediana
+   in un altro. E' il difetto che l'app aveva davvero, ed era invisibile a
+   tutti gli altri controlli perche' le due righe, prese una alla volta,
+   sono entrambe giuste. Quando la stessa grandezza si puo' calcolare in due
+   modi, il collaudo deve guardare i modi, non le righe.
 
    v1.3.0 — quattro controlli mirati alla classe di errore ricorrente:
    pezzi che non si parlano. Valori calcolati e mai usati, chiavi di stato
@@ -427,6 +434,21 @@ prova("ogni valore toccabile ha la sua spiegazione", () => {
   const inutili = [...prodotte].filter(k => !usate.has(k));
   if (senza.length) return "caselle senza testo: " + senza.join(", ");
   return inutili.length ? { avviso: "testi mai raggiungibili: " + inutili.join(", ") } : true;
+});
+
+prova("la massima del giorno si calcola in un modo solo", () => {
+  /* v1.4.0 — il numero grande del verdetto usava media(g.tmax); i riquadri
+     dei giorni, la scena e il widget quantile(g.tmax,.5). Stesso dato, due
+     valori sulla stessa schermata, e lo scarto si apre proprio quando i
+     membri divergono. Nessuno dei quaranta controlli poteva vederlo, perche'
+     entrambe le righe sono corrette prese da sole: e' la classe di difetto
+     piu' ostinata di questo progetto — due pezzi che non si parlano — e qui
+     si chiude almeno per una grandezza. */
+  const modi = new Set();
+  for (const m of nudo.matchAll(/(media|quantile)\s*\(\s*(?:g|G\(\))\.tmax/g)) modi.add(m[1]);
+  return modi.size > 1
+    ? "g.tmax letta sia con media() sia con quantile(): due numeri per lo stesso dato"
+    : true;
 });
 
 prova("ogni glifo richiamato esiste", () => {

@@ -1,6 +1,17 @@
 /* ============================================================
    Ventaglio — service worker
-   Versione: v1.1.0   Build: 2026-07-27 16:10 CEST
+   Versione: v1.2.0   Build: 2026-08-12 CEST
+
+   CHANGELOG v1.2.0
+   - Il manifest di RainViewer finiva nel ramo "prima la cache": e' l'elenco
+     degli istanti radar disponibili e cambia ogni dieci minuti, quindi il
+     radar ricalcolava sugli stessi identici scatti. "Ricalcola" non
+     ricalcolava niente, e quando i due scatti coincidevano si arrivava
+     all'errore "le due immagini sono identiche". Ora passa dalla rete.
+   - I riquadri radar non vengono piu' messi in cache. Portano il timestamp
+     nel percorso, quindi ogni calcolo ne scarica una ventina di nuovi che
+     non verranno richiesti mai piu': restavano li' fino al cambio di chiave,
+     cioe' fino alla pubblicazione successiva.
 
    CHANGELOG v1.1.0
    - La chiave della cache era fissa a "ventaglio-v1": il blocco di
@@ -24,7 +35,7 @@
 
 /* v1.1.0 — va cambiata a ogni pubblicazione: e' cio' che fa ripulire
    le vecchie copie all'attivazione. */
-const CACHE = "ventaglio-2026-07-27-a";
+const CACHE = "ventaglio-2026-08-12-a";
 const GUSCIO = ["./", "./index.html"];
 
 self.addEventListener("install", e=>{
@@ -41,7 +52,16 @@ self.addEventListener("fetch", e=>{
   const req = e.request;
   if(req.method !== "GET") return;
   const url = new URL(req.url);
-  const daRete = /open-meteo\.com$/.test(url.hostname) || url.hostname.endsWith("open-meteo.com");
+  /* v1.2.0 — anche il manifest di RainViewer va preso dalla rete: elenca gli
+     istanti radar disponibili e cambia ogni dieci minuti. Servito dalla cache
+     faceva ricalcolare il radar sugli stessi scatti di prima. */
+  const daRete = url.hostname.endsWith("open-meteo.com")
+              || url.pathname.endsWith("weather-maps.json");
+
+  /* v1.2.0 — i riquadri radar hanno il timestamp nel percorso: non si
+     ripetono mai, quindi in cache si accumulerebbero soltanto. Passano dalla
+     rete senza lasciare traccia. */
+  if(/rainviewer/.test(url.hostname) && url.pathname.endsWith(".png")) return;
 
   if(daRete){
     // previsioni: prima la rete, la cache solo come rete di salvataggio

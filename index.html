@@ -1,9 +1,37 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.76.0 — giorno, massima e minima anche sulla scena del giorno
+  VENTAGLIO v3.77.0 — il radar dice prima il fatto, e una massima sola
   File  : ventaglio-v3.html
-  Build : 2026-07-29 15:30 CEST
+  Build : 2026-08-12 CEST
+  v3.77.0: cinque difetti, quattro dei quali visibili in una schermata sola:
+           il radar con la pioggia a quattro chilometri.
+           Il titolo diceva 'Pioggia troppo lenta per capire dove va', cioe'
+           raccontava che cosa il metodo non riesce a fare, mentre il fatto —
+           che piove, e a che distanza — finiva nella riga grigia sotto. Ora
+           la distanza viene prima, come faceva gia' il ramo gemello li'
+           accanto: si dice cio' che si osserva, poi cio' che manca.
+           Quel ramo veniva anche provato PRIMA di 'nessuna pioggia nel
+           raggio utile', quindi con il campo immobile e niente entro i 200
+           km annunciava una pioggia che nel raggio utile non c'era.
+           Sulla mappa, a pochi chilometri il bersaglio finiva dentro la mira
+           e il filo era lungo due unita': invisibili entrambi. L'etichetta
+           '4 km', scostata di nove unita' fisse perpendicolari a un filo che
+           non si vedeva, si piazzava sul mare aperto a est mentre l'eco
+           stava a nord. Ora lo scostamento segue la lunghezza del filo, e da
+           vicino l'etichetta va nella direzione dell'eco.
+           E l'inquadratura sapeva allargarsi per la pioggia lontana ma non
+           stringersi per quella vicina: trecento chilometri di campo per un
+           fatto a quattro, con l'anello piu' stretto a cinquanta.
+           Fuori dal radar, due cose. quandoPiove() era l'ultimo posto dove
+           il giorno in corso contava ancora le ore passate: alle otto di
+           sera la scena poteva annunciare pioggia 'al mattino'. E la massima
+           del giorno si calcolava in due modi — media nel numero grande,
+           mediana nei riquadri, nella scena e nel widget — cioe' due valori
+           per lo stesso dato sulla stessa schermata. Ora e' la mediana
+           ovunque, i record della pagella portano il marcatore q:'med' per
+           non mescolarsi con i vecchi, e verifica.js v1.4.0 ha la regola che
+           impedisce al difetto di tornare.
   v3.76.0: la v3.75.0 aveva aggiunto il giorno solo al percorso con l'ora
            selezionata; guardando un giorno futuro senza toccare la
            striscia la riga tornava anonima. Ora dice 'lunedi' 3 agosto'
@@ -1564,7 +1592,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.76.0 &middot; build 2026-07-30<br>
+v3.77.0 &middot; build 2026-08-12<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2170,7 +2198,14 @@ function testiSpiegazione(v){
 function renderVerdetto(){
   const g=G(), N=g.tmax.length;
   const oltreCal = S.dayIdx > ORIZZONTE_CAL;
-  const grezza=media(g.tmax);
+  /* v3.77.0 — la mediana, come gia' ovunque altrove. Il numero grande usava
+     la media mentre i riquadri dei giorni, la scena e il widget usavano la
+     mediana: stesso dato, due valori sulla stessa schermata, e lo scarto si
+     apre proprio quando i membri divergono, cioe' nel caso che conta. La
+     mediana e' anche la scelta piu' solida su una popolazione asimmetrica.
+     E' la lezione della v3.65.0 in un altro punto: se una grandezza si puo'
+     calcolare in due modi, prima o poi la si calcola in due modi. */
+  const grezza=quantile(g.tmax,.5);
   const bias=S.cal?S.cal.bias:0;
   const corretta=grezza-bias;
   const disp=sd(g.tmax);
@@ -2834,7 +2869,9 @@ async function registraPrevisione(){
       if(d===0) return;                        // oggi non e' una previsione
       const chiave=g.data+"|"+d;
       if(visti.has(chiave)) return;            // gia' registrata a questo anticipo
-      const grezza=media(g.tmax), disp=sd(g.tmax);
+      /* v3.77.0 — mediana anche qui, o la pagella verificherebbe un numero
+         che a schermo non compare piu'. */
+      const grezza=quantile(g.tmax,.5), disp=sd(g.tmax);
       const half=(S.cal&&S.cal.a!==undefined)
         ? S.cal.k*Math.max(0.15,S.cal.a+S.cal.b*disp) : 1.28*disp;
       /* v3.31.0 — si annota il fattore pioggia in vigore. Senza, l'archivio
@@ -2842,7 +2879,12 @@ async function registraPrevisione(){
          indistinguibile, e la pagella confronterebbe grandezze diverse
          credendole omogenee. */
       const kp=fattoreP();
-      arch.push({ emesso:oggi, valida:g.data, lead:d,
+      /* v3.77.0 — e si annota anche COME e' stata riassunta la popolazione,
+         per la stessa ragione per cui si annota kp: fino a ieri era la media,
+         da oggi la mediana, e senza il marcatore la pagella mescolerebbe due
+         stime diverse credendole la stessa cosa. I record senza "q" sono
+         quelli vecchi, a media. */
+      arch.push({ emesso:oggi, valida:g.data, lead:d, q:"med",
                   t:+(grezza-bias).toFixed(2), h:+half.toFixed(2),
                   p1:Math.round(100*g.psum.filter(x=>x*kp>=1).length/g.psum.length),
                   kp:+kp.toFixed(3), n:g.tmax.length });
@@ -3138,7 +3180,11 @@ async function radarCalcola() {
       const fineDa = (i) => {
         // tollera due minuti asciutti: uno squarcio dentro il fronte non
         // e' la fine della pioggia
-        for (let t = i; t < serie.length; t++)
+        /* v3.77.0 — in coda alla serie serie[t+1] e serie[t+2] sono undefined,
+           e tre "asciutto" di cui due inventati facevano dichiarare finita la
+           pioggia due minuti prima che finissero i dati. Dove non si vede,
+           non si conclude: meglio "non si riesce a vedere dove finisce". */
+        for (let t = i; t + 2 < serie.length; t++)
           if (!serie[t] && !serie[t + 1] && !serie[t + 2]) return t;
         return null;
       };
@@ -3176,6 +3222,19 @@ async function radarCalcola() {
       // meta' larghezza necessaria perche' l'eco stia dentro con un margine
       const serve = (vicino * 1.35) / kmPerPx * 2;
       if (serve > ritLar) ritLar = Math.min(R_DIM, serve);
+      /* v3.77.0 — e il contrario, che mancava. La v3.71.0 aveva insegnato
+         all'inquadratura ad allargarsi per la pioggia lontana, ma non a
+         stringersi per quella vicina: con l'eco a 4 km restavano trecento
+         chilometri di campo, il soggetto della scheda ridotto a un pixel e
+         l'anello piu' stretto a 50 km, dodici volte la distanza annunciata.
+         Il minimo tiene il contesto attorno, e non scende oltre perche' a
+         460 metri per pixel i riquadri non hanno altro dettaglio da dare:
+         sotto quella soglia si ingrandirebbe soltanto la sfocatura. */
+      else {
+        const MIN_KM = 60;
+        const basta = Math.max(MIN_KM, vicino * 4) / kmPerPx * 2;
+        if (basta < ritLar) ritLar = basta;
+      }
     }
     let ritAlt = ritLar * 360 / 640;
     if (ritAlt > R_DIM) { ritAlt = R_DIM; ritLar = ritAlt * 640 / 360; }
@@ -3400,20 +3459,31 @@ function renderRadar() {
             : `Non si riesce a vedere dove finisce: la fascia di pioggia &egrave; pi&ugrave; larga `
               + `di quanto arrivi lo sguardo, quindi metti in conto che duri parecchio.`)
         + (fidati ? "" : ` Il calcolo per&ograve; &egrave; poco sicuro: prendilo con le molle.`);
-  } else if (r.fermo) {
-    tit = "Pioggia troppo lenta per capire dove va";
-    colore = "amber";
-    sot = `Fra le due immagini si &egrave; spostata cos&igrave; poco che non si riesce a `
-        + `stabilire una direzione.`;
   } else if (nienteQui) {
     /* v3.73.0 — niente numeri quando non c'e' niente entro la portata utile:
        il fatto e' l'assenza di pioggia, non la distanza di un eco lontano */
+    /* v3.77.0 — e va provato PRIMA di "ferma". Con il campo immobile e nessun
+       eco entro i 200 km si annunciava "Pioggia troppo lenta per capire dove
+       va": una pioggia che nel raggio utile non c'e'. La v3.73.1 aveva messo
+       nienteQui dentro senzaMoto, che spegne i valori derivati, ma i titoli
+       li aveva lasciati nell'ordine di prima. */
     tit = "Nessuna pioggia nel raggio utile";
     sot = `Entro <b>${PORTATA_UTILE} km</b> il radar non vede pioggia, e questa &egrave; `
         + `la distanza dentro la quale i suoi dati sono affidabili. `
         + `Pi&ugrave; lontano il fascio scruta troppo in alto: vede le cime delle nubi, `
         + `non la pioggia che tocca terra.`
         + (scarto ? "" : ` Nelle prossime due ore, da qui, non arriva nulla.`);
+  } else if (r.fermo) {
+    /* v3.77.0 — il titolo raccontava che cosa il metodo non riesce a fare, e
+       il fatto — che piove, e a che distanza — finiva nella riga grigia
+       sotto. Il ramo gemello qui accanto, "direzione incerta", lo faceva gia'
+       nel modo giusto: prima cio' che si osserva, poi cio' che manca. Con la
+       pioggia a quattro chilometri la scheda si apriva su una limitazione
+       invece che su una pioggia praticamente addosso. */
+    tit = `Pioggia a ${r.vicino.toFixed(0)} km, ferma o quasi`;
+    colore = "amber";
+    sot = `Il radar la vede l&igrave;, ma fra le due immagini si &egrave; spostata `
+        + `cos&igrave; poco che una direzione non si riesce a stabilirla.`;
   } else if (scarto) {
     tit = `Pioggia a ${r.vicino.toFixed(0)} km, direzione incerta`;
     sot = `Il radar la vede, ma da che parte si sta muovendo non si riesce a `
@@ -3534,8 +3604,9 @@ function renderRadar() {
       let bx = null, by = null;      // v3.70.5 — dove sta la pioggia piu' vicina
       if (!r.sopra && r.vicinoAng !== null && r.vicino !== Infinity && rr(r.vicino) < 74) {
         const a = r.vicinoAng * Math.PI / 180;
-        const ex = CX + Math.sin(a) * rr(r.vicino);
-        const ey = CY - Math.cos(a) * rr(r.vicino);
+        const d = rr(r.vicino);                        // lunghezza del filo
+        const ex = CX + Math.sin(a) * d;
+        const ey = CY - Math.cos(a) * d;
         bx = ex; by = ey;
         /* v3.70.1 — il bersaglio era grande quanto la mira e si confondeva
            con essa: qui e' piu' piccolo, e accanto compare la distanza,
@@ -3543,19 +3614,39 @@ function renderRadar() {
         /* v3.70.3 — la distanza stava a meta' del filo, sovrapposta alla
            pioggia: ora si scosta di lato rispetto alla direzione, dove il
            fondo e' quasi sempre libero. */
-        const nx = Math.cos(a), ny = Math.sin(a);       // perpendicolare al filo
-        const lx = Math.min(150, Math.max(10, ex + nx * 9));
-        const ly = Math.min(84, Math.max(8, ey + ny * 9));
-        g += '<line x1="' + CX + '" y1="' + CY + '" x2="' + ex.toFixed(1)
-          + '" y2="' + ey.toFixed(1) + '" class="filo"/>'
-          + '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1)
-          + '" r="2" class="bersaglio"/>'
-          ;
-        ets.push(["dist", lx, ly, r.vicino.toFixed(0) + " km"]);
+        /* v3.77.0 — a pochi chilometri tutto questo si sbriciolava. Il
+           bersaglio (raggio 2) finiva DENTRO la mira (raggio 2.4) e il filo
+           era lungo due unita': invisibili entrambi. E la distanza, scostata
+           di nove unita' fisse perpendicolari a un filo che non si vedeva,
+           si piazzava quattro volte piu' lontana della pioggia che descrive,
+           in una direzione che con quella pioggia non c'entra: "4 km" finiva
+           sul mare aperto a est mentre l'eco stava a nord. Ora lo scostamento
+           segue la lunghezza del filo, e quando l'eco e' cosi' vicino da
+           starci sotto l'etichetta va nella sua direzione, appena fuori dalla
+           mira: numero e verso si leggono insieme. */
+        const sottoLaMira = d < 3.4;
+        if (sottoLaMira) {
+          ets.push(["dist", CX + Math.sin(a) * 7.5, CY - Math.cos(a) * 7.5,
+                    r.vicino.toFixed(0) + " km"]);
+        } else {
+          const nx = Math.cos(a), ny = Math.sin(a);     // perpendicolare al filo
+          const off = Math.max(3.5, Math.min(9, d * 0.5));
+          g += '<line x1="' + CX + '" y1="' + CY + '" x2="' + ex.toFixed(1)
+            + '" y2="' + ey.toFixed(1) + '" class="filo"/>'
+            + '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1)
+            + '" r="2" class="bersaglio"/>'
+            ;
+          ets.push(["dist", Math.min(150, Math.max(10, ex + nx * off)),
+                            Math.min(84,  Math.max(8,  ey + ny * off)),
+                            r.vicino.toFixed(0) + " km"]);
+        }
       }
 
       g += '<circle cx="' + CX + '" cy="' + CY + '" r="2.4" class="mira"/>';
-      ets.push(["qui", CX, CY + 8, "tu"]);
+      /* v3.77.0 — "tu" passa sopra la mira quando la pioggia sta sotto: ora
+         che a corto raggio l'etichetta della distanza sta vicino al centro,
+         le due si accavallavano. */
+      ets.push(["qui", CX, (by !== null && by > CY) ? CY - 8 : CY + 8, "tu"]);
 
       // la freccia del movimento, solo se la pioggia si muove davvero
       /* v3.70.5 — la freccia era enorme e ambigua: non si capiva se
@@ -4147,10 +4238,20 @@ function quandoPiove(){
   const g=G(); if(!g) return "";
   // v3.15.0 — anche qui la popolazione passa da oraStat, come ovunque
   const d=S.dayIdx;
+  /* v3.77.0 — l'ultimo posto dove il giorno in corso contava ancora le ore
+     passate. Le tre fasce si mediavano sempre tutte, quindi alle otto di sera
+     la scena poteva annunciare "piove soprattutto al mattino" per una pioggia
+     gia' caduta: la stessa incoerenza tolta da psumFinestra in v3.40.0 e da
+     raffFinestra in v3.43.0, sopravvissuta qui perche' la regola era scritta
+     in un commento e non in una funzione. Una fascia interamente passata non
+     si accorcia: sparisce. */
+  const da=oraInizio(d);
   const fascia=(a,b)=>{ let s=0,n=0;
-    for(let h=a;h<=b;h++){ const q=oraStat(d,h).pioggia; if(q!=null){ s+=q; n++; } }
-    return n?s/n:0; };
-  const f=[{n:"al mattino",v:fascia(6,11)},{n:"nel pomeriggio",v:fascia(12,17)},{n:"in serata",v:fascia(18,23)}];
+    for(let h=Math.max(a,da);h<=b;h++){ const q=oraStat(d,h).pioggia; if(q!=null){ s+=q; n++; } }
+    return n?s/n:null; };
+  const f=[{n:"al mattino",v:fascia(6,11)},{n:"nel pomeriggio",v:fascia(12,17)},
+           {n:"in serata",v:fascia(18,23)}].filter(x=>x.v!==null);
+  if(!f.length) return "";
   const top=f.reduce((a,b)=>b.v>a.v?b:a);
   if(top.v<12) return "quasi tutte le simulazioni restano asciutte";
   const altre=f.filter(x=>x!==top && x.v>top.v*0.7);
