@@ -2,8 +2,13 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.4.0
-   Build   : 2026-08-12 CEST
+   Versione: v1.5.0
+   Build   : 2026-08-13 CEST
+
+   v1.5.0 — due regole sul radar, dopo la terza velocita' impossibile
+   stampata come misura. Le prime due volte la correzione era stata locale,
+   nel ramo dove il numero era comparso; la causa stava a monte, nella
+   finestra di ricerca. Qui si vincola la causa, non il sintomo.
 
    v1.4.0 — un controllo sulla COERENZA fra pezzi lontani: che la massima
    del giorno non venga riassunta con la media in un punto e con la mediana
@@ -267,6 +272,18 @@ regola("radar: lo zoom si sceglie, non si fissa", "for (const z of [8, 7, 6, 5])
 
 regola("radar: il punto si legge a piena risoluzione", "const SOG = 60",
   "sulla griglia ridotta un pixel copre 5 km e 'piove qui' perde significato");
+
+/* v1.5.0 — terza volta che esce una velocita' impossibile: 328 km/h in
+   v3.72.0, 209 in v3.78.1. Le prime due volte ho spento il sintomo nel
+   ramo dove l'avevo visto; la causa era la finestra di ricerca, larga
+   abbastanza da contenere spostamenti che nessuna nube compie. */
+regola("radar: il raggio di ricerca nasce da una velocita' massima",
+  "Math.ceil(KMH_MAX * (dt / 60) / passoKm)",
+  "a raggio fisso la finestra ammette spostamenti impossibili: a zoom 5 arrivava a 1300 km/h");
+
+regola("radar: una velocita' inverosimile spegne cio' che ne discende",
+  "const inverosimile = kmh > KMH_MAX",
+  "senza, direzione, minuti d'arrivo e durata restano stampati come misure");
 
 regola("il giorno in corso conta solo le ore che restano", "function psumFinestra",
   "sommare le 24 ore fa annunciare a mezzogiorno la pioggia caduta di notte");

@@ -1,9 +1,38 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.1 — lo zoom chiesto alla fonte non esisteva
+  VENTAGLIO v3.78.2 — nessuna nube va a duecento all'ora
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.2: la scheda diceva '209 km/h' e accanto 'puoi fidarti, il calcolo
+           e' solido'. Il codice lo sapeva gia': il commento della v3.73.1
+           dice 'i 328 km/h lo confermano, nessuna nube va a quella
+           velocita''. Ma quella guardia era stata legata alla sola pioggia
+           fuori portata, cioe' al sintomo di allora, non alla causa: il
+           numero impossibile e' tornato appena si e' presentata un'altra
+           strada per produrlo.
+           La causa e' il raggio di ricerca, fisso a 14 caselle. Una casella
+           vale cinque chilometri e mezzo a zoom 7 e ventidue a zoom 5, per
+           cui la finestra ammetteva spostamenti fino a 233 km/h nel primo
+           caso e 1316 nel secondo. Su un campo quasi vuoto con una cella
+           sola lo scarto minimo puo' cadere lontano per puro caso —
+           allineare la cella con il vuoto costa quasi quanto allinearla con
+           se stessa — e la nettezza non se ne accorge, perche' misura
+           quanto il minimo spicca, non se ha senso fisico.
+           Ora il raggio si ricava dalla velocita' massima plausibile, 120
+           km/h: le risposte impossibili non sono piu' RAPPRESENTABILI
+           invece di essere filtrate a valle. Il massimo scende a 122-133
+           km/h a ogni zoom, e un temporale veloce da cento resta
+           rappresentabile ovunque. Costa anche meno, perche' il ciclo e'
+           quadratico nel raggio: a zoom 7 sono 289 confronti per casella
+           invece di 841.
+           Resta la diagonale della finestra, che concede un margine, e a
+           quella pensa una guardia: sopra i 156 km/h il movimento si
+           considera non misurato, e con esso si spengono direzione, minuti
+           d'arrivo e durata. Azzerati alla fonte, dentro S.radar, cosi' ogni
+           pezzo che legge vede la stessa cosa invece di doversene ricordare
+           per conto suo — che e' il modo in cui questa storia era gia'
+           andata storta due volte.
   v3.78.1: la v3.78.0 chiedeva riquadri a uno zoom che RainViewer non serve,
            e la mappa si riempiva della scritta 'Zoom Level Not Supported'.
            La fonte arriva fino allo zoom 7; da 8 in su risponde con un PNG
@@ -1669,7 +1698,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.1 &middot; build 2026-08-13<br>
+v3.78.2 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3219,10 +3248,30 @@ async function radarCalcola() {
     for (let i = 0; i < A.m.length; i++) if (Math.abs(A.m[i] - B.m[i]) > 2) div++;
     if (!div) throw new Error("le due immagini sono identiche");
 
-    const sc = rScostamento(A.m, B.m, A.n, 14);
+    /* v3.78.2 — "209 KM/H, PUOI FIDARTI". Il raggio di ricerca era fisso a
+       14 caselle, e una casella vale qui cinque chilometri e mezzo: la
+       finestra ammetteva spostamenti fino a 230 km/h, velocita' che nessuna
+       precipitazione raggiunge. Su un campo quasi vuoto con una cella sola,
+       lo scarto minimo puo' cadere lontano per puro caso — allineare la
+       cella con il vuoto costa quasi quanto allinearla con se stessa — e la
+       nettezza non se ne accorge, perche' misura quanto il minimo spicca,
+       non se ha senso fisico.
+       Il raggio ora si ricava dalla velocita' massima plausibile: le
+       risposte impossibili non sono piu' rappresentabili, invece di essere
+       filtrate a valle. E costa meno, perche' il ciclo e' quadratico nel
+       raggio. La diagonale della finestra concede ancora un margine, e a
+       quello pensa la guardia sotto. */
+    const KMH_MAX = 120;
     const kmPx = rMpp(lat, z) / 1000;
-    const km = Math.hypot(sc.dx, sc.dy) * kmPx * R_RID;
-    const kmh = km / (dt / 60), errKmh = (kmPx * R_RID / 2) / (dt / 60);
+    const passoKm = kmPx * R_RID;              // quanto vale una casella ridotta
+    const raggio = Math.max(2, Math.min(14, Math.ceil(KMH_MAX * (dt / 60) / passoKm)));
+    const sc = rScostamento(A.m, B.m, A.n, raggio);
+    const km = Math.hypot(sc.dx, sc.dy) * passoKm;
+    const kmh = km / (dt / 60), errKmh = (passoKm / 2) / (dt / 60);
+    /* e se malgrado tutto ne esce un numero inverosimile, non e' una misura:
+       e' il confronto fra le due immagini che si e' agganciato dove non
+       doveva. Si spegne come si spegne un calcolo debole. */
+    const inverosimile = kmh > KMH_MAX * 1.3;
 
     // il punto si legge a piena risoluzione: sulla griglia ridotta un pixel
     // copre 5,5 km e "piove qui" diventava un'affermazione senza base
@@ -3432,8 +3481,18 @@ async function radarCalcola() {
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
                 kmVista: larKm,   // v3.78.0 — gia' in chilometri, dal mosaico giusto
                 verso: fermo ? null : rVerso(sc.dx, sc.dy),
-                nettezza: sc.nettezza, sopra, vicino, vicinoAng, arrivo,
-                durata, smette, troncata, kmPx };   // v3.36.0
+                /* v3.78.2 — con una velocita' inverosimile non regge niente
+                   di cio' che dal movimento discende: ne' la direzione, ne'
+                   i minuti d'arrivo, ne' la durata. Si azzera qui, alla
+                   fonte, cosi' ogni pezzo che legge vede la stessa cosa
+                   invece di doversene ricordare per conto suo. */
+                inverosimile,
+                nettezza: inverosimile ? 0 : sc.nettezza,
+                sopra, vicino, vicinoAng,
+                arrivo: inverosimile ? null : arrivo,
+                durata: inverosimile ? null : durata,
+                smette: inverosimile ? null : smette,
+                troncata, kmPx };   // v3.36.0
   } catch (e) {
     /* v3.69.0 — "Radar non disponibile qui" nascondeva la causa: puo' essere
        una fonte irraggiungibile, un'area senza copertura, o un difetto nel
@@ -3597,7 +3656,13 @@ function renderRadar() {
         + `e non proprio sulla tua testa. `
         + (r.smette !== null
             ? `Dovrebbe smettere fra <b>${quanto(r.smette)}</b>, verso le <b>${orario(r.smette)}</b>.`
-            : r.fermo ? "" : `Guardando avanti non si vede la fine: potrebbe durare oltre le due ore.`);
+            : r.fermo ? ""
+            /* v3.78.2 — senza un movimento attendibile non si sa nemmeno che
+               non si veda la fine: non si e' guardato niente. */
+            : r.inverosimile
+              ? `Da che parte si sposta non si riesce a stabilirlo, quindi `
+                + `nemmeno fra quanto smette.`
+              : `Guardando avanti non si vede la fine: potrebbe durare oltre le due ore.`);
   } else if (r.arrivo !== null) {
     tit = `Pioggia in arrivo fra ${r.arrivo} minuti`;
     colore = r.arrivo <= 30 ? "coral" : "amber";
