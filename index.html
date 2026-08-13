@@ -1,9 +1,38 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.0 — la mappa ha un suo zoom, e la freccia c'e' sempre
+  VENTAGLIO v3.78.1 — lo zoom chiesto alla fonte non esisteva
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.1: la v3.78.0 chiedeva riquadri a uno zoom che RainViewer non serve,
+           e la mappa si riempiva della scritta 'Zoom Level Not Supported'.
+           La fonte arriva fino allo zoom 7; da 8 in su risponde con un PNG
+           segnaposto, che il browser carica senza errori — onload scatta, il
+           contatore dei riquadri riusciti sale — quindi nessuna delle
+           guardie poteva accorgersene. Misurato con una sonda: da z=8 in su
+           ogni riquadro, in qualunque parte del mondo, e' lo stesso file da
+           1370 byte; a z=7 un riquadro davvero vuoto ne pesa 334.
+           E qui c'e' la parte che vale la pena scrivere: quei 1370 byte
+           erano gia' citati nel commento di rZoom come 'riquadri vuoti'.
+           Non lo erano, ed e' la stessa lettura sbagliata che mi ha portato
+           a costruire sopra un mosaico fine che non poteva esistere. Un
+           commento sbagliato dura piu' a lungo di un difetto, perche' chi
+           legge lo prende per una misura gia' fatta.
+           Ora il tetto e' 7. Il mosaico fine serve solo quando il calcolo ha
+           dovuto scendere a 5 o 6, e li' il guadagno c'e' davvero:
+           l'ingrandimento della miniatura passa da 9,8 a 4,9 volte partendo
+           da z=6, e da 19,7 a 4,9 partendo da z=5. Se il calcolo gira gia' a
+           7 non cambia niente, ed e' giusto cosi': non c'e' altro dettaglio
+           da mostrare, e fingere il contrario e' esattamente cio' che
+           faceva la versione precedente.
+           In piu' una guardia che mancava: se al nuovo zoom non c'e' un eco
+           da nessuna parte il mosaico fine e' un rettangolo vuoto, e si
+           tiene quello largo. E via i due anelli da 2 e 5 km aggiunti ieri:
+           col tetto a 7 il campo non scende sotto i centoventi chilometri,
+           quindi erano voci irraggiungibili, cioe' la promessa di una scala
+           che il dato non puo' reggere.
+           Verificato a calcolo contro la v3.77.1 su tre zoom e nove
+           distanze: dodici casi migliorati, nessuna regressione.
   v3.78.0: due domande dalla stessa schermata: dove va la pioggia, e quanto
            e' vicina davvero.
            LA FRECCIA MANCAVA PROPRIO QUANDO SERVE. Il filo, il bersaglio e
@@ -29,9 +58,10 @@
            gli anelli guadagnano due passi piu' stretti, da 2 e 5 km, senza i
            quali a quindici chilometri di campo la scala si appiattiva su un
            cerchio solo.
-           Misurato: con la pioggia vicina il dato sotto la mappa passa da
-           462 a 115 metri per pixel, e l'ingrandimento della miniatura
-           scende da 9,8 volte a 2,6 nel caso peggiore.
+           [I numeri che stavano qui — 462 a 115 metri per pixel, quattro
+           volte il dettaglio — erano calcolati su zoom che la fonte non
+           serve: vedi v3.78.1. Restano validi il ragionamento e la freccia,
+           non le cifre.]
   v3.77.1: due inversioni nella stessa scheda, che si coprivano a vicenda.
            La freccia del movimento puntava all'INVERSO: dentro un SVG l'asse
            y cresce verso il basso, quindi il tracciato 'M0 0 L0 10' nasce
@@ -1639,7 +1669,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.0 &middot; build 2026-08-13<br>
+v3.78.1 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3094,7 +3124,15 @@ async function rFirma(host, path, z, x, y) {
 
 /* si scende di zoom finche' i due istanti non danno file diversi: e' la
    definizione operativa di "qui ci sono dati". A zoom 8 su Gaeta tornavano
-   riquadri vuoti da 1370 byte, identici a se stessi in ogni istante. */
+   riquadri da 1370 byte, identici a se stessi in ogni istante. */
+/* v3.78.1 — quei 1370 byte NON sono un riquadro vuoto, come credevo
+   scrivendo la riga sopra: sono il segnaposto "Zoom Level Not Supported".
+   RainViewer serve il radar fino allo zoom 7, e da 8 in su risponde con
+   quel file, uguale in ogni parte del mondo. Un riquadro davvero vuoto, a
+   z=7, ne pesa 334. Lo zoom 8 resta nell'elenco perche' provarlo costa due
+   richieste e non assume nulla: se un giorno la fonte alzera' il tetto,
+   questo ciclo se ne accorgera' da solo. Ma oggi non vince mai, ed e' bene
+   che sia scritto invece di sembrare una scelta fra pari. */
 async function rZoom(host, p1, p2, lat, lon) {
   for (const z of [8, 7, 6, 5]) {
     const pg = rPixel(lat, lon, z);
@@ -3280,20 +3318,38 @@ async function radarCalcola() {
        vicina da giustificarli. Il calcolo continua a girare sul mosaico
        largo — alfa(), la traiettoria e "piove qui" non cambiano di una
        virgola: qui cambia soltanto l'immagine che si guarda. */
+    /* v3.78.1 — LO ZOOM FINE CHIESTO NON ESISTEVA. RainViewer serve i
+       riquadri radar fino allo zoom 7: oltre restituisce un PNG segnaposto
+       con scritto "Zoom Level Not Supported". Il browser lo carica senza
+       errori — onload scatta, il contatore ok sale — e quella scritta
+       finiva stampata sulla mappa. Misurato: da z=8 in su ogni riquadro, in
+       qualunque parte del mondo, e' lo stesso file da 1370 byte; a z=7 un
+       riquadro davvero vuoto ne pesa 334. Il commento di rZoom qui sotto
+       chiama "vuoti" quei 1370 byte, ed e' la stessa confusione in cui sono
+       cascato io: non sono vuoti, sono il rifiuto del server.
+       Il tetto e' quindi 7, e il mosaico fine serve solo quando il calcolo
+       ha dovuto scendere a 5 o 6 — dove il guadagno c'e' ed e' grosso. */
+    const Z_MAPPA = 7;
     let mapCanvas = m2.canvas, mapPx = px, mapPy = py;
     let mapKmPx = rMpp(lat, z) / 1000;
-    if (vicino !== Infinity && vicino < 25) try {
-      const zF = Math.min(10, z + 2);
-      if (zF > z) {
-        const pgF = rPixel(lat, lon, zF);
-        const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
-        const mF = await rMosaico(j.host, f2.path, zF, cxF, cyF);
-        if (mF.ok >= 5) {
-          mapCanvas = mF.canvas;
-          mapPx = pgF.x - (cxF - 1) * 256;
-          mapPy = pgF.y - (cyF - 1) * 256;
-          mapKmPx = rMpp(lat, zF) / 1000;
-        }
+    if (vicino !== Infinity && vicino < 25 && z < Z_MAPPA) try {
+      const zF = Math.min(Z_MAPPA, z + 2);
+      const pgF = rPixel(lat, lon, zF);
+      const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
+      const mF = await rMosaico(j.host, f2.path, zF, cxF, cyF);
+      /* e non basta che i riquadri arrivino: se a quello zoom non c'e' un
+         eco da nessuna parte, il mosaico fine e' un rettangolo vuoto e il
+         largo diceva di piu'. Si campiona un pixel ogni sedici. */
+      let acceso = 0;
+      if (mF.ok >= 5) {
+        const dd = mF.ctx.getImageData(0, 0, R_DIM, R_DIM).data;
+        for (let i = 3; i < dd.length; i += 64) if (dd[i] > 20) acceso++;
+      }
+      if (acceso > 20) {
+        mapCanvas = mF.canvas;
+        mapPx = pgF.x - (cxF - 1) * 256;
+        mapPy = pgF.y - (cyF - 1) * 256;
+        mapKmPx = rMpp(lat, zF) / 1000;
       }
     } catch (e) {}
 
@@ -3313,11 +3369,17 @@ async function radarCalcola() {
          chilometri di campo e l'anello piu' stretto a 50 km, dodici volte la
          distanza annunciata. */
       /* v3.78.0 — il minimo non e' piu' un numero fisso ma la soglia oltre
-         la quale si ingrandirebbe la sfocatura: mezza larghezza pari a 125
-         pixel del mosaico in uso, cioe' meno di due volte e mezzo di
-         ingrandimento fino ai 640 della miniatura. Col mosaico fine sono una
-         quindicina di chilometri invece di sessanta, e lo scatto si vede. */
-      else larKm = Math.min(larKm, Math.max(125 * mapKmPx, vicino * 4) * 2);
+         la quale si ingrandirebbe soltanto la sfocatura: mezza larghezza
+         pari a 125 pixel del mosaico in uso. */
+      /* v3.78.1 — e comunque mai piu' largo di prima. Con la sorgente ferma
+         a 923 metri per pixel — lo zoom 7 e' il massimo servito — quella
+         soglia varrebbe centoquindici chilometri: allargherebbe il campo
+         invece di stringerlo, l'opposto di cio' che serve. Il piu' stretto
+         dei due. */
+      else {
+        const MIN_KM = Math.min(60, 125 * mapKmPx);
+        larKm = Math.min(larKm, Math.max(MIN_KM, vicino * 4) * 2);
+      }
     }
     let ritLar = larKm / mapKmPx;
     if (ritLar > R_DIM) ritLar = R_DIM;
@@ -3645,11 +3707,13 @@ function renderRadar() {
          distanza etichettata, il punto ha il suo nome, e la pioggia piu'
          vicina viene indicata da un segno che parte da te e arriva a lei. */
       const kmMezza = (r.kmVista || 200) / 2;      // meta' larghezza inquadrata
-      /* v3.78.0 — due passi piu' stretti in cima all'elenco. Col mosaico
-         fine il campo scende a una quindicina di chilometri, e il piu'
-         piccolo anello disponibile era di dieci: la scala si sarebbe
-         appiattita su un cerchio solo. */
-      const passi = [2, 5, 10, 20, 25, 50, 100, 150];
+      /* v3.78.0 — aggiunti due passi piu' stretti, da 2 e 5 km, per il campo
+         ristretto che il mosaico fine avrebbe permesso. */
+      /* v3.78.1 — tolti: col tetto dello zoom a 7 il campo non scende sotto
+         i centoventi chilometri, quindi l'anello interno non sara' mai piu'
+         stretto di venti. Erano due voci irraggiungibili, cioe' l'illusione
+         di una scala che il dato non puo' sostenere. */
+      const passi = [10, 20, 25, 50, 100, 150];
       const rInt = passi.reduce((a, b) =>
         Math.abs(b - kmMezza / 3) < Math.abs(a - kmMezza / 3) ? b : a);
       const rEst = rInt * 2;
