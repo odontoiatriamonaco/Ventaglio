@@ -1,9 +1,28 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.77.0 — il radar dice prima il fatto, e una massima sola
+  VENTAGLIO v3.77.1 — la freccia del radar puntava all'inverso
   File  : ventaglio-v3.html
-  Build : 2026-08-12 CEST
+  Build : 2026-08-13 CEST
+  v3.77.1: due inversioni nella stessa scheda, che si coprivano a vicenda.
+           La freccia del movimento puntava all'INVERSO: dentro un SVG l'asse
+           y cresce verso il basso, quindi il tracciato 'M0 0 L0 10' nasce
+           rivolto a sud, e rotate(ang) lo porta a ang+180. E la riga sotto
+           il titolo stampava 'da sud' partendo da r.verso, che e' la
+           direzione di MARCIA e non la provenienza — la riga qui accanto la
+           usa correttamente, per dire 'va verso'.
+           Con la pioggia che scendeva da nord si leggeva dunque 'da sud'
+           accanto a una freccia rivolta a nord: sbagliate tutte e due, e
+           d'accordo fra loro, cosi' nessuna delle due sembrava sbagliata. E'
+           il motivo per cui erano sopravvissute: un errore solo si nota,
+           due che si confermano a vicenda si leggono come una spiegazione.
+           La freccia inoltre partiva dal bersaglio e veniva verso il centro:
+           con l'inquadratura stretta della v3.77.0 il bersaglio dista poche
+           unita' dalla mira, quindi le finiva addosso insieme all'etichetta
+           della distanza. Ora sta oltre il bersaglio, dalla parte da cui la
+           pioggia arriva, con la punta che si ferma su di esso e la
+           lunghezza che segue la distanza: il centro resta libero.
+           Verificata a calcolo su tutte e otto le direzioni della rosa.
   v3.77.0: cinque difetti, quattro dei quali visibili in una schermata sola:
            il radar con la pioggia a quattro chilometri.
            Il titolo diceva 'Pioggia troppo lenta per capire dove va', cioe'
@@ -1592,7 +1611,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.77.0 &middot; build 2026-08-12<br>
+v3.77.1 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3033,6 +3052,10 @@ function rPixel(lat, lon, z) {
 const rMpp = (lat, z) => 156543.03392 * Math.cos(lat * Math.PI / 180) / (2 ** z);
 const R_ROSA = ["nord","nord-est","est","sud-est","sud","sud-ovest","ovest","nord-ovest"];
 const rVerso = (dx, dy) => R_ROSA[Math.round(((Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360) / 45) % 8];
+/* v3.77.1 — il punto opposto della rosa. "Va verso sud" e "viene da nord"
+   sono lo stesso movimento detto dai due capi, e la riga sotto il titolo
+   usava il primo per dire il secondo. */
+const rOpposto = v => { const i = R_ROSA.indexOf(v); return i < 0 ? null : R_ROSA[(i + 4) % 8]; };
 
 async function rFirma(host, path, z, x, y) {
   const b = new Uint8Array(await (await fetch(
@@ -3528,10 +3551,15 @@ function renderRadar() {
       const dist = (r.vicino === Infinity || r.vicino > 200)
         ? null : r.vicino.toFixed(0) + " km";
       const dove = (r.fermo || !r.verso || r.nettezza <= 0.08) ? "" : ", va verso " + r.verso;
+      /* v3.77.1 — "a 4 km, da sud" con la pioggia che arrivava da nord.
+         r.verso e' la direzione di MARCIA, come dice la riga qui sopra che
+         la usa per quello che e'; qui veniva stampata come provenienza,
+         cioe' rovesciata. Ora si gira di mezza rosa. */
+      const daDove = (r.verso && rOpposto(r.verso)) ? ", da " + rOpposto(r.verso) : "";
       sot.textContent = r.sopra
         ? "il radar vede pioggia sopra la zona"
         : (r.arrivo !== null
-            ? (dist ? "a " + dist + (r.verso ? ", da " + r.verso : "") : "in avvicinamento")
+            ? (dist ? "a " + dist + daDove : "in avvicinamento")
             : (dist
                 ? "la pi\u00F9 vicina a " + dist + dove
                 : "niente pioggia entro il raggio utile del radar"));
@@ -3654,13 +3682,27 @@ function renderRadar() {
          parte dal bersaglio e punta verso di te: dice il verso del
          movimento nel punto in cui il movimento conta. */
       if (ang !== null && bx !== null) {
-        const ax = Math.sin(ang * Math.PI / 180), ay = -Math.cos(ang * Math.PI / 180);
-        const x1 = bx + ax * 5, y1 = by + ay * 5;
-        const x2 = bx + ax * 15, y2 = by + ay * 15;
-        g += '<g transform="translate(' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ') '
-          + 'rotate(' + ang + ')">'
-          + '<path d="M0 0 L0 10" class="dir"/>'
-          + '<path d="M-2.6 6.6 L0 10 L2.6 6.6" class="dir"/></g>';
+        /* v3.77.1 — due difetti nella stessa freccia, che si coprivano a
+           vicenda. Puntava all'INVERSO: dentro un SVG l'asse y cresce verso
+           il basso, quindi il tracciato "M0 0 L0 10" nasce rivolto a sud e
+           rotate(ang) lo porta a ang+180. Con la pioggia in arrivo da nord
+           la freccia indicava nord, e la riga sotto — anch'essa rovesciata —
+           diceva "da sud": due errori che si confermavano a vicenda e
+           sembravano coerenti.
+           E partiva dal bersaglio venendo verso di te: con l'inquadratura
+           stretta della v3.77.0 il bersaglio dista poche unita' dal centro,
+           quindi la freccia finiva addosso alla mira e all'etichetta della
+           distanza. Ora sta tutta al di la' del bersaglio, dalla parte da
+           cui la pioggia arriva, con la punta che si ferma su di esso: il
+           centro resta libero e la lunghezza segue la distanza. */
+        const mx = Math.sin(ang * Math.PI / 180), my = -Math.cos(ang * Math.PI / 180);
+        const lung = Math.max(5, Math.min(12, rr(r.vicino) * 0.8));
+        const tx = bx - mx * lung, ty = by - my * lung;   // la coda, sopravvento
+        g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
+          + 'rotate(' + (ang + 180) + ')">'
+          + '<path d="M0 0 L0 ' + lung.toFixed(1) + '" class="dir"/>'
+          + '<path d="M-2.6 ' + (lung - 3.4).toFixed(1) + ' L0 ' + lung.toFixed(1)
+          + ' L2.6 ' + (lung - 3.4).toFixed(1) + '" class="dir"/></g>';
       }
       mp.innerHTML = g + '</svg><span class="ets">'
         + ets.map(function(e){
