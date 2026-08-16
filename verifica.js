@@ -2,8 +2,17 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.9.1
+   Versione: v1.10.1
    Build   : 2026-08-13 CEST
+
+   v1.10.1 — la regola sull'ora coglieva una sola delle due forme in cui
+   l'errore si presenta: l'indice fra parentesi quadre, non quello costruito
+   prima in una variabile. Delle due letture sbagliate ne vedeva una.
+
+   v1.10.0 — il verdetto deve leggere tutti i valori dell'ora alla stessa
+   ora. Vento, umidita', raffiche e punto di rugiada uscivano da oraOra, che
+   vale 0 su ogni giorno futuro: la scheda diceva "domani alle 16:00" e
+   accanto il vento di mezzanotte, etichettato "adesso".
 
    v1.9.1 — il controllo nuovo cercava "arbitra:" ovunque e pescava anche la
    frase "Qui non arbitra: valgono le previsioni", che sta dentro un
@@ -543,6 +552,25 @@ prova("radar: ogni esito del confronto dichiara se arbitra", () => {
   if (!/c\.arbitra/.test(nudo)) return "il paragrafo di chiusura non guarda arbitra";
   return ritorni === dichiarati ? true
     : `${ritorni} esiti, ${dichiarati} dichiarano arbitra`;
+});
+
+prova("il verdetto legge all'ora scelta, non a due ore diverse", () => {
+  /* v1.10.0 — vento, umidita', raffiche e punto di rugiada uscivano da
+     oraOra, che e' oraInizio(S.dayIdx) e vale 0 su ogni giorno che non sia
+     oggi: la scheda diceva "domani alle 16:00" e accanto il vento di
+     mezzanotte, etichettato "adesso". La temperatura seguiva l'ora scelta,
+     loro no. Qui si vieta di INDICIZZARE con oraOra: come inizio di una
+     finestra oraria resta legittimo, come istante no. */
+  const f = nudo.match(/function renderVerdetto\([\s\S]*?\n\}/);
+  if (!f) return "renderVerdetto non trovata";
+  /* v1.10.1 — due forme, non una: l'indice scritto fra parentesi quadre e
+     quello costruito prima in una variabile ("S.dayIdx * 24 + oraOra"). La
+     prima stesura vedeva solo la prima, e delle due letture sbagliate ne
+     coglieva una. */
+  const g = [...f[0].matchAll(/\[[^\]\n]*\boraOra\b[^\]\n]*\]|\*\s*24\s*\+\s*oraOra\b/g)]
+    .map(m => m[0]);
+  return g.length ? "letture indicizzate su oraOra invece che su hSel: " + g.join(", ")
+                  : true;
 });
 
 prova("ogni glifo richiamato esiste", () => {

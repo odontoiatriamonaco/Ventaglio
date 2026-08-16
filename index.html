@@ -1,9 +1,34 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.7 — un testo fisso non puo' commentare esiti che cambiano
+  VENTAGLIO v3.78.8 — il vento di mezzanotte spacciato per adesso
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.8: cercando ridondanze nella scheda radar e' saltato fuori un difetto
+           piu' grave, e fuori dal radar.
+           L'ORA SBAGLIATA. Nel verdetto, vento, umidita', raffiche e punto di
+           rugiada venivano letti a oraOra, che e' oraInizio(S.dayIdx), e
+           quella funzione restituisce 0 per ogni giorno che non sia oggi.
+           Guardando 'domani alle 16:00' la temperatura seguiva l'ora scelta e
+           il vento veniva da MEZZANOTTE, con scritto sotto 'adesso'. Anche
+           restando su oggi, scorrendo la striscia su un'altra ora quei tre
+           restavano fermi all'orologio, mentre la scena — che li legge da
+           S.ora — mostrava numeri diversi a pochi pixel di distanza. E
+           l'umidita' veniva da un'ora e il punto di rugiada da un'altra,
+           dentro la stessa frase che li mette in rapporto. Ora passano tutti
+           da hSel.
+           Nella scheda radar, tre cose. Il ramo 'in arrivo fra N minuti' era
+           provato prima di 'scarto', quindi con il calcolo debole titolava
+           l'arrivo e venti pixel sotto mostrava i trattini e 'non fidarti':
+           i minuti d'arrivo escono dallo stesso spostamento che i trattini
+           stanno spegnendo. La casella 'quanto dura' era l'ultimo valore
+           derivato dal moto rimasto fuori dalla guardia unica. E il
+           sottotitolo ripeteva il titolo con le stesse parole senza portare
+           il numero: ora porta quello.
+           Infine il riquadro del confronto, che riscriveva quasi parola per
+           parola il paragrafo due centimetri sopra cambiando i sinonimi.
+           Dice solo cio' che il corpo non ha gia' detto: la percentuale dei
+           modelli e la conseguenza.
   v3.78.7: il riquadro del confronto diceva 'qui non arbitra: valgono le
            previsioni', e il paragrafo subito sotto ribatteva 'sulle prossime
            due ore ha ragione quasi sempre chi guarda'.
@@ -1817,7 +1842,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.7 &middot; build 2026-08-13<br>
+v3.78.8 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2533,11 +2558,22 @@ function renderVerdetto(){
      verdetto mostrava solo aggregati: massima, minima, raffica massima.
      Chi apre l'app vuole prima sapere che aria tira in questo momento;
      la sintesi della giornata e' contesto, e va in corpo minore. */
-  const iOra = S.dayIdx * 24 + oraOra;
+  /* v3.78.8 — L'ORA SBAGLIATA. Questi tre valori usavano oraOra, che e'
+     oraInizio(S.dayIdx), e quella funzione restituisce 0 per ogni giorno che
+     non sia oggi: su "domani alle 16:00" la temperatura seguiva l'ora scelta
+     e vento, umidita' e raffiche venivano letti a MEZZANOTTE, per giunta
+     etichettati "adesso". Anche restando su oggi, scorrendo la striscia su
+     un'altra ora rimanevano fermi all'orologio. La scena, per lo stesso
+     istante, li legge da S.ora: due velocita' del vento e due umidita' per
+     la stessa ora, a pochi pixel di distanza.
+     L'ora e' una sola, ed e' quella selezionata. Da qui in giu' si passa
+     sempre da hSel, cosi' non si puo' sbagliarla in un punto solo. */
+  const hSel = (oraSel !== null) ? oraSel : oraOra;
+  const iOra = S.dayIdx * 24 + hSel;
   const ventoOra = (adesso && S.atmo && S.atmo.vento) ? S.atmo.vento[iOra] : null;
   const urOra    = (adesso && S.atmo && S.atmo.ur)    ? S.atmo.ur[iOra]    : null;
   const raffiche = adesso
-    ? memDelGiorno(S.dayIdx).map(m => (m.W ? m.W[oraOra] : null))
+    ? memDelGiorno(S.dayIdx).map(m => (m.W ? m.W[hSel] : null))
         .filter(v => v !== null && v !== undefined).map(v => v * fattoreW())
     : [];
   const raffOra = raffiche.length ? quantile(raffiche, .5) : null;
@@ -2652,7 +2688,10 @@ function renderVerdetto(){
   /* v3.55.0 — i testi si preparano qui, con i valori di adesso gia' dentro */
   S.spiega = testiSpiegazione({
     ur: adesso ? urOra : urGiorno,
-    rug: (S.atmo && S.atmo.rug) ? S.atmo.rug[S.dayIdx*24 + (oraSel !== null ? oraSel : 14)] : null,
+    /* v3.78.8 — il punto di rugiada passa da hSel come l'umidita' accanto:
+       il testo li mette in rapporto causale, e prima venivano da due ore
+       diverse — l'una da oraSel, l'altro da oraOra. */
+    rug: (S.atmo && S.atmo.rug) ? S.atmo.rug[S.dayIdx*24 + hSel] : null,
     /* v3.57.0 — la coppia reale/percepita deve venire dalla STESSA ora.
        Prima la temperatura era quella dell'ora selezionata e la percepita il
        massimo del giorno: alle otto del mattino usciva "il termometro segna
@@ -3718,19 +3757,21 @@ function confrontoRadar(r) {
   if (r.vicino === Infinity) return {
     arbitra: true,
     tono: "teal",
+    // v3.78.8 — "fin dove arriva il mosaico" lo dice gia' il corpo, meglio
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
-         + `e il radar <b>non vede pioggia da nessuna parte</b>, fin dove arriva il `
-         + `mosaico. Su questo intervallo conta di pi&ugrave; il radar: non sta `
-         + `indovinando, sta guardando.`
+         + `ma non c'&egrave; niente che possa arrivare. Su questo intervallo conta `
+         + `di pi&ugrave; il radar: non sta indovinando, sta guardando.`
   };
   if (r.vicino > PORTATA_UTILE) return {
     arbitra: false,
     tono: "amber",
+    /* v3.78.8 — riscriveva quasi parola per parola il paragrafo che sta due
+       centimetri sopra, cambiando solo i sinonimi. L'unica cosa che questo
+       riquadro sa e il corpo no e' la percentuale dei modelli, piu' la
+       conseguenza pratica. Il resto lo ha appena letto. */
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
-         + `Il radar non vede niente entro i <b>${PORTATA_UTILE} km</b> in cui &egrave; `
-         + `affidabile, ma pi&ugrave; lontano qualcosa c'&egrave;, e da quella distanza `
-         + `non pu&ograve; dire se stia venendo da questa parte. `
-         + `Qui non arbitra: valgono le previsioni.`
+         + `Il radar, per quel che vede bene, non le conferma n&eacute; le smentisce: `
+         + `qui non arbitra, valgono le previsioni.`
   };
   if (!fidati) return {
     arbitra: false,   // v3.78.7 — "non lo usare per smentirle" e' un'astensione
@@ -3855,7 +3896,15 @@ function renderRadar() {
               ? `Da che parte si sposta non si riesce a stabilirlo, quindi `
                 + `nemmeno fra quanto smette.`
               : `Guardando avanti non si vede la fine: potrebbe durare oltre le due ore.`);
-  } else if (r.arrivo !== null) {
+  } else if (r.arrivo !== null && !senzaMoto) {
+    /* v3.78.8 — questo ramo veniva provato prima di "scarto", quindi con il
+       calcolo debole la scheda titolava "Pioggia in arrivo fra 23 minuti" e
+       venti pixel sotto mostrava "si sposta —", "velocita' —" e "non
+       fidarti: il calcolo non regge". I minuti d'arrivo escono dallo stesso
+       sc.dx/sc.dy che senzaMoto sta spegnendo. La v3.72.0 aveva dichiarato
+       chiusa proprio questa cosa — "non reggono nemmeno i minuti d'arrivo" —
+       ma la correzione era arrivata ai numeri della griglia e non al titolo,
+       che e' la prima cosa che si legge. */
     tit = `Pioggia in arrivo fra ${r.arrivo} minuti`;
     colore = r.arrivo <= 30 ? "coral" : "amber";
     sot = `Verso le <b>${orario(r.arrivo)}</b>, se continua a muoversi cos&igrave;. `
@@ -3965,9 +4014,15 @@ function renderRadar() {
         ? "il radar vede pioggia sopra la zona"
         : (r.arrivo !== null
             ? (dist ? "a " + dist + daDove : "in avvicinamento")
+            /* v3.78.8 \u2014 il sottotitolo diceva "niente pioggia entro il raggio
+               utile del radar" sotto un titolo che diceva "Nessuna pioggia nel
+               raggio utile": le stesse parole in due corpi diversi, e nessuna
+               delle due portava il numero. Ora porta quello, che il titolo non
+               ha. E nel ramo "ferma" ripeteva la distanza gia' stampata in
+               grande sopra: li' dice lo stato. */
             : (dist
-                ? "la pi\u00F9 vicina a " + dist + dove
-                : "niente pioggia entro il raggio utile del radar"));
+                ? (r.fermo ? "ferma sul posto, a " + dist : "la pi\u00F9 vicina a " + dist + dove)
+                : "nessun eco entro i " + PORTATA_UTILE + " km affidabili"));
     }
 
     /* v3.66.0 — la miniatura: la mappa vera con il punto al centro e, se la
@@ -4181,7 +4236,12 @@ function renderRadar() {
       + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}">`
         + `${senzaMoto ? "\u2014" : r.kmh.toFixed(0) + '<small> km/h</small>'}</div>`
         + `<div class="k">velocit&agrave;</div></div>`
-      + (r.durata !== null || (r.sopra && r.smette !== null)
+      /* v3.78.8 — anche questa casella dipende dal movimento: durata e
+         smette escono dalla proiezione minuto per minuto della traiettoria.
+         Era l'ultimo valore derivato dal moto rimasto fuori dalla guardia
+         unica, e con il calcolo debole la griglia stampava "— , —, 45 min,
+         non fidarti": tre caselle spente e una che parlava lo stesso. */
+      + (!senzaMoto && (r.durata !== null || (r.sopra && r.smette !== null))
           ? `<div class="metric"><div class="v">${r.sopra ? r.smette : r.durata}`
             + `<small> min</small></div><div class="k">`
             + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
