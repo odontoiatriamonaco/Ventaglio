@@ -1,9 +1,28 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.5 — la scheda non promette cio' che i suoi numeri negano
+  VENTAGLIO v3.78.6 — il radar non arbitra quando ha appena detto di non sapere
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.6: la scheda diceva 'se stia venendo da questa parte, non si sa', e
+           subito sotto il riquadro del confronto sentenziava 'su questo
+           intervallo conta di piu' il radar: non sta indovinando, sta
+           guardando'. Gli restituiva l'autorita' che si era tolto due righe
+           sopra.
+           E' la stessa conflazione sciolta ieri in v3.78.5 — nessun eco e
+           eco fuori portata trattati come un caso solo — sopravvissuta in
+           confrontoRadar, una funzione piu' in la'. L'avevo corretta dove
+           l'avevo vista invece che dove stava: e' il modo in cui questi
+           difetti si spostano invece di morire.
+           Ora i due casi si separano anche qui. Senza alcun eco in tutto il
+           mosaico il radar arbitra davvero: guarda trecentocinquanta
+           chilometri di niente, e da li' in due ore non arriva nulla. Con un
+           eco oltre la portata utile non arbitra affatto, lo dichiara, e
+           restano le previsioni.
+           In piu' due soglie scritte a numero — 'r.vicino > 200' — tornano
+           a PORTATA_UTILE, che era stata resa una costante sola in v3.78.4
+           senza che questi due la usassero. Una soglia scritta in tre posti
+           prima o poi ne diventa tre.
   v3.78.5: quattro trattini in fila dicevano 'il movimento non si misura', e
            la riga sotto prometteva 'nelle prossime due ore, da qui, non
            arriva nulla', che dal movimento discende. La frase era agganciata
@@ -1778,7 +1797,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.5 &middot; build 2026-08-13<br>
+v3.78.6 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3660,11 +3679,28 @@ function confrontoRadar(r) {
   const radarBagna = r.sopra || (r.arrivo !== null && r.arrivo <= 120);
   const fidati = r.nettezza > 0.18;
 
-  if (r.vicino === Infinity || r.vicino > 200) return {
+  /* v3.78.6 — due casi opposti trattati come uno. E' la stessa conflazione
+     sciolta in v3.78.5 dentro renderRadar, sopravvissuta qui una funzione
+     piu' in la': la correggevo dove l'avevo vista, non dove stava.
+     Senza alcun eco in tutto il mosaico il radar puo' davvero arbitrare:
+     guarda trecentocinquanta chilometri di niente, e da li' in due ore non
+     arriva nulla. Ma se un eco c'e' oltre la portata utile, il radar ha
+     appena dichiarato di non sapere se stia venendo: mandarlo ad arbitrare
+     gli restituisce l'autorita' che si era tolto da solo due righe sopra. */
+  if (r.vicino === Infinity) return {
     tono: "teal",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
-         + `e il radar <b>non vede pioggia entro il suo raggio utile</b>. `
-         + `Su questo intervallo conta di pi&ugrave; il radar: non sta indovinando, sta guardando.`
+         + `e il radar <b>non vede pioggia da nessuna parte</b>, fin dove arriva il `
+         + `mosaico. Su questo intervallo conta di pi&ugrave; il radar: non sta `
+         + `indovinando, sta guardando.`
+  };
+  if (r.vicino > PORTATA_UTILE) return {
+    tono: "amber",
+    testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
+         + `Il radar non vede niente entro i <b>${PORTATA_UTILE} km</b> in cui &egrave; `
+         + `affidabile, ma pi&ugrave; lontano qualcosa c'&egrave;, e da quella distanza `
+         + `non pu&ograve; dire se stia venendo da questa parte. `
+         + `Qui non arbitra: valgono le previsioni.`
   };
   if (!fidati) return {
     tono: "amber",
@@ -3879,7 +3915,8 @@ function renderRadar() {
     const sot = $("radarSotto");
     if (sot) {
       // v3.73.0 — oltre la portata utile la distanza non si riporta
-      const dist = (r.vicino === Infinity || r.vicino > 200)
+      // v3.78.6 — la soglia e' PORTATA_UTILE, non un 200 riscritto a mano
+      const dist = (r.vicino === Infinity || r.vicino > PORTATA_UTILE)
         ? null : r.vicino.toFixed(0) + " km";
       const dove = (r.fermo || !r.verso || r.nettezza <= 0.08) ? "" : ", va verso " + r.verso;
       /* v3.77.1 — "a 4 km, da sud" con la pioggia che arrivava da nord.

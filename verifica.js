@@ -2,8 +2,13 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.7.0
+   Versione: v1.8.0
    Build   : 2026-08-13 CEST
+
+   v1.8.0 — la portata utile del radar non si riscrive a numero. Era stata
+   resa una costante sola, ma due confronti continuavano a dire 200 per
+   conto loro, e uno dei due faceva arbitrare il radar in un caso in cui
+   aveva appena dichiarato di non sapere.
 
    v1.7.0 — una regola sulla PROSA, non sui numeri. La scheda mostrava
    quattro trattini per dire "il movimento non si misura" e sotto prometteva
@@ -500,6 +505,16 @@ prova("radar: nessuna promessa sul futuro dove i numeri tacciono", () => {
   const m = nudo.match(/scarto\s*\?\s*""\s*:[^;]{0,120}/);
   return m ? "frase agganciata a 'scarto' invece che a senzaMoto: " + m[0].slice(0, 70)
            : true;
+});
+
+prova("radar: la portata utile non si riscrive a mano", () => {
+  /* v1.8.0 — PORTATA_UTILE e' stata resa una costante sola in v3.78.4, ma
+     due confronti continuavano a scrivere 200 a numero: uno decideva se
+     stampare la distanza, l'altro se il radar potesse arbitrare contro le
+     previsioni. Una soglia scritta in tre posti e' una soglia che prima o
+     poi ne diventa tre. */
+  const m = [...nudo.matchAll(/vicino\s*[<>]=?\s*200\b/g)].map(x => x[0]);
+  return m.length ? "soglia a numero invece di PORTATA_UTILE: " + m.join(", ") : true;
 });
 
 prova("ogni glifo richiamato esiste", () => {
