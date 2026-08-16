@@ -2,8 +2,17 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.8.0
+   Versione: v1.9.1
    Build   : 2026-08-13 CEST
+
+   v1.9.1 — il controllo nuovo cercava "arbitra:" ovunque e pescava anche la
+   frase "Qui non arbitra: valgono le previsioni", che sta dentro un
+   letterale. Il controllo sul non confondere testo e codice si faceva
+   ingannare da un testo che sembrava codice. Ancorato a inizio riga.
+
+   v1.9.0 — ogni esito del confronto radar-previsioni deve dichiarare se il
+   radar sta arbitrando. Il paragrafo di chiusura e' fisso e restava
+   attaccato anche ai rami in cui il radar si astiene.
 
    v1.8.0 — la portata utile del radar non si riscrive a numero. Era stata
    resa una costante sola, ma due confronti continuavano a dire 200 per
@@ -515,6 +524,25 @@ prova("radar: la portata utile non si riscrive a mano", () => {
      poi ne diventa tre. */
   const m = [...nudo.matchAll(/vicino\s*[<>]=?\s*200\b/g)].map(x => x[0]);
   return m.length ? "soglia a numero invece di PORTATA_UTILE: " + m.join(", ") : true;
+});
+
+prova("radar: ogni esito del confronto dichiara se arbitra", () => {
+  /* v1.9.0 — il paragrafo di chiusura del confronto ("sulle prossime due ore
+     ha ragione quasi sempre chi guarda") e' fisso, e restava attaccato anche
+     ai rami in cui il radar si astiene: la scheda diceva "qui non arbitra,
+     valgono le previsioni" e sotto il contrario. Un testo fisso non puo'
+     commentare esiti che cambiano, quindi ogni esito deve dichiararsi. */
+  const f = nudo.match(/function confrontoRadar\([\s\S]*?\n\}/);
+  if (!f) return "confrontoRadar non trovata";
+  const ritorni = (f[0].match(/return\s*\{/g) || []).length;
+  /* v1.9.1 — ancorato a inizio riga. Cercando "arbitra:" ovunque si pescava
+     anche la frase "Qui non arbitra: valgono le previsioni", che sta dentro
+     un letterale: il controllo sul non confondere testo e codice si faceva
+     ingannare da un testo che sembrava codice. */
+  const dichiarati = (f[0].match(/^\s*arbitra\s*:/gm) || []).length;
+  if (!/c\.arbitra/.test(nudo)) return "il paragrafo di chiusura non guarda arbitra";
+  return ritorni === dichiarati ? true
+    : `${ritorni} esiti, ${dichiarati} dichiarano arbitra`;
 });
 
 prova("ogni glifo richiamato esiste", () => {

@@ -1,9 +1,29 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.6 — il radar non arbitra quando ha appena detto di non sapere
+  VENTAGLIO v3.78.7 — un testo fisso non puo' commentare esiti che cambiano
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.7: il riquadro del confronto diceva 'qui non arbitra: valgono le
+           previsioni', e il paragrafo subito sotto ribatteva 'sulle prossime
+           due ore ha ragione quasi sempre chi guarda'.
+           Quel paragrafo nacque in v3.39.0 con un compito preciso: spiegare
+           che due parti dell'app in disaccordo non sono un difetto. Allora
+           il confronto dava sempre ragione al radar, quindi un testo fisso
+           bastava. Da allora sono comparsi rami in cui il radar si astiene —
+           misura debole, eco fuori portata — e il paragrafo e' rimasto
+           attaccato lo stesso, a smentire la riga sopra. Non e' invecchiato:
+           e' rimasto fermo mentre attorno cambiava.
+           Ora ogni esito dichiara se il radar sta arbitrando, e la
+           spiegazione compare solo dove serve. Sparisce anche quando le due
+           fonti concordano: giustificare un disaccordo che non c'e' e'
+           rispondere a una domanda che nessuno ha fatto.
+           Nota di metodo. La regola che ho scritto per impedirne il ritorno
+           contava 'arbitra:' in tutto il sorgente, e pescava anche la frase
+           'Qui non arbitra: valgono le previsioni', che sta dentro un
+           letterale: un controllo sul non confondere testo e codice si e'
+           fatto ingannare da un testo che sembrava codice. Ancorato a inizio
+           riga.
   v3.78.6: la scheda diceva 'se stia venendo da questa parte, non si sa', e
            subito sotto il riquadro del confronto sentenziava 'su questo
            intervallo conta di piu' il radar: non sta indovinando, sta
@@ -1797,7 +1817,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.6 &middot; build 2026-08-13<br>
+v3.78.7 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3687,7 +3707,16 @@ function confrontoRadar(r) {
      arriva nulla. Ma se un eco c'e' oltre la portata utile, il radar ha
      appena dichiarato di non sapere se stia venendo: mandarlo ad arbitrare
      gli restituisce l'autorita' che si era tolto da solo due righe sopra. */
+  /* v3.78.7 — ogni esito dichiara se il radar sta ARBITRANDO. Il paragrafo
+     di chiusura ("sulle prossime due ore ha ragione quasi sempre chi
+     guarda") nacque in v3.39.0 per spiegare un disaccordo, quando il
+     confronto dava sempre ragione al radar. Da allora sono comparsi rami in
+     cui il radar si astiene, e quel paragrafo restava attaccato lo stesso:
+     la scheda diceva "qui non arbitra, valgono le previsioni" e sotto "ha
+     ragione quasi sempre chi guarda". Un testo fisso non puo' commentare
+     esiti che cambiano. */
   if (r.vicino === Infinity) return {
+    arbitra: true,
     tono: "teal",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
          + `e il radar <b>non vede pioggia da nessuna parte</b>, fin dove arriva il `
@@ -3695,6 +3724,7 @@ function confrontoRadar(r) {
          + `indovinando, sta guardando.`
   };
   if (r.vicino > PORTATA_UTILE) return {
+    arbitra: false,
     tono: "amber",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
          + `Il radar non vede niente entro i <b>${PORTATA_UTILE} km</b> in cui &egrave; `
@@ -3703,24 +3733,31 @@ function confrontoRadar(r) {
          + `Qui non arbitra: valgono le previsioni.`
   };
   if (!fidati) return {
+    arbitra: false,   // v3.78.7 — "non lo usare per smentirle" e' un'astensione
     tono: "amber",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore. `
          + `Il radar stavolta non &egrave; misurato abbastanza bene per dire la sua: `
          + `non lo usare per smentirle.`
   };
   if (modello >= 50 && !radarBagna) return {
+    arbitra: true,
     tono: "teal",
     testo: `Le previsioni danno <b>${modello}%</b> di pioggia nelle prossime due ore, `
          + `ma il radar <b>non vede nulla in avvicinamento</b>. Su questo intervallo `
          + `conta di pi&ugrave; il radar: non sta indovinando, sta guardando.`
   };
   if (modello <= 25 && radarBagna) return {
+    arbitra: true,
     tono: "coral",
     testo: `Le previsioni danno solo <b>${modello}%</b> nelle prossime due ore, `
          + `ma il radar <b>la vede arrivare</b>. Succede: i modelli non azzeccano `
          + `sempre dove finisce una cella gi&agrave; formata. Qui darei retta al radar.`
   };
   return {
+    /* v3.78.7 — quando concordano non c'e' niente da arbitrare, e nemmeno da
+       giustificare: spiegare perche' due fonti d'accordo non sono un difetto
+       e' rispondere a una domanda che nessuno ha fatto. */
+    arbitra: false,
     tono: "teal",
     testo: `Radar e previsioni <b>concordano</b>: modelli al ${modello}% nelle prossime `
          + `due ore, e il radar ${radarBagna ? "conferma" : "non vede pioggia in arrivo"}.`
@@ -4165,10 +4202,17 @@ function renderRadar() {
              + `<p class="note" style="margin:0">${c.testo}</p>`
              /* v3.39.0 — che due parti della stessa app dicano cose diverse
                 sembra un difetto se non si spiega perche' non lo e'. */
-             + `<p class="note" style="margin:9px 0 0;opacity:.92">Non &egrave; un errore `
-             + `dell'app: sono due strumenti diversi. Le previsioni <b>calcolano</b> cosa `
-             + `succeder&agrave;, il radar <b>guarda</b> cosa c'&egrave; adesso. Sulle `
-             + `prossime due ore ha ragione quasi sempre chi guarda.</p></div>`;
+             /* v3.78.7 — ma solo dove il radar arbitra davvero. Dove si
+                astiene, questo paragrafo lo smentiva: la riga sopra diceva
+                "qui non arbitra, valgono le previsioni" e questa "ha ragione
+                quasi sempre chi guarda". */
+             + (c.arbitra
+                 ? `<p class="note" style="margin:9px 0 0;opacity:.92">Non &egrave; un errore `
+                   + `dell'app: sono due strumenti diversi. Le previsioni <b>calcolano</b> cosa `
+                   + `succeder&agrave;, il radar <b>guarda</b> cosa c'&egrave; adesso. Sulle `
+                   + `prossime due ore ha ragione quasi sempre chi guarda.</p>`
+                 : "")
+             + `</div>`;
       })()
     + `<p class="note" style="margin-top:18px"><b>Come funziona.</b> Il radar non prevede: `
       + `<b>guarda</b>. Manda impulsi nell'aria e le gocce li rimandano indietro, cos&igrave; si `
