@@ -2,8 +2,14 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.6.0
+   Versione: v1.7.0
    Build   : 2026-08-13 CEST
+
+   v1.7.0 — una regola sulla PROSA, non sui numeri. La scheda mostrava
+   quattro trattini per dire "il movimento non si misura" e sotto prometteva
+   "non arriva nulla", che dal movimento discende. Nessuno dei controlli
+   guardava le frasi: verificavano che i valori tacessero, non che il testo
+   accanto tacesse con loro.
 
    v1.6.0 — una regola sulla portata utile del radar. Il testo la conosceva
    e la mappa no, quindi la scheda dichiarava "niente nel raggio utile" e
@@ -480,6 +486,20 @@ prova("la massima del giorno si calcola in un modo solo", () => {
   return modi.size > 1
     ? "g.tmax letta sia con media() sia con quantile(): due numeri per lo stesso dato"
     : true;
+});
+
+prova("radar: nessuna promessa sul futuro dove i numeri tacciono", () => {
+  /* v1.7.0 — la scheda mostrava quattro trattini, cioe' "il movimento non si
+     misura", e sotto prometteva "nelle prossime due ore non arriva nulla",
+     che dal movimento discende. La frase era agganciata a "scarto", una
+     condizione piu' stretta di "senzaMoto" che governa i trattini. E' la
+     seconda volta che il testo e i numeri si scollano sulla stessa scheda:
+     la prima fu la v3.73.1, corretta allora sui soli numeri.
+     Qui si vieta la forma, non l'occorrenza: una frase in coda a
+     "scarto ? ..." parla del movimento con la guardia sbagliata. */
+  const m = nudo.match(/scarto\s*\?\s*""\s*:[^;]{0,120}/);
+  return m ? "frase agganciata a 'scarto' invece che a senzaMoto: " + m[0].slice(0, 70)
+           : true;
 });
 
 prova("ogni glifo richiamato esiste", () => {

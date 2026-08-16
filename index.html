@@ -1,9 +1,33 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.4 — la mappa non si costruisce attorno a cio' che tace
+  VENTAGLIO v3.78.5 — la scheda non promette cio' che i suoi numeri negano
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.5: quattro trattini in fila dicevano 'il movimento non si misura', e
+           la riga sotto prometteva 'nelle prossime due ore, da qui, non
+           arriva nulla', che dal movimento discende. La frase era agganciata
+           a 'scarto', condizione piu' stretta di 'senzaMoto' che governa i
+           trattini: e' la v3.73.1 daccapo, corretta allora sui numeri e non
+           sulla prosa.
+           Ma i due casi che finivano in quel ramo non sono lo stesso caso, e
+           separarli dice piu' che tacere in entrambi. Se non c'e' un eco in
+           tutto il mosaico, non c'e' pioggia entro trecentocinquanta
+           chilometri, e per arrivare qui in due ore ne servirebbero
+           centosettantasette all'ora: quella promessa la regge l'ASSENZA e
+           non il movimento, quindi vale ed e' bene dirla. Se invece un eco
+           c'e' fra i duecento e il bordo, a centoventi all'ora in due ore se
+           ne coprono duecentoquaranta: qualcosa a duecentodieci puo'
+           arrivare davvero, e quell'eco per definizione e' misurato male.
+           Li' non si sa, e ora si dice che non si sa.
+           In piu' la griglia dei valori sparisce quando non c'e' niente da
+           misurare. Mostrava quattro trattini, e il quarto portava la
+           didascalia 'niente da misurare': cioe' quello che gli altri tre
+           gia' dicevano. Mezza scheda per una cosa sola, lo stesso spreco
+           corretto in v3.54.0 sulle tre soglie di pioggia affiancate.
+           verifica.js v1.7.0 aggiunge la prima regola sulle FRASI: i
+           controlli guardavano che i valori tacessero, non che il testo
+           accanto tacesse con loro.
   v3.78.4: la scheda diceva 'nessuna pioggia nel raggio utile' e sotto
            mostrava settecento chilometri di riquadro vuoto, con gli anelli
            a cento e duecento e niente dentro.
@@ -1754,7 +1778,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.4 &middot; build 2026-08-13<br>
+v3.78.5 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3781,7 +3805,28 @@ function renderRadar() {
         + `la distanza dentro la quale i suoi dati sono affidabili. `
         + `Pi&ugrave; lontano il fascio scruta troppo in alto: vede le cime delle nubi, `
         + `non la pioggia che tocca terra.`
-        + (scarto ? "" : ` Nelle prossime due ore, da qui, non arriva nulla.`);
+        /* v3.78.5 — la frase sul futuro era agganciata a "scarto", condizione
+           piu' stretta di quella che spegne i numeri: quattro trattini
+           dicevano "il movimento non si misura" e la riga sotto prometteva
+           "non arriva nulla", che dal movimento discende. E' la v3.73.1 di
+           nuovo, applicata allora ai numeri e non alla prosa.
+           Ma i due casi che finiscono in questo ramo non sono lo stesso caso,
+           e conviene separarli invece di tacere in entrambi.
+           Nessun eco in tutto il mosaico: niente pioggia entro trecento
+           cinquanta chilometri, e per arrivare qui in due ore ne servirebbero
+           centosettantasette all'ora. Quella promessa la regge l'ASSENZA, non
+           il movimento, quindi vale ed e' bene dirla.
+           Eco fra i duecento e il bordo: a centoventi all'ora in due ore si
+           coprono duecentoquaranta chilometri, quindi qualcosa a duecento
+           dieci puo' arrivare davvero — e quell'eco, per definizione della
+           portata utile, e' misurato male. Qui non si sa, e si dice che non
+           si sa. */
+        + (r.vicino === Infinity
+            ? ` Nemmeno pi&ugrave; lontano, fin dove arriva il mosaico, c'&egrave; `
+              + `qualcosa che possa raggiungerti in due ore.`
+            : ` Un eco pi&ugrave; distante c'&egrave;, ma a quella distanza non se ne `
+              + `pu&ograve; dire niente di affidabile: se stia venendo da questa `
+              + `parte, non si sa.`);
   } else if (r.fermo) {
     /* v3.77.0 — il titolo raccontava che cosa il metodo non riesce a fare, e
        il fatto — che piove, e a che distanza — finiva nella riga grigia
@@ -4043,26 +4088,32 @@ function renderRadar() {
   el.innerHTML =
     `<p class="note" style="margin-top:2px">${sot}</p>`
 
-    + `<div class="verdict" style="margin-top:20px">`
-    + `<div class="metric"><div class="v${nienteQui ? " spento" : ""}">`
-      + `${nienteQui ? "\u2014" : r.vicino.toFixed(0) + '<small> km</small>'}</div>`
-      + `<div class="k">pioggia pi&ugrave; vicina</div></div>`
-    + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}" style="font-size:22px">`
-      + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso)}</div>`
-      + `<div class="k">si sposta</div></div>`
-    + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}">`
-      + `${senzaMoto ? "\u2014" : r.kmh.toFixed(0) + '<small> km/h</small>'}</div>`
-      + `<div class="k">velocit&agrave;</div></div>`
-    + (r.durata !== null || (r.sopra && r.smette !== null)
-        ? `<div class="metric"><div class="v">${r.sopra ? r.smette : r.durata}`
-          + `<small> min</small></div><div class="k">`
-          + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
-        : "")
-    + (nienteQui
-        ? `<div class="metric"><div class="v spento" style="font-size:20px">\u2014</div>`
-          + `<div class="k">niente da misurare</div></div>`
-        : `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
-          + `<div class="k">${giudizio[2]}</div></div>`) + `</div>`
+    /* v3.78.5 \u2014 con niente da misurare la griglia mostrava quattro trattini
+       in fila, e il quarto portava la didascalia "niente da misurare": cioe'
+       esattamente quello che gli altri tre gia' dicevano. Mezza scheda per
+       una cosa sola, lo stesso spreco corretto in v3.54.0 sulle tre soglie di
+       pioggia affiancate. Il testo qui sopra e' completo da solo, quindi la
+       griglia non compare affatto.
+       E cadendo il caso nienteQui, la prima casella non ha piu' bisogno della
+       sua guardia: fuori da quel ramo la distanza esiste sempre. */
+    + (nienteQui ? "" :
+        `<div class="verdict" style="margin-top:20px">`
+      + `<div class="metric"><div class="v">`
+        + `${r.vicino.toFixed(0)}<small> km</small></div>`
+        + `<div class="k">pioggia pi&ugrave; vicina</div></div>`
+      + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}" style="font-size:22px">`
+        + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso)}</div>`
+        + `<div class="k">si sposta</div></div>`
+      + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}">`
+        + `${senzaMoto ? "\u2014" : r.kmh.toFixed(0) + '<small> km/h</small>'}</div>`
+        + `<div class="k">velocit&agrave;</div></div>`
+      + (r.durata !== null || (r.sopra && r.smette !== null)
+          ? `<div class="metric"><div class="v">${r.sopra ? r.smette : r.durata}`
+            + `<small> min</small></div><div class="k">`
+            + `${r.sopra ? "ancora per" : "quanto dura"}</div></div>`
+          : "")
+      + `<div class="metric"><div class="v ${giudizio[0]}" style="font-size:20px">${giudizio[1]}</div>`
+        + `<div class="k">${giudizio[2]}</div></div>` + `</div>`)
 
     + (() => {
         const c = confrontoRadar(r);
