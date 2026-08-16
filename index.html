@@ -1,9 +1,32 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.3 — riquadri a 512, e la freccia non si capovolge piu'
+  VENTAGLIO v3.78.4 — la mappa non si costruisce attorno a cio' che tace
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.4: la scheda diceva 'nessuna pioggia nel raggio utile' e sotto
+           mostrava settecento chilometri di riquadro vuoto, con gli anelli
+           a cento e duecento e niente dentro.
+           La portata utile — i duecento chilometri oltre i quali il fascio
+           radar scruta sopra le nubi invece che dentro la pioggia — la
+           conosceva soltanto il testo. La mappa no: vedeva un eco a
+           trecentocinquanta chilometri, allargava l'inquadratura fino al
+           limite del mosaico per contenerlo, e poi non lo disegnava
+           nemmeno, perche' cadeva oltre il raggio tracciabile. Un riquadro
+           enorme costruito attorno a una cosa di cui il testo aveva appena
+           deciso di non parlare.
+           Il rovescio lo rendeva evidente: senza alcun eco la mappa
+           spariva del tutto. Il caso con MENO informazione ne mostrava di
+           piu'.
+           Ora PORTATA_UTILE sta fra le costanti del radar e non dentro
+           renderRadar, e la mappa la usa come la usa il testo. Vale il
+           principio scritto in v3.71.0: una mappa vuota dice meno della
+           riga di testo che le sta sopra.
+           Non e' un difetto delle versioni di oggi — c'e' da quando esiste
+           la portata utile, in v3.73.0. L'inquadratura che si adatta l'ha
+           soltanto reso visibile, che e' il modo consueto in cui questi
+           difetti vengono a galla: non quando nascono, ma quando qualcosa
+           accanto smette di nasconderli.
   v3.78.3: due cose, e una correzione a quello che avevo scritto ieri.
            LA FRECCIA SI CAPOVOLGEVA A DUE CHILOMETRI. Con l'eco cosi'
            vicino il bersaglio finisce dentro la mira, e la convenzione
@@ -1731,7 +1754,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.3 &middot; build 2026-08-13<br>
+v3.78.4 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3163,6 +3186,13 @@ function renderPagella(){
    ============================================================ */
 const RV_MAPPE = "https://api.rainviewer.com/public/weather-maps.json";
 const R_LATO = 3, R_DIM = 256 * R_LATO, R_RID = 6;
+/* v3.73.0 — oltre questa distanza il fascio radar scruta sopra i tremila
+   metri: vede le cime delle nubi, non la pioggia che tocca terra.
+   v3.78.4 — e sta QUI, non dentro renderRadar, perche' la usano in due: il
+   testo per dire 'niente nel raggio utile' e la mappa per decidere se
+   disegnarsi. Finche' l'ha saputa solo il testo, la mappa costruiva
+   inquadrature attorno a echi che la scheda si rifiutava di nominare. */
+const PORTATA_UTILE = 200;
 
 function rPixel(lat, lon, z) {
   const n = 2 ** z * 256, r = lat * Math.PI / 180;
@@ -3431,8 +3461,19 @@ async function radarCalcola() {
        ancorato alla risoluzione del dato a 256. */
     const larDef = R_DIM * (z <= 6 ? 0.16 : z === 7 ? 0.30 : 0.46) * 640 / 360
                  * (rMpp(lat, z) / 1000);
+    /* v3.78.4 — LA MAPPA IGNORAVA LA PORTATA UTILE. Con la pioggia oltre i
+       duecento chilometri la scheda diceva 'nessuna pioggia nel raggio
+       utile' — giusto — e intanto allargava l'inquadratura fino a
+       settecento chilometri per contenere quell'eco, che poi restava fuori
+       dal raggio disegnabile e non veniva nemmeno segnato: un riquadro
+       enorme e vuoto, costruito attorno a una cosa di cui il testo aveva
+       appena deciso di non parlare. E al contrario, senza alcun eco la
+       mappa spariva: il caso con MENO informazione ne mostrava di piu'.
+       Ora il criterio e' uno solo. Vale il principio della v3.71.0: una
+       mappa vuota dice meno della riga di testo che le sta sopra. */
+    const dentroPortata = vicino !== Infinity && vicino <= PORTATA_UTILE;
     let larKm = larDef;
-    if (vicino !== Infinity) {
+    if (dentroPortata) {
       // larghezza necessaria perche' l'eco stia dentro con un margine
       const serveKm = vicino * 1.35 * 2;
       if (serveKm > larKm) larKm = serveKm;
@@ -3460,7 +3501,7 @@ async function radarCalcola() {
        avere il mosaico: nove riquadri da 512 sono un quarto di megabyte, e
        chiederli per poi nasconderli e' il genere di spreco che non si vede
        finche' non si guarda il traffico. */
-    const mappaVerra = vicino !== Infinity && vicino < (larKm / 2) * 0.98;
+    const mappaVerra = dentroPortata && vicino < (larKm / 2) * 0.98;
 
     let mapCanvas = m2.canvas, mapPx = px, mapPy = py, mapDim = R_DIM;
     let mapKmPx = rMpp(lat, z) / 1000;
@@ -3491,8 +3532,7 @@ async function radarCalcola() {
     if (ritAlt > mapDim) { ritAlt = mapDim; ritLar = ritAlt * 640 / 360; }
     larKm = ritLar * mapKmPx;
     // se la pioggia resta comunque fuori campo, la mappa non serve
-    const mappaUtile = vicino === Infinity ? false
-      : (vicino / mapKmPx) < (ritLar / 2) * 0.98;
+    const mappaUtile = dentroPortata && (vicino / mapKmPx) < (ritLar / 2) * 0.98;
 
     let miniatura = null;
     if (mappaUtile) try {
@@ -3683,7 +3723,7 @@ function renderRadar() {
      prima di arrivare o un artefatto. In piu' il mosaico e' cucito da radar
      diversi: lassu' potrebbe esserci un buco di copertura. Dare un numero al
      chilometro su un dato del genere e' una precisione che non abbiamo. */
-  const PORTATA_UTILE = 200;
+  // v3.78.4 — PORTATA_UTILE vive ora accanto alle altre costanti del radar
   const oltrePortata = r.vicino !== Infinity && r.vicino > PORTATA_UTILE;
   const nienteQui = r.vicino === Infinity || oltrePortata;
   /* v3.73.1 — spegnevo velocita' e direzione quando il CALCOLO era debole,

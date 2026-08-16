@@ -2,8 +2,14 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.5.0
+   Versione: v1.6.0
    Build   : 2026-08-13 CEST
+
+   v1.6.0 — una regola sulla portata utile del radar. Il testo la conosceva
+   e la mappa no, quindi la scheda dichiarava "niente nel raggio utile" e
+   accanto disegnava un riquadro costruito attorno all'eco che si era
+   appena rifiutata di nominare. Stessa famiglia di sempre: due pezzi che
+   decidono la stessa cosa con criteri diversi.
 
    v1.5.0 — due regole sul radar, dopo la terza velocita' impossibile
    stampata come misura. Le prime due volte la correzione era stata locale,
@@ -284,6 +290,14 @@ regola("radar: il raggio di ricerca nasce da una velocita' massima",
 regola("radar: una velocita' inverosimile spegne cio' che ne discende",
   "const inverosimile = kmh > KMH_MAX",
   "senza, direzione, minuti d'arrivo e durata restano stampati come misure");
+
+/* v1.6.0 — il testo e la mappa devono usare la stessa portata utile. Finche'
+   solo il testo la conosceva, la scheda diceva "niente nel raggio utile" e
+   accanto disegnava settecento chilometri di vuoto, inquadrati attorno a un
+   eco che si era appena rifiutata di nominare. */
+regola("radar: la mappa rispetta la stessa portata utile del testo",
+  "const mappaUtile = dentroPortata",
+  "la mappa si costruiva attorno a echi oltre i 200 km, che il testo dichiara inaffidabili");
 
 regola("il giorno in corso conta solo le ore che restano", "function psumFinestra",
   "sommare le 24 ore fa annunciare a mezzogiorno la pioggia caduta di notte");
