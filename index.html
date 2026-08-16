@@ -1,9 +1,42 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.2 — nessuna nube va a duecento all'ora
+  VENTAGLIO v3.78.3 — riquadri a 512, e la freccia non si capovolge piu'
   File  : ventaglio-v3.html
   Build : 2026-08-13 CEST
+  v3.78.3: due cose, e una correzione a quello che avevo scritto ieri.
+           LA FRECCIA SI CAPOVOLGEVA A DUE CHILOMETRI. Con l'eco cosi'
+           vicino il bersaglio finisce dentro la mira, e la convenzione
+           'coda sopravvento, punta sul bersaglio' — giusta per la pioggia
+           distante — faceva atterrare la punta addosso al centro: si
+           leggeva 'sta arrivando' mentre il titolo diceva 'ma si
+           allontana'. Sotto i tre chilometri il bersaglio non e' piu'
+           distinguibile da te, quindi la freccia si ancora al centro e
+           punta in fuori, esattamente come gia' faceva col piove-sopra.
+           Una convenzione che si puo' capovolgere non e' una convenzione.
+           LA FONTE SERVE LO STESSO RIQUADRO ANCHE A 512 PIXEL. Ieri ho
+           scritto che il limite era la fonte e non il codice: era vero
+           sullo ZOOM, che si ferma a 7, ma cercavo altro zoom invece di
+           altra risoluzione allo stesso zoom. Il parametro della dimensione
+           non l'avevo provato.
+           Misurato prima di usarlo, caricando il 1024 nativo accanto al
+           nostro ingrandimento del 256: piu' alta frequenza (0,77 contro
+           0,48) e piu' zone piatte, cioe' bordi disegnati netti sullo
+           stesso dato. Le classi di intensita' restano 27 in tutte le
+           dimensioni: non e' piu' informazione, e' la stessa informazione
+           non impastata da noi. Per questo il pavimento del campo resta
+           ancorato alla risoluzione a 256 — quella dice quanto si sa, non
+           quanto si vede.
+           Si sale a 512 solo quando altrimenti si ingrandirebbe troppo, e
+           mai a 1024: sarebbe una tela da trentotto megabyte su un
+           telefono. E non si scarica niente se la mappa non verra'
+           disegnata. L'ingrandimento della miniatura passa da 4,9 a 2,6
+           volte nel caso comune, e da 9,8 a 1,2 nel peggiore.
+           Infine l'ordine, che nelle tre versioni precedenti era storto:
+           prima quanto zoom concede la fonte, poi quanto campo serve in
+           chilometri, e solo alla fine con quanti pixel disegnarlo. Fatto
+           al contrario, ogni scelta vincolava la successiva per il verso
+           sbagliato.
   v3.78.2: la scheda diceva '209 km/h' e accanto 'puoi fidarti, il calcolo
            e' solido'. Il codice lo sapeva gia': il commento della v3.73.1
            dice 'i 328 km/h lo confermano, nessuna nube va a quella
@@ -1698,7 +1731,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.2 &middot; build 2026-08-13<br>
+v3.78.3 &middot; build 2026-08-13<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3174,21 +3207,26 @@ async function rZoom(host, p1, p2, lat, lon) {
   return null;
 }
 
-async function rMosaico(host, path, z, cx, cy) {
+/* v3.78.3 — la dimensione dei riquadri diventa un parametro. La fonte serve
+   lo stesso riquadro, alla stessa area di terreno, anche a 512 e 1024 pixel:
+   il calcolo continua a lavorare sui 256, che gli bastano, mentre la mappa
+   puo' chiedere il doppio e smettere di essere sfocata da noi. */
+async function rMosaico(host, path, z, cx, cy, lato) {
+  const L = lato || 256, DIM = L * R_LATO;
   const c = document.createElement("canvas");
-  c.width = c.height = R_DIM;
+  c.width = c.height = DIM;
   const g = c.getContext("2d", { willReadFrequently: true });
   let ok = 0;
   await Promise.all([...Array(R_LATO * R_LATO)].map((_, k) => new Promise(ris => {
     const i = k % R_LATO, j = (k / R_LATO) | 0;
     const im = new Image();
     im.crossOrigin = "anonymous";
-    im.onload = () => { g.drawImage(im, i * 256, j * 256); ok++; ris(); };
+    im.onload = () => { g.drawImage(im, i * L, j * L); ok++; ris(); };
     im.onerror = () => ris();
-    im.src = `${host}${path}/256/${z}/${cx - 1 + i}/${cy - 1 + j}/4/1_1.png`;
+    im.src = `${host}${path}/${L}/${z}/${cx - 1 + i}/${cy - 1 + j}/4/1_1.png`;
     setTimeout(ris, 15000);
   })));
-  return { ctx: g, canvas: c, ok };   // v3.66.0 — serve anche la tela
+  return { ctx: g, canvas: c, ok, dim: DIM };   // v3.66.0 — serve anche la tela
 }
 
 function rRidotta(ctx) {
@@ -3378,33 +3416,19 @@ async function radarCalcola() {
        cascato io: non sono vuoti, sono il rifiuto del server.
        Il tetto e' quindi 7, e il mosaico fine serve solo quando il calcolo
        ha dovuto scendere a 5 o 6 — dove il guadagno c'e' ed e' grosso. */
-    const Z_MAPPA = 7;
-    let mapCanvas = m2.canvas, mapPx = px, mapPy = py;
-    let mapKmPx = rMpp(lat, z) / 1000;
-    if (vicino !== Infinity && vicino < 25 && z < Z_MAPPA) try {
-      const zF = Math.min(Z_MAPPA, z + 2);
-      const pgF = rPixel(lat, lon, zF);
-      const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
-      const mF = await rMosaico(j.host, f2.path, zF, cxF, cyF);
-      /* e non basta che i riquadri arrivino: se a quello zoom non c'e' un
-         eco da nessuna parte, il mosaico fine e' un rettangolo vuoto e il
-         largo diceva di piu'. Si campiona un pixel ogni sedici. */
-      let acceso = 0;
-      if (mF.ok >= 5) {
-        const dd = mF.ctx.getImageData(0, 0, R_DIM, R_DIM).data;
-        for (let i = 3; i < dd.length; i += 64) if (dd[i] > 20) acceso++;
-      }
-      if (acceso > 20) {
-        mapCanvas = mF.canvas;
-        mapPx = pgF.x - (cxF - 1) * 256;
-        mapPy = pgF.y - (cyF - 1) * 256;
-        mapKmPx = rMpp(lat, zF) / 1000;
-      }
-    } catch (e) {}
+    /* v3.78.3 — l'ordine giusto e' questo: prima quanto zoom concede la
+       fonte, poi quanto campo serve — in chilometri, che e' una grandezza
+       del mondo e non dello schermo — e solo alla fine con quanti pixel
+       disegnarlo. Fatto al contrario, come nelle tre versioni precedenti,
+       ogni scelta vincolava la successiva per il verso sbagliato. */
+    const Z_MAPPA = 7;                       // il tetto servito, misurato
+    const zMappa = Math.min(Z_MAPPA, z + 2);
+    const kmPx256 = rMpp(lat, zMappa) / 1000;
 
-    /* v3.78.0 — l'inquadratura si ragiona in chilometri e si converte in
-       pixel solo alla fine: con due mosaici a risoluzioni diverse, contare
-       in pixel significherebbe misurare con due righelli. */
+    /* il campo, in chilometri. Dipende da quanta informazione c'e', non da
+       quanti pixel: i riquadri da 512 disegnano meglio le stesse classi di
+       intensita', non ne misurano di nuove, quindi il pavimento resta
+       ancorato alla risoluzione del dato a 256. */
     const larDef = R_DIM * (z <= 6 ? 0.16 : z === 7 ? 0.30 : 0.46) * 640 / 360
                  * (rMpp(lat, z) / 1000);
     let larKm = larDef;
@@ -3412,28 +3436,59 @@ async function radarCalcola() {
       // larghezza necessaria perche' l'eco stia dentro con un margine
       const serveKm = vicino * 1.35 * 2;
       if (serveKm > larKm) larKm = serveKm;
-      /* v3.77.0 — e il contrario, che mancava. La v3.71.0 aveva insegnato
-         all'inquadratura ad allargarsi per la pioggia lontana, ma non a
-         stringersi per quella vicina: con l'eco a 4 km restavano trecento
-         chilometri di campo e l'anello piu' stretto a 50 km, dodici volte la
-         distanza annunciata. */
-      /* v3.78.0 — il minimo non e' piu' un numero fisso ma la soglia oltre
-         la quale si ingrandirebbe soltanto la sfocatura: mezza larghezza
-         pari a 125 pixel del mosaico in uso. */
-      /* v3.78.1 — e comunque mai piu' largo di prima. Con la sorgente ferma
-         a 923 metri per pixel — lo zoom 7 e' il massimo servito — quella
-         soglia varrebbe centoquindici chilometri: allargherebbe il campo
-         invece di stringerlo, l'opposto di cio' che serve. Il piu' stretto
-         dei due. */
-      else {
-        const MIN_KM = Math.min(60, 125 * mapKmPx);
-        larKm = Math.min(larKm, Math.max(MIN_KM, vicino * 4) * 2);
-      }
+      /* v3.77.0 — e il contrario, che mancava: l'inquadratura sapeva
+         allargarsi per la pioggia lontana ma non stringersi per quella
+         vicina. v3.78.1 — mai piu' larga di prima, comunque. */
+      else larKm = Math.min(larKm, Math.max(Math.min(60, 125 * kmPx256), vicino * 4) * 2);
     }
+
+    /* v3.78.3 — LA FONTE SERVE LO STESSO RIQUADRO ANCHE A 512 PIXEL, e non
+       ci avevo pensato: cercavo altro zoom, che non c'e', invece di altra
+       risoluzione allo stesso zoom, che c'e'. Misurato caricando il 1024
+       nativo accanto al nostro ingrandimento del 256: piu' alta frequenza
+       (0,77 contro 0,48) e piu' zone piatte, cioe' bordi disegnati netti
+       sullo stesso dato — non classi di intensita' nuove, che restano 27 in
+       tutte le dimensioni. Non e' piu' informazione: e' la stessa, non
+       impastata da noi. Si sale a 512 solo quando altrimenti si
+       ingrandirebbe troppo, e non oltre: il mosaico a 1024 sarebbe una tela
+       da trentotto megabyte su un telefono. */
+    const lato = (larKm / kmPx256) < 420 ? 512 : 256;
+
+    /* v3.78.3 — e non si scarica niente se la mappa non verra' disegnata.
+       La condizione e' la stessa di mappaUtile piu' sotto, detta in
+       chilometri invece che in pixel, cosi' si puo' rispondere prima di
+       avere il mosaico: nove riquadri da 512 sono un quarto di megabyte, e
+       chiederli per poi nasconderli e' il genere di spreco che non si vede
+       finche' non si guarda il traffico. */
+    const mappaVerra = vicino !== Infinity && vicino < (larKm / 2) * 0.98;
+
+    let mapCanvas = m2.canvas, mapPx = px, mapPy = py, mapDim = R_DIM;
+    let mapKmPx = rMpp(lat, z) / 1000;
+    if (mappaVerra && (zMappa !== z || lato !== 256)) try {
+      const pgF = rPixel(lat, lon, zMappa);
+      const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
+      const mF = await rMosaico(j.host, f2.path, zMappa, cxF, cyF, lato);
+      /* e non basta che i riquadri arrivino: se li' non c'e' un eco da
+         nessuna parte il mosaico e' un rettangolo vuoto, e quello largo
+         diceva di piu'. Si campiona un pixel ogni sedici. */
+      let acceso = 0;
+      if (mF.ok >= 5) {
+        const dd = mF.ctx.getImageData(0, 0, mF.dim, mF.dim).data;
+        for (let i = 3; i < dd.length; i += 64) if (dd[i] > 20) acceso++;
+      }
+      if (acceso > 20) {
+        mapCanvas = mF.canvas; mapDim = mF.dim;
+        const scala = lato / 256;
+        mapPx = (pgF.x - (cxF - 1) * 256) * scala;
+        mapPy = (pgF.y - (cyF - 1) * 256) * scala;
+        mapKmPx = kmPx256 / scala;
+      }
+    } catch (e) {}
+
     let ritLar = larKm / mapKmPx;
-    if (ritLar > R_DIM) ritLar = R_DIM;
+    if (ritLar > mapDim) ritLar = mapDim;
     let ritAlt = ritLar * 360 / 640;
-    if (ritAlt > R_DIM) { ritAlt = R_DIM; ritLar = ritAlt * 640 / 360; }
+    if (ritAlt > mapDim) { ritAlt = mapDim; ritLar = ritAlt * 640 / 360; }
     larKm = ritLar * mapKmPx;
     // se la pioggia resta comunque fuori campo, la mappa non serve
     const mappaUtile = vicino === Infinity ? false
@@ -3826,7 +3881,9 @@ function renderRadar() {
       });
 
       // il segno che collega te alla pioggia piu' vicina
-      let bx = null, by = null;      // v3.70.5 — dove sta la pioggia piu' vicina
+      // v3.70.5 — dove sta la pioggia piu' vicina
+      // v3.78.3 — sottoLaMira serve anche alla freccia, quindi vive qui
+      let bx = null, by = null, sottoLaMira = false;
       if (!r.sopra && r.vicinoAng !== null && r.vicino !== Infinity && rr(r.vicino) < 74) {
         const a = r.vicinoAng * Math.PI / 180;
         const d = rr(r.vicino);                        // lunghezza del filo
@@ -3849,7 +3906,7 @@ function renderRadar() {
            segue la lunghezza del filo, e quando l'eco e' cosi' vicino da
            starci sotto l'etichetta va nella sua direzione, appena fuori dalla
            mira: numero e verso si leggono insieme. */
-        const sottoLaMira = d < 3.4;
+        sottoLaMira = d < 3.4;
         if (sottoLaMira) {
           ets.push(["dist", CX + Math.sin(a) * 7.5, CY - Math.cos(a) * 7.5,
                     r.vicino.toFixed(0) + " km"]);
@@ -3874,15 +3931,16 @@ function renderRadar() {
       /* v3.78.0 — e anche quando sotto scende la freccia del movimento, che
          con la pioggia sopra la testa parte dal centro. */
       const giu = ang !== null && -Math.cos(ang * Math.PI / 180) > 0.3;
+      const alCentro = r.sopra || sottoLaMira;   // v3.78.3
       ets.push(["qui", CX,
-        ((by !== null && by > CY) || (r.sopra && giu)) ? CY - 8 : CY + 8, "tu"]);
+        ((by !== null && by > CY) || (alCentro && giu)) ? CY - 8 : CY + 8, "tu"]);
 
       // la freccia del movimento, solo se la pioggia si muove davvero
       /* v3.70.5 — la freccia era enorme e ambigua: non si capiva se
          indicasse dove va la pioggia o da dove arriva. Ora e' piccola,
          parte dal bersaglio e punta verso di te: dice il verso del
          movimento nel punto in cui il movimento conta. */
-      if (ang !== null && bx !== null) {
+      if (ang !== null && bx !== null && !sottoLaMira) {
         /* v3.77.1 — due difetti nella stessa freccia, che si coprivano a
            vicenda. Puntava all'INVERSO: dentro un SVG l'asse y cresce verso
            il basso, quindi il tracciato "M0 0 L0 10" nasce rivolto a sud e
@@ -3904,7 +3962,15 @@ function renderRadar() {
           + '<path d="M0 0 L0 ' + lung.toFixed(1) + '" class="dir"/>'
           + '<path d="M-2.6 ' + (lung - 3.4).toFixed(1) + ' L0 ' + lung.toFixed(1)
           + ' L2.6 ' + (lung - 3.4).toFixed(1) + '" class="dir"/></g>';
-      } else if (ang !== null && r.sopra) {
+      } else if (ang !== null && alCentro) {
+        /* v3.78.3 — e lo stesso vale quando l'eco e' cosi' vicino da stare
+           sotto la mira. Con la pioggia a due chilometri la punta atterrava
+           addosso al centro e la freccia si leggeva come "sta arrivando",
+           mentre il titolo diceva "ma si allontana": la convenzione "coda
+           sopravvento, punta sul bersaglio" regge finche' il bersaglio e'
+           distinguibile da te, e sotto i tre chilometri non lo e' piu'.
+           Li' la freccia si ancora al centro e punta in fuori, che dice la
+           stessa cosa senza poterla capovolgere. */
         /* v3.78.0 — QUANDO PIOVE SOPRA DI TE LA MAPPA RESTAVA SENZA FRECCIA.
            Il filo e il bersaglio si disegnano solo per un eco distante, e la
            freccia era agganciata al bersaglio: con la pioggia sulla testa
