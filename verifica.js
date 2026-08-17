@@ -2,7 +2,7 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.12.0
+   Versione: v1.13.0
    Build   : 2026-08-17 CEST
 
    v1.12.0 — quattro regole sull'arrivo della pioggia. La scheda appaiava il
@@ -367,6 +367,14 @@ regola("radar: il tetto sull'errore relativo sta fuori dal ternario",
   "Math.min(0.9, kmh > 0 ? errKmh / kmh : 0.9)",
   "dentro, il ramo della velocita' nulla dava relErr 1 e arrivoMax diventava una divisione per zero");
 
+/* v1.13.0 — la rosa a sedici punti. I confini di quella a otto sono i centri
+   di questa, quindi un angolo che prima saltava fra due nomi ora cade nel
+   punto piu' stabile. E si compone con le preposizioni, cosa che la forma
+   "fra est e sud-est" non faceva: usciva "da fra ovest e nord-ovest". */
+regola("radar: la provenienza si ricava dall'angolo, non dal nome arrotondato",
+  "rVerso16(((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360 + 180)",
+  "calcolare l'opposto del punto arrotondato reintroduce il salto sul confine, corretto in una direzione sola");
+
 /* la prova sulla riserva ripetuta usa "nudo", che nasce piu' sotto: sta
    insieme alle altre che ne dipendono. Scritta qui dava un TDZ — "Cannot
    access 'nudo' before initialization" — cioe' esattamente il difetto che
@@ -453,17 +461,19 @@ prova("nessun const o let letto prima di essere dichiarato", () => {
     .replace(/"(?:[^"\\\n]|\\.)*"/g, '""');
 
   const guai = [];
-  for (const m of testo.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g)) {
-    // il corpo della funzione, fino alla graffa che la chiude
-    let d = 1, i = m.index + m[0].length;
-    const inizio = i;
-    while (i < testo.length && d > 0) {
-      if (testo[i] === "{") d++;
-      else if (testo[i] === "}") d--;
-      i++;
-    }
-    const corpo = testo.slice(inizio, i - 1);
 
+  /* v1.13.0 — IL CONTROLLO NON GUARDAVA DOVE SERVIVA. Esaminava solo il
+     livello principale del corpo di ogni funzione, e radarCalcola ha TUTTO
+     dentro un try: quel livello e' quasi vuoto, quindi la funzione non veniva
+     analizzata affatto. Ed e' esattamente li' che sono nati i due
+     ReferenceError che questa prova esiste per fermare — "lar" in v3.69.1 e
+     "arrivo" in v3.80.0 — entrambi arrivati in produzione con il collaudo
+     verde. Un controllo che non guarda dove il codice e' piu' fitto da' una
+     sicurezza che non ha.
+     Ora si scende di un livello dentro try e catch: le loro graffe delimitano
+     uno scope, quindi la regola del livello unico vale identica al loro
+     interno, e cambia solo dove si guarda. */
+  function scansiona(nome, corpo) {
     // profondita' di graffe carattere per carattere: 0 = livello principale
     const liv = new Array(corpo.length);
     let p = 0;
@@ -478,17 +488,41 @@ prova("nessun const o let letto prima di essere dichiarato", () => {
          sta a livello zero perche' le parentesi tonde non sono graffe, e
          un h di un ciclo precedente lo faceva risultare letto in anticipo. */
       if (/for\s*\(\s*$/.test(corpo.slice(Math.max(0, dec.index - 8), dec.index))) continue;
-      const nome = dec[1];
-      const re = new RegExp("(?<![.\\w$])" + nome + "(?![\\w$])", "g");
+      const chi = dec[1];
+      const re = new RegExp("(?<![.\\w$])" + chi + "(?![\\w$])", "g");
       for (const uso of corpo.matchAll(re)) {
         if (uso.index >= dec.index) break;
         if (liv[uso.index] !== 0) continue;            // letto dentro una funzione annidata
-        guai.push(m[1] + "(): " + nome);
+        guai.push(nome + "(): " + chi);
         break;
       }
     }
+    // e un livello piu' dentro, se al livello principale c'e' un try o un catch
+    for (const t of corpo.matchAll(/\b(?:try|catch\s*\([^)]*\))\s*\{/g)) {
+      if (liv[t.index] !== 0) continue;
+      let d = 1, i = t.index + t[0].length;
+      const dentro = i;
+      while (i < corpo.length && d > 0) {
+        if (corpo[i] === "{") d++;
+        else if (corpo[i] === "}") d--;
+        i++;
+      }
+      scansiona(nome, corpo.slice(dentro, i - 1));
+    }
   }
-  return guai.length ? guai.join(" \u00B7 ") : true;
+
+  for (const m of testo.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{/g)) {
+    // il corpo della funzione, fino alla graffa che la chiude
+    let d = 1, i = m.index + m[0].length;
+    const inizio = i;
+    while (i < testo.length && d > 0) {
+      if (testo[i] === "{") d++;
+      else if (testo[i] === "}") d--;
+      i++;
+    }
+    scansiona(m[1], testo.slice(inizio, i - 1));
+  }
+  return guai.length ? [...new Set(guai)].join(" \u00B7 ") : true;
 });
 
 /* ------------------------------------------------------------
@@ -575,6 +609,16 @@ prova("radar: nessuna promessa sul futuro dove i numeri tacciono", () => {
   const m = nudo.match(/scarto\s*\?\s*""\s*:[^;]{0,120}/);
   return m ? "frase agganciata a 'scarto' invece che a senzaMoto: " + m[0].slice(0, 70)
            : true;
+});
+
+prova("radar: una sola rosa dei venti", () => {
+  /* v1.13.0 — con due rose in casa la stessa direzione ha due nomi, e la
+     scheda finisce per dire "verso est" nel riquadro e "verso est-sud-est"
+     nella riga sotto. E' la famiglia di difetti di tutta questa serie. */
+  const rose = [...nudo.matchAll(/const\s+(R_ROSA\w*)\s*=/g)].map((m) => m[1]);
+  return rose.length > 1
+    ? "due rose: " + rose.join(", ") + " — due nomi per la stessa direzione"
+    : true;
 });
 
 prova("radar: la riserva sul calcolo non si ripete nella stessa scheda", () => {

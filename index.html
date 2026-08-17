@@ -1,9 +1,41 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.80.0 — tre numeri veri che insieme dicevano una cosa falsa
+  VENTAGLIO v3.80.1 — il ReferenceError che il collaudo non poteva vedere
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.80.1: la v3.80.0 non funzionava affatto. 'Radar non riuscito', a ogni
+           calcolo, per un ReferenceError: avevo messo il conto della distanza
+           d'arrivo subito dopo la velocita', che e' PRIMA che 'arrivo' esista.
+           E' la terza volta che accade in radarCalcola — la v3.69.1 fu 'lar
+           dichiarata dentro il try e letta fuori' — e ogni volta per lo stesso
+           motivo: la funzione e' lunga, sta tutta dentro un try, e mettere un
+           calcolo accanto a cio' che lo riguarda e' facilissimo se cio' che lo
+           riguarda nasce piu' sotto. Ora i valori derivati dall'arrivo vivono
+           dopo l'arrivo.
+           MA LA COSA CHE CONTA E' PERCHE' IL COLLAUDO NON L'HA VISTO. Esiste
+           dalla v1.2.0 un controllo apposta per questo, e guardava solo il
+           livello principale del corpo di ogni funzione. radarCalcola ha tutto
+           dentro un try: quel livello e' quasi vuoto, quindi la funzione non
+           veniva esaminata affatto. Il controllo non guardava dove il codice e'
+           piu' fitto, ed e' li' che sono usciti entrambi i ReferenceError.
+           Ora scende di un livello dentro try e catch, e verificato: sulla
+           v3.80.0 pubblicata segnala 'radarCalcola(): arrivo'.
+           LA ROSA A SEDICI PUNTI. La v3.79.0 aveva risolto il salto del verso
+           nominando due punti — 'fra est e sud-est' — che dice il vero ma non
+           si compone con le preposizioni: uscivano 'da fra ovest e nord-ovest'
+           e 'verso fra est e sud-est'. La strada giusta era quella della
+           meteorologia, e risolve il problema all'origine: i confini della rosa
+           a otto sono i CENTRI di quella a sedici. L'angolo di Gaeta, 112,7
+           gradi, cadeva sul confine peggiore fra est e sud-est; a sedici punti
+           e' quasi esattamente il centro di est-sud-est.
+           Con essa se ne vanno la rosa a otto e rOpposto, che non leggeva piu'
+           nessuno, e la provenienza si ricava girando di mezzo giro l'ANGOLO
+           invece dell'opposto del nome arrotondato — che reintroduceva il salto
+           appena chiuso, corretto in una direzione sola.
+           Trovato tutto facendo girare il radar vero sui dati veri, non
+           rileggendo il codice. Il difetto era in produzione e il collaudo era
+           verde.
   v3.80.0: la scheda diceva 'Pioggia in arrivo fra 85 minuti', sotto 'a 21 km',
            e nel riquadro '23 km/h'. Ventun chilometri in ottantacinque minuti
            fanno quindici all'ora, non ventitre'. Nessuno dei tre numeri era
@@ -1922,7 +1954,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.80.0 &middot; build 2026-08-17<br>
+v3.80.1 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3382,12 +3414,20 @@ function rPixel(lat, lon, z) {
            y: (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n };
 }
 const rMpp = (lat, z) => 156543.03392 * Math.cos(lat * Math.PI / 180) / (2 ** z);
-const R_ROSA = ["nord","nord-est","est","sud-est","sud","sud-ovest","ovest","nord-ovest"];
-const rVerso = (dx, dy) => R_ROSA[Math.round(((Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360) / 45) % 8];
-/* v3.77.1 — il punto opposto della rosa. "Va verso sud" e "viene da nord"
-   sono lo stesso movimento detto dai due capi, e la riga sotto il titolo
-   usava il primo per dire il secondo. */
-const rOpposto = v => { const i = R_ROSA.indexOf(v); return i < 0 ? null : R_ROSA[(i + 4) % 8]; };
+/* v3.80.1 — c'erano R_ROSA a otto punti e rVerso, che le davano il nome. Sono
+   state tolte: dopo il passaggio alla rosa a sedici non le leggeva piu'
+   nessuno, e tenere due rose vuol dire tenere due parole per la stessa
+   direzione — cioe' la cosa che questa versione e' venuta a togliere. Chi
+   cerca il perche' del salto fra "est" e "sud-est" lo trova nel commento di
+   rVerso16 qui sotto. */
+/* v3.77.1 — c'era rOpposto, che dava il punto opposto della rosa: "va verso
+   sud" e "viene da nord" sono lo stesso movimento detto dai due capi, e la
+   riga sotto il titolo usava il primo per dire il secondo.
+   v3.80.1 — tolta. La provenienza si ricava ora girando di mezzo giro
+   l'ANGOLO misurato e passandolo a rVerso16, che e' la stessa strada del
+   verso: partire dal nome arrotondato per calcolarne l'opposto reintroduceva
+   il salto sul confine che la v3.79.0 aveva appena chiuso. Ne restava un uso
+   solo, e girava per quella via. */
 /* v3.79.0 — quando l'angolo cade vicino al confine fra due punti della rosa,
    nominarne uno solo e' una precisione che non c'e'. Misurato su Gaeta:
    l'angolo vero stava fermo attorno ai 110 gradi — nove gradi di escursione
@@ -3398,14 +3438,21 @@ const rOpposto = v => { const i = R_ROSA.indexOf(v); return i < 0 ? null : R_ROS
    da quella di prima: lo stesso dato darebbe parole diverse a seconda di cosa
    e' venuto prima, e in un'app che si regge sul dire come stanno le cose e'
    un prezzo troppo alto. Nominarli entrambi non ha stato e dice il vero. */
-function rVersoAmpio(ang) {
-  const i = Math.round(ang / 45) % 8;
-  const off = ((ang - i * 45 + 540) % 360) - 180;   // scarto dal centro, |off| <= 22.5
-  if (Math.abs(off) <= 13.5) return R_ROSA[i];      // ben dentro il settore
-  const j = (i + (off > 0 ? 1 : 7)) % 8;
-  return off > 0 ? "fra " + R_ROSA[i] + " e " + R_ROSA[j]
-                 : "fra " + R_ROSA[j] + " e " + R_ROSA[i];
-}
+/* v3.80.1 — la prima stesura restituiva "fra est e sud-est", che dice il vero
+   ma non si compone con le preposizioni: uscivano "da fra ovest e nord-ovest"
+   e "verso fra est e sud-est". La strada giusta era piu' semplice ed e' quella
+   della meteorologia: la rosa a SEDICI punti. Si compone ("da est-sud-est"), e
+   ha una proprieta' che risolve il problema all'origine — i confini della rosa
+   a otto sono i CENTRI di quella a sedici. L'angolo di Gaeta, 112,7 gradi,
+   cadeva sul confine peggiore fra est e sud-est; nella rosa a sedici e' quasi
+   esattamente il centro di est-sud-est, cioe' il punto piu' stabile che
+   esista. I cinque scatti misurati — da 106 a 115 gradi — stanno tutti dentro
+   lo stesso settore, che va da 101,25 a 123,75. */
+const R_ROSA16 = ["nord","nord-nord-est","nord-est","est-nord-est",
+                  "est","est-sud-est","sud-est","sud-sud-est",
+                  "sud","sud-sud-ovest","sud-ovest","ovest-sud-ovest",
+                  "ovest","ovest-nord-ovest","nord-ovest","nord-nord-ovest"];
+const rVerso16 = (ang) => R_ROSA16[Math.round(((ang % 360) + 360) % 360 / 22.5) % 16];
 
 async function rFirma(host, path, z, x, y) {
   const b = new Uint8Array(await (await fetch(
@@ -3578,33 +3625,14 @@ async function radarCalcola() {
        doveva. Si spegne come si spegne un calcolo debole. */
     const inverosimile = kmh > KMH_MAX * 1.3;
 
-    /* v3.80.0 — DUE PIOGGE PRESENTATE COME UNA. "vicino" e' l'eco piu' vicino
-       in QUALUNQUE direzione; "arrivo" segue il raggio controvento dalla tua
-       posizione, quindi parla di un'altra cella, quasi sempre piu' lontana.
-       La scheda le appaiava — titolo "in arrivo fra 85 minuti", riga sotto "a
-       21 km" — e chi legge fa la divisione: ventun chilometri in ottantacinque
-       minuti sono quindici all'ora, contro i ventitre' stampati due centimetri
-       piu' giu'. Tre numeri veri che insieme dicono una cosa falsa.
-       La distanza della pioggia CHE ARRIVA si ricava dalla velocita' e dal
-       tempo, ed e' coerente per costruzione: distanza diviso velocita' da'
-       esattamente i minuti annunciati. */
-    const kmArrivo = arrivo !== null ? kmh * arrivo / 60 : null;
-
-    /* v3.80.0 — e l'orario d'arrivo porta l'incertezza della velocita' da cui
-       discende. Con 23 km/h e mezza casella di grana, l'errore e' 8 km/h, il
-       35 per cento: quegli 85 minuti stanno fra 63 e 130. "Verso le 21:28" era
-       una precisione al minuto costruita su un dato che la riga accanto
-       dichiarava incerto — la stessa cosa del "quindi non passera' di qui",
-       in forma numerica.
-       La propagazione e' quella di t = d/v con d fissa: t/(1+e) e t/(1-e). */
-    /* il tetto sta FUORI dal ternario: dentro, il ramo della velocita' nulla
-       restituiva 1 e arrivoMax diventava una divisione per zero. Oggi non ci
-       si arriva — con spostamento nullo "fermo" e' vero e arrivo resta null —
-       ma un Infinity che dipende da un'altra guardia lontana e' una mina che
-       costa un carattere disinnescare. */
-    const relErr = Math.min(0.9, kmh > 0 ? errKmh / kmh : 0.9);
-    const arrivoMin = arrivo !== null ? Math.max(1, Math.round(arrivo / (1 + relErr))) : null;
-    const arrivoMax = arrivo !== null ? Math.round(arrivo / (1 - relErr)) : null;
+    /* v3.80.1 — questo blocco stava qui sopra, prima che "arrivo" esistesse:
+       ReferenceError a ogni calcolo, e la scheda diceva "Radar non riuscito".
+       E' la terza volta che accade in questa funzione — la v3.69.1 fu "lar
+       dichiarata dentro il try e letta fuori" — e ogni volta il motivo e' lo
+       stesso: qui il codice e' lungo, tutto dentro un try, e mettere un
+       calcolo "vicino a quello che lo riguarda" e' facilissimo se quello che
+       lo riguarda nasce piu' sotto. I valori derivati dall'arrivo vivono ora
+       DOPO l'arrivo, subito prima di essere usati. */
 
     /* v3.79.0 — UN GIUDIZIO CHE GUARDA ANCHE LA GRANA. nettezza dice quanto
        il minimo spicca fra tutti gli accostamenti, e sa dirlo bene: sul caso
@@ -3688,6 +3716,30 @@ async function radarCalcola() {
         }
       }
     }
+
+    /* v3.80.0 — DUE PIOGGE PRESENTATE COME UNA. "vicino" e' l'eco piu' vicino
+       in QUALUNQUE direzione; "arrivo" segue il raggio controvento dalla tua
+       posizione, quindi parla di un'altra cella, quasi sempre piu' lontana.
+       La scheda le appaiava — titolo "in arrivo fra 85 minuti", riga sotto "a
+       21 km" — e chi legge fa la divisione: ventun chilometri in ottantacinque
+       minuti sono quindici all'ora, contro i ventitre' stampati due centimetri
+       piu' giu'. Tre numeri veri che insieme dicono una cosa falsa.
+       La distanza della pioggia CHE ARRIVA si ricava dalla velocita' e dal
+       tempo, ed e' coerente per costruzione: distanza diviso velocita' da'
+       esattamente i minuti annunciati. */
+    const kmArrivo = arrivo !== null ? kmh * arrivo / 60 : null;
+
+    /* v3.80.0 — e l'orario d'arrivo porta l'incertezza della velocita' da cui
+       discende. Con 23 km/h e mezza casella di grana l'errore e' 8 km/h, il 35
+       per cento: quegli 85 minuti stanno fra 63 e 130. "Verso le 21:28" era una
+       precisione al minuto su un dato che la riga accanto dichiarava incerto —
+       la stessa cosa del "quindi non passera' di qui", in forma numerica.
+       La propagazione e' quella di t = d/v con d fissa: t/(1+e) e t/(1-e).
+       Il tetto sta FUORI dal ternario: dentro, il ramo della velocita' nulla
+       restituiva 1 e arrivoMax diventava una divisione per zero. */
+    const relErr = Math.min(0.9, kmh > 0 ? errKmh / kmh : 0.9);
+    const arrivoMin = arrivo !== null ? Math.max(1, Math.round(arrivo / (1 + relErr))) : null;
+    const arrivoMax = arrivo !== null ? Math.round(arrivo / (1 - relErr)) : null;
 
     /* v3.66.0 — la mappa si vede, non si legge. I riquadri li scarichiamo
        gia' per calcolare il movimento e finora li buttavamo via: da qui in
@@ -3858,7 +3910,8 @@ async function radarCalcola() {
 
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
                 kmVista: larKm,   // v3.78.0 — gia' in chilometri, dal mosaico giusto
-                verso: fermo ? null : rVerso(sc.dx, sc.dy),
+                // v3.80.1 — via "verso" a otto punti: lo leggeva solo la prosa,
+                // che ora usa verso16, e restarci era tenere due nomi per una cosa
                 /* v3.79.0 — l'angolo vero, in gradi. La freccia lo usava
                    ricavandolo all'indietro dal NOME del punto cardinale, cioe'
                    riarrotondato a multipli di 45: buttava via la precisione
@@ -3866,8 +3919,16 @@ async function radarCalcola() {
                    indexOf sulla rosa che si rompe appena il nome cambia forma. */
                 angoloMoto: fermo ? null
                   : ((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360,
-                versoAmpio: fermo ? null
-                  : rVersoAmpio(((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360),
+                verso16: fermo ? null
+                  : rVerso16(((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360),
+                /* v3.80.1 — e la PROVENIENZA con lo stesso trattamento. La riga
+                   sotto il titolo la ricavava da rOpposto(verso), cioe'
+                   dall'opposto del punto ARROTONDATO: con l'angolo sul confine
+                   fra due venti — 112,7 gradi, misurato su Gaeta — quella
+                   parola salta come saltava il verso prima della v3.79.0. Il
+                   difetto era stato corretto in una direzione sola. */
+                da16: fermo ? null
+                  : rVerso16(((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360 + 180),
                 /* v3.78.2 — con una velocita' inverosimile non regge niente
                    di cio' che dal movimento discende: ne' la direzione, ne'
                    i minuti d'arrivo, ne' la durata. Si azzera qui, alla
@@ -4206,14 +4267,14 @@ function renderRadar() {
     tit = `Piove a ${r.vicino.toFixed(0)} km, direzione approssimativa`;
     colore = "amber";
     // v3.79.0 — il verso ampio: se l'angolo sta sul confine si nominano entrambi
-    sot = `C'&egrave; pioggia poco distante e sembra andare <b>verso ${r.versoAmpio}</b>. `
+    sot = `C'&egrave; pioggia poco distante e sembra andare <b>verso ${r.verso16}</b>. `
         + `Ma fra le due immagini si &egrave; spostata di appena `
         + `<b>${(r.celle * r.kmPx * R_RID).toFixed(0)} km</b>, e la misura ha una grana `
         + `di ${(r.kmPx * R_RID).toFixed(0)}: il verso ha un margine di quasi mezzo `
         + `quadrante, e non basta per dire che non passer&agrave; di qui.`;
   } else if (r.vicino !== Infinity && r.vicino < 40) {
     tit = `Piove a ${r.vicino.toFixed(0)} km, ma si allontana`;
-    sot = `C'&egrave; pioggia poco distante e si sta muovendo <b>verso ${r.verso}</b>, `
+    sot = `C'&egrave; pioggia poco distante e si sta muovendo <b>verso ${r.verso16}</b>, `
         + `quindi non passer&agrave; di qui.`;
   } else {
     tit = "Niente pioggia in avvicinamento";
@@ -4250,12 +4311,13 @@ function renderRadar() {
       // v3.78.6 — la soglia e' PORTATA_UTILE, non un 200 riscritto a mano
       const dist = (r.vicino === Infinity || r.vicino > PORTATA_UTILE)
         ? null : r.vicino.toFixed(0) + " km";
-      const dove = (r.fermo || !r.verso || r.nettezza <= 0.08) ? "" : ", va verso " + r.verso;
+      const dove = (r.fermo || !r.verso16 || r.nettezza <= 0.08) ? "" : ", va verso " + r.verso16;
       /* v3.77.1 — "a 4 km, da sud" con la pioggia che arrivava da nord.
          r.verso e' la direzione di MARCIA, come dice la riga qui sopra che
          la usa per quello che e'; qui veniva stampata come provenienza,
          cioe' rovesciata. Ora si gira di mezza rosa. */
-      const daDove = (r.verso && rOpposto(r.verso)) ? ", da " + rOpposto(r.verso) : "";
+      // v3.80.1 — la provenienza in forma ampia, come il verso nel corpo
+      const daDove = r.da16 ? ", da " + r.da16 : "";
       sot.textContent = r.sopra
         ? "il radar vede pioggia sopra la zona"
         : (r.arrivo !== null
@@ -4488,7 +4550,7 @@ function renderRadar() {
         + `${r.vicino.toFixed(0)}<small> km</small></div>`
         + `<div class="k">pioggia pi&ugrave; vicina</div></div>`
       + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}" style="font-size:22px">`
-        + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso)}</div>`
+        + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso16)}</div>`
         + `<div class="k">si sposta</div></div>`
       /* v3.79.0 \u2014 l'incertezza c'era e non si vedeva: errKmh e' calcolato dal
          v3.34.0 e non e' mai stato stampato. Mezza casella su venti minuti
