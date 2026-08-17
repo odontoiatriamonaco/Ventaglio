@@ -1,6 +1,6 @@
 /* ============================================================
    Ventaglio — service worker
-   Versione: v1.2.0   Build: 2026-08-12 CEST
+   Versione: v1.2.0   Build: 2026-08-17 CEST
 
    CHANGELOG v1.2.0
    - Il manifest di RainViewer finiva nel ramo "prima la cache": e' l'elenco
@@ -35,7 +35,7 @@
 
 /* v1.1.0 — va cambiata a ogni pubblicazione: e' cio' che fa ripulire
    le vecchie copie all'attivazione. */
-const CACHE = "ventaglio-2026-08-13-l";
+const CACHE = "ventaglio-2026-08-17-a";
 const GUSCIO = ["./", "./index.html"];
 
 self.addEventListener("install", e=>{

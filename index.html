@@ -1,9 +1,54 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.78.8 — il vento di mezzanotte spacciato per adesso
+  VENTAGLIO v3.79.0 — la direzione non salta piu' per un pixel
   File  : ventaglio-v3.html
-  Build : 2026-08-13 CEST
+  Build : 2026-08-17 CEST
+  v3.79.0: primo intervento sul CUORE della misura e non sulla sua
+           presentazione, e nato da un'osservazione dal campo: un'ora prima la
+           scheda diceva 'pioggia in arrivo fra 50 minuti', poi 'piove a 16 km
+           ma si allontana'. Non era cambiato il tempo.
+           Rifatta la misura da fuori sugli ultimi cinque scatti di Gaeta, con
+           lo stesso algoritmo: lo spostamento era SEMPRE di una casella, mai
+           piu'. Una casella vale 5,5 km, cioe' 17 km/h su venti minuti, quindi
+           le uniche velocita' rappresentabili erano 0, 17, 23, 33... e niente
+           in mezzo: il '23 km/h' stampato in grande sembrava una misura fine e
+           invece era uno dei tre valori possibili. E il verso saltava fra est
+           e sud-est — quarantacinque gradi — per un pixel di scarto. Da una
+           cella a nord-ovest, 'est' ti passa addosso e 'sud-est' di fianco: da
+           qui l'arrivo annunciato e poi ritirato.
+           AFFINAMENTO SOTTO LA CASELLA. Il minimo vero non sta al centro della
+           casella: si fitta una parabola sui tre scarti attorno al minimo, per
+           asse, e si prende il vertice. E' la tecnica del flusso ottico, costa
+           tre letture per asse. L'angolo che ne esce, sugli stessi cinque
+           scatti, sta fermo a 110 gradi con nove gradi di escursione contro i
+           quarantacinque di prima.
+           IL NOME, PERO', SALTAVA ANCORA. 112,5 gradi e' esattamente il confine
+           fra est e sud-est, e l'angolo vero ci stava sopra: la misura era
+           ferma e la parola no. Un'isteresi avrebbe fatto dipendere
+           l'etichetta da quella precedente — lo stesso dato con parole diverse
+           a seconda di cosa e' venuto prima — e in quest'app e' un prezzo
+           troppo alto. Vicino al confine si nominano entrambi i punti: 'fra
+           est e sud-est' non ha stato e dice il vero. Tutti e cinque gli scatti
+           danno la stessa frase.
+           UN GIUDIZIO CHE GUARDA ANCHE LA GRANA. nettezza dice quanto il minimo
+           spicca, e lo dice bene: valeva 0,55-0,72, valori alti. Ma non sa su
+           quante caselle poggia lo spostamento, ed e' cieca allo stesso modo in
+           cui era cieca davanti ai 209 km/h. Sotto le due caselle il verso
+           resta approssimativo: si dice, e si dichiara approssimativo, ma non
+           si costruisce sopra un 'quindi non passera' di qui', che era
+           un'affermazione categorica poggiata su un pixel.
+           Infine due cose che c'erano e non si vedevano. errKmh e' calcolato
+           dalla v3.34.0 e non e' mai stato stampato: mezza casella su venti
+           minuti sono otto chilometri l'ora, un terzo del valore letto, e senza
+           il margine '23 km/h' finge una precisione che non ha. E la freccia
+           ricavava l'angolo all'indietro dal NOME del punto cardinale,
+           riarrotondandolo a multipli di 45: buttava via la precisione appena
+           guadagnata, e passava da un indexOf che si rompe appena il nome
+           cambia forma. Ora usa i gradi misurati.
+           Corretta anche la data di build delle versioni di oggi, che avevo
+           timbrata 13 agosto senza verificarla contro i dati che avevo sotto
+           mano: e' il 17.
   v3.78.8: cercando ridondanze nella scheda radar e' saltato fuori un difetto
            piu' grave, e fuori dal radar.
            L'ORA SBAGLIATA. Nel verdetto, vento, umidita', raffiche e punto di
@@ -1842,7 +1887,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.78.8 &middot; build 2026-08-13<br>
+v3.79.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3308,6 +3353,24 @@ const rVerso = (dx, dy) => R_ROSA[Math.round(((Math.atan2(dx, -dy) * 180 / Math.
    sono lo stesso movimento detto dai due capi, e la riga sotto il titolo
    usava il primo per dire il secondo. */
 const rOpposto = v => { const i = R_ROSA.indexOf(v); return i < 0 ? null : R_ROSA[(i + 4) % 8]; };
+/* v3.79.0 — quando l'angolo cade vicino al confine fra due punti della rosa,
+   nominarne uno solo e' una precisione che non c'e'. Misurato su Gaeta:
+   l'angolo vero stava fermo attorno ai 110 gradi — nove gradi di escursione
+   in un'ora — ma 112,5 e' esattamente il confine fra est e sud-est, quindi il
+   nome saltava avanti e indietro pur essendo la misura stabile. Il salto non
+   era nella pioggia ne' nella misura: era nell'arrotondamento del NOME.
+   Si potrebbe mettere un'isteresi, ma vorrebbe dire far dipendere l'etichetta
+   da quella di prima: lo stesso dato darebbe parole diverse a seconda di cosa
+   e' venuto prima, e in un'app che si regge sul dire come stanno le cose e'
+   un prezzo troppo alto. Nominarli entrambi non ha stato e dice il vero. */
+function rVersoAmpio(ang) {
+  const i = Math.round(ang / 45) % 8;
+  const off = ((ang - i * 45 + 540) % 360) - 180;   // scarto dal centro, |off| <= 22.5
+  if (Math.abs(off) <= 13.5) return R_ROSA[i];      // ben dentro il settore
+  const j = (i + (off > 0 ? 1 : 7)) % 8;
+  return off > 0 ? "fra " + R_ROSA[i] + " e " + R_ROSA[j]
+                 : "fra " + R_ROSA[j] + " e " + R_ROSA[i];
+}
 
 async function rFirma(host, path, z, x, y) {
   const b = new Uint8Array(await (await fetch(
@@ -3376,6 +3439,8 @@ function rRidotta(ctx) {
 /* l'offset si applica a B: applicarlo ad A restituisce l'INVERSO del
    movimento, difetto che nel file di prova dava direzioni opposte */
 function rScostamento(A, B, n, raggio) {
+  const lato = 2 * raggio + 1;
+  const SUP = new Float32Array(lato * lato);      // la superficie degli scarti
   let best = null; const scarti = [];
   for (let dy = -raggio; dy <= raggio; dy++)
     for (let dx = -raggio; dx <= raggio; dx++) {
@@ -3385,11 +3450,46 @@ function rScostamento(A, B, n, raggio) {
           s += Math.abs(A[y * n + x] - B[(y + dy) * n + (x + dx)]); c++;
         }
       const v = s / c; scarti.push(v);
+      SUP[(dy + raggio) * lato + (dx + raggio)] = v;
       if (!best || v < best.s) best = { dx, dy, s: v };
     }
   scarti.sort((a, b) => a - b);
   const med = scarti[scarti.length >> 1];
-  return { ...best, nettezza: med > 0 ? (med - best.s) / med : 0 };
+
+  /* v3.79.0 — AFFINAMENTO SOTTO LA CASELLA. A caselle intere la misura ha
+     una grana grossolana: una casella vale 5,5 km e su venti minuti sono 17
+     km/h, quindi le uniche velocita' rappresentabili erano 0, 17, 23, 33,
+     37... e nulla in mezzo. Peggio la direzione: (1,0) e (1,1) distano una
+     casella e quarantacinque gradi, quindi il verso saltava da est a
+     sud-est e ritorno per un pixel di scarto.
+     Misurato sul campo il 17 agosto su Gaeta, cinque scatti consecutivi:
+     est, est, sud-est, sud-est, est — sempre uno spostamento di una casella,
+     e la scheda diceva "puoi fidarti" a ogni giro. Un'ora prima la stessa
+     pioggia risultava "in arrivo fra 50 minuti", poi "si allontana": non era
+     cambiato il tempo, era cambiato l'arrotondamento.
+     Il minimo vero non sta al centro della casella. Si fitta una parabola
+     sui tre scarti allineati attorno al minimo, su ciascun asse, e si prende
+     il suo vertice: e' la tecnica del flusso ottico, costa tre letture per
+     asse e restituisce uno spostamento frazionario. */
+  const sup = (dx, dy) => SUP[(dy + raggio) * lato + (dx + raggio)];
+  const vertice = (asseX) => {
+    const m = asseX ? best.dx : best.dy;
+    if (Math.abs(m) >= raggio) return 0;          // sul bordo manca un vicino
+    const a = asseX ? sup(best.dx - 1, best.dy) : sup(best.dx, best.dy - 1);
+    const c = asseX ? sup(best.dx + 1, best.dy) : sup(best.dx, best.dy + 1);
+    const den = a - 2 * best.s + c;
+    if (!(den > 0)) return 0;                     // non e' una conca: niente da affinare
+    const d = 0.5 * (a - c) / den;
+    return (d > -0.5 && d < 0.5) ? d : 0;         // oltre mezza casella e' rumore
+  };
+  const fdx = best.dx + vertice(true), fdy = best.dy + vertice(false);
+  return { dx: fdx, dy: fdy,
+           /* gli interi restano: "fermo" ha sempre voluto dire "il migliore
+              accostamento e' l'offset zero", e con i frazionari lo zero
+              esatto non capiterebbe mai piu' */
+           dxInt: best.dx, dyInt: best.dy,
+           celle: Math.hypot(fdx, fdy), s: best.s,
+           nettezza: med > 0 ? (med - best.s) / med : 0 };
 }
 
 async function radarCalcola() {
@@ -3443,6 +3543,22 @@ async function radarCalcola() {
        doveva. Si spegne come si spegne un calcolo debole. */
     const inverosimile = kmh > KMH_MAX * 1.3;
 
+    /* v3.79.0 — UN GIUDIZIO CHE GUARDA ANCHE LA GRANA. nettezza dice quanto
+       il minimo spicca fra tutti gli accostamenti, e sa dirlo bene: sul caso
+       di Gaeta valeva 0,55-0,72, valori alti. Ma non sa su QUANTE caselle
+       poggia lo spostamento, ed e' cieca allo stesso modo in cui era cieca
+       davanti ai 209 km/h: li' non sapeva che una velocita' e' impossibile,
+       qui non sa che una direzione misurata su una casella ha un margine di
+       quasi mezzo quadrante. Anche con l'affinamento sotto la casella, sotto
+       le due caselle di spostamento il verso resta approssimativo: si dice,
+       ma non si costruiscono sopra affermazioni categoriche.
+       Il giudizio si calcola qui, una volta sola, e lo leggono sia la scheda
+       sia il confronto con le previsioni: prima ognuna delle due lo
+       ricavava da sola dalla sola nettezza. */
+    const nett = inverosimile ? 0 : sc.nettezza;
+    const direzioneIncerta = sc.celle < 2;
+    const solido = nett > 0.18 && !direzioneIncerta;
+
     // il punto si legge a piena risoluzione: sulla griglia ridotta un pixel
     // copre 5,5 km e "piove qui" diventava un'affermazione senza base
     const pieno = m2.ctx.getImageData(0, 0, R_DIM, R_DIM).data;
@@ -3476,7 +3592,9 @@ async function radarCalcola() {
        trovera' sopra le coordinate: da quella sequenza escono l'arrivo, la
        durata e il momento in cui smette. Costa un ciclo in piu' e risponde
        alla domanda vera, che non e' "arriva?" ma "quanto mi becco". */
-    const fermo = sc.dx === 0 && sc.dy === 0;
+    // v3.79.0 — sugli interi: "fermo" vuol dire che il miglior accostamento
+    // e' l'offset zero, e con i frazionari lo zero esatto non capita mai
+    const fermo = sc.dxInt === 0 && sc.dyInt === 0;
     let arrivo = null, durata = null, smette = null, troncata = false;
     if (!fermo) {
       const serie = [];
@@ -3678,13 +3796,23 @@ async function radarCalcola() {
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
                 kmVista: larKm,   // v3.78.0 — gia' in chilometri, dal mosaico giusto
                 verso: fermo ? null : rVerso(sc.dx, sc.dy),
+                /* v3.79.0 — l'angolo vero, in gradi. La freccia lo usava
+                   ricavandolo all'indietro dal NOME del punto cardinale, cioe'
+                   riarrotondato a multipli di 45: buttava via la precisione
+                   appena guadagnata sotto la casella, e dipendeva da un
+                   indexOf sulla rosa che si rompe appena il nome cambia forma. */
+                angoloMoto: fermo ? null
+                  : ((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360,
+                versoAmpio: fermo ? null
+                  : rVersoAmpio(((Math.atan2(sc.dx, -sc.dy) * 180 / Math.PI) + 360) % 360),
                 /* v3.78.2 — con una velocita' inverosimile non regge niente
                    di cio' che dal movimento discende: ne' la direzione, ne'
                    i minuti d'arrivo, ne' la durata. Si azzera qui, alla
                    fonte, cosi' ogni pezzo che legge vede la stessa cosa
                    invece di doversene ricordare per conto suo. */
                 inverosimile,
-                nettezza: inverosimile ? 0 : sc.nettezza,
+                nettezza: nett,
+                celle: sc.celle, direzioneIncerta, solido,   // v3.79.0
                 sopra, vicino, vicinoAng,
                 arrivo: inverosimile ? null : arrivo,
                 durata: inverosimile ? null : durata,
@@ -3736,7 +3864,7 @@ function confrontoRadar(r) {
   const modello = Math.round(Math.max(...q));
 
   const radarBagna = r.sopra || (r.arrivo !== null && r.arrivo <= 120);
-  const fidati = r.nettezza > 0.18;
+  const fidati = r.solido;   // v3.79.0 — lo stesso giudizio della scheda
 
   /* v3.78.6 — due casi opposti trattati come uno. E' la stessa conflazione
      sciolta in v3.78.5 dentro renderRadar, sopravvissuta qui una funzione
@@ -3845,8 +3973,11 @@ function renderRadar() {
      Il verdetto e' ora una frase sola, i numeri stanno sotto, e l'affidabilita'
      e' un giudizio in parole invece di una percentuale inventata da me. */
 
-  const fidati = r.nettezza > 0.18;
-  const dubbio = r.nettezza > 0.08 && !fidati;
+  /* v3.79.0 — il giudizio arriva dalla fonte, dove tiene conto sia di quanto
+     il minimo spicca sia di quante caselle misura. Prima era "nettezza >
+     0.18" scritto qui e un'altra volta in confrontoRadar. */
+  const fidati = r.solido;
+  const dubbio = !fidati && r.nettezza > 0.08;
   /* v3.72.0 — quando il calcolo del movimento non regge, non reggono nemmeno
      velocita', direzione e minuti d'arrivo, che ne discendono. Restava pero'
      un titolo affermativo e un "328 km/h" stampato in grande accanto a "non
@@ -3965,6 +4096,21 @@ function renderRadar() {
     sot = `Il radar la vede, ma da che parte si sta muovendo non si riesce a `
         + `stabilirlo: le due immagini si somigliano troppo, e il calcolo della `
         + `direzione non vale.`;
+  } else if (r.vicino !== Infinity && r.vicino < 40 && r.direzioneIncerta) {
+    /* v3.79.0 — "quindi non passera' di qui" era un'affermazione categorica
+       poggiata su uno spostamento di una casella, cioe' su una direzione con
+       un margine di quasi mezzo quadrante. Da una cella a nord-ovest, "est"
+       ti passa addosso e "sud-est" ti passa di fianco: fra le due c'e' un
+       pixel. Con la misura cosi' grossa si dice dov'e' la pioggia e da che
+       parte sembra andare, e si dice anche che non basta a escludere niente. */
+    tit = `Piove a ${r.vicino.toFixed(0)} km, direzione approssimativa`;
+    colore = "amber";
+    // v3.79.0 — il verso ampio: se l'angolo sta sul confine si nominano entrambi
+    sot = `C'&egrave; pioggia poco distante e sembra andare <b>verso ${r.versoAmpio}</b>. `
+        + `Ma fra le due immagini si &egrave; spostata di appena `
+        + `<b>${(r.celle * r.kmPx * R_RID).toFixed(0)} km</b>, e la misura ha una grana `
+        + `di ${(r.kmPx * R_RID).toFixed(0)}: il verso ha un margine di quasi mezzo `
+        + `quadrante, e non basta per dire che non passer&agrave; di qui.`;
   } else if (r.vicino !== Infinity && r.vicino < 40) {
     tit = `Piove a ${r.vicino.toFixed(0)} km, ma si allontana`;
     sot = `C'&egrave; pioggia poco distante e si sta muovendo <b>verso ${r.verso}</b>, `
@@ -4033,7 +4179,9 @@ function renderRadar() {
     if (mp && !r.miniatura) mp.style.display = "none";
     if (mp && r.miniatura) {
       // v3.72.0 — niente freccia se la direzione non e' attendibile
-      const ang = (r.fermo || r.nettezza <= 0.08) ? null : R_ROSA.indexOf(r.verso) * 45;
+      // v3.79.0 — l'angolo misurato, non riarrotondato passando dal nome
+      const ang = (r.fermo || r.nettezza <= 0.08 || r.angoloMoto === null)
+        ? null : r.angoloMoto;
       /* v3.70.0 — la mappa non si legge da sola: una macchia colorata senza
          riferimenti puo' stare ovunque. Servono tre cose che il radar da
          solo non da': dove sei TU, quanto e' lontana la pioggia in
@@ -4172,7 +4320,7 @@ function renderRadar() {
         const lung = Math.max(5, Math.min(12, rr(r.vicino) * 0.8));
         const tx = bx - mx * lung, ty = by - my * lung;   // la coda, sopravvento
         g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
-          + 'rotate(' + (ang + 180) + ')">'
+          + 'rotate(' + (ang + 180).toFixed(1) + ')">'
           + '<path d="M0 0 L0 ' + lung.toFixed(1) + '" class="dir"/>'
           + '<path d="M-2.6 ' + (lung - 3.4).toFixed(1) + ' L0 ' + lung.toFixed(1)
           + ' L2.6 ' + (lung - 3.4).toFixed(1) + '" class="dir"/></g>';
@@ -4196,7 +4344,7 @@ function renderRadar() {
         const mx = Math.sin(ang * Math.PI / 180), my = -Math.cos(ang * Math.PI / 180);
         const tx = CX + mx * 4.5, ty = CY + my * 4.5;
         g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
-          + 'rotate(' + (ang + 180) + ')">'
+          + 'rotate(' + (ang + 180).toFixed(1) + ')">'
           + '<path d="M0 0 L0 13" class="dir"/>'
           + '<path d="M-2.6 9.6 L0 13 L2.6 9.6" class="dir"/></g>';
       }
@@ -4233,9 +4381,13 @@ function renderRadar() {
       + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}" style="font-size:22px">`
         + `${senzaMoto ? "\u2014" : (r.fermo ? "ferma" : "verso " + r.verso)}</div>`
         + `<div class="k">si sposta</div></div>`
+      /* v3.79.0 \u2014 l'incertezza c'era e non si vedeva: errKmh e' calcolato dal
+         v3.34.0 e non e' mai stato stampato. Mezza casella su venti minuti
+         sono otto chilometri l'ora, cioe' un terzo del valore letto: senza
+         il margine, "23 km/h" sembra una misura fine e non lo e'. */
       + `<div class="metric"><div class="v${senzaMoto ? " spento" : ""}">`
         + `${senzaMoto ? "\u2014" : r.kmh.toFixed(0) + '<small> km/h</small>'}</div>`
-        + `<div class="k">velocit&agrave;</div></div>`
+        + `<div class="k">velocit&agrave;${senzaMoto ? "" : " &plusmn; " + r.errKmh.toFixed(0)}</div></div>`
       /* v3.78.8 — anche questa casella dipende dal movimento: durata e
          smette escono dalla proiezione minuto per minuto della traiettoria.
          Era l'ultimo valore derivato dal moto rimasto fuori dalla guardia

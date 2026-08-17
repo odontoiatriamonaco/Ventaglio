@@ -2,8 +2,14 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.10.1
-   Build   : 2026-08-13 CEST
+   Versione: v1.11.0
+   Build   : 2026-08-17 CEST
+
+   v1.11.0 — quattro regole sulla grana della misura del movimento radar.
+   Misurato sul campo: cinque scatti consecutivi con spostamento di una
+   casella sola, verso che saltava di 45 gradi, e "puoi fidarti" a ogni giro.
+   L'indicatore di affidabilita' misurava una cosa diversa da quella che
+   promette — la stessa cecita' che aveva lasciato passare i 209 km/h.
 
    v1.10.1 — la regola sull'ora coglieva una sola delle due forme in cui
    l'errore si presenta: l'indice fra parentesi quadre, non quello costruito
@@ -319,6 +325,26 @@ regola("radar: il raggio di ricerca nasce da una velocita' massima",
 regola("radar: una velocita' inverosimile spegne cio' che ne discende",
   "const inverosimile = kmh > KMH_MAX",
   "senza, direzione, minuti d'arrivo e durata restano stampati come misure");
+
+/* v1.11.0 — tre regole sulla GRANA della misura del movimento. Misurato sul
+   campo il 17 agosto a Gaeta: cinque scatti consecutivi, spostamento sempre
+   di una casella, verso che saltava fra est e sud-est, e la scheda diceva
+   "puoi fidarti" a ogni giro. Un'ora prima la stessa pioggia era "in arrivo
+   fra 50 minuti", poi "si allontana": non era cambiato il tempo, era cambiato
+   l'arrotondamento. */
+regola("radar: lo spostamento si affina sotto la casella", "0.5 * (a - c) / den",
+  "a caselle intere la velocita' puo' valere solo 0, 17, 23, 33... e il verso salta di 45 gradi per un pixel");
+
+regola("radar: il giudizio di solidita' guarda anche quante caselle misura",
+  "const solido = nett > 0.18 && !direzioneIncerta",
+  "nettezza dice quanto il minimo spicca, non su quante caselle poggia: e' cieca come lo era davanti ai 209 km/h");
+
+regola("radar: un solo giudizio di solidita', letto dalla fonte",
+  "const fidati = r.solido",
+  "la scheda e il confronto con le previsioni lo ricavavano ognuna per conto sua dalla sola nettezza");
+
+regola("radar: la freccia usa l'angolo misurato, non il nome del punto cardinale",
+  "r.angoloMoto", "ricavarlo da indexOf sulla rosa lo riarrotonda a multipli di 45");
 
 /* v1.6.0 — il testo e la mappa devono usare la stessa portata utile. Finche'
    solo il testo la conosceva, la scheda diceva "niente nel raggio utile" e
