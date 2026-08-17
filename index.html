@@ -1,9 +1,44 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.79.0 — la direzione non salta piu' per un pixel
+  VENTAGLIO v3.80.0 — tre numeri veri che insieme dicevano una cosa falsa
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.80.0: la scheda diceva 'Pioggia in arrivo fra 85 minuti', sotto 'a 21 km',
+           e nel riquadro '23 km/h'. Ventun chilometri in ottantacinque minuti
+           fanno quindici all'ora, non ventitre'. Nessuno dei tre numeri era
+           sbagliato: erano DUE PIOGGE diverse messe in fila come se fossero
+           una. 'vicino' e' l'eco piu' vicino in qualunque direzione — quella
+           cella a nord-ovest; 'arrivo' segue il raggio controvento dalla tua
+           posizione, quindi parla di un'altra cella, a ovest e piu' lontana.
+           Ora la riga sotto il titolo porta la distanza della pioggia CHE
+           ARRIVA, ricavata da velocita' per tempo: coerente per costruzione,
+           perche' distanza diviso velocita' restituisce esattamente i minuti
+           annunciati. L'eco piu' vicino resta nel riquadro sotto, dove la
+           didascalia dice che cos'e'.
+           L'ORARIO PORTAVA UNA PRECISIONE CHE NON AVEVA. Con 23 km/h e mezza
+           casella di grana l'errore e' 8 km/h, il 35 per cento: quegli 85
+           minuti stanno fra 63 e 130. 'Verso le 21:28' era una precisione al
+           minuto su un dato che la riga accanto dichiarava incerto — lo stesso
+           difetto del 'quindi non passera' di qui', in forma numerica. Ora
+           quando il margine e' largo il titolo da' il minimo, che e' anche il
+           numero azionabile — quanto tempo ho di sicuro — e il paragrafo da'
+           il bordo lontano; oltre le due ore dice che sconfina, invece di
+           fingere di sapere. Sotto il 15 per cento di margine l'ora esatta
+           resta, perche' li' e' davvero l'informazione migliore.
+           E via la coda 'il calcolo pero' e' poco sicuro': la stessa riserva
+           compariva tre volte nella stessa schermata — qui, nel riquadro dei
+           valori e nel confronto con le previsioni. Il riquadro la dice in un
+           posto fisso, dove la si va a cercare.
+           Due difetti trovati provando, non leggendo. Il tetto sull'errore
+           relativo stava dentro un ternario, e il ramo della velocita' nulla
+           restituiva 1: arrivoMax diventava una divisione per zero. Oggi non
+           ci si arriva — con spostamento nullo 'fermo' e' vero e 'arrivo'
+           resta null — ma un Infinity che dipende da una guardia lontana e'
+           una mina, e costa un carattere disinnescarla. E il titolo nuovo
+           conteneva 'pi&ugrave;': i titoli passano da textContent, non da
+           innerHTML, quindi l'entita' si vedeva cruda. Nessun altro titolo ne
+           conteneva, quindi non c'era precedente a ricordarmelo.
   v3.79.0: primo intervento sul CUORE della misura e non sulla sua
            presentazione, e nato da un'osservazione dal campo: un'ora prima la
            scheda diceva 'pioggia in arrivo fra 50 minuti', poi 'piove a 16 km
@@ -1887,7 +1922,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.79.0 &middot; build 2026-08-17<br>
+v3.80.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3543,6 +3578,34 @@ async function radarCalcola() {
        doveva. Si spegne come si spegne un calcolo debole. */
     const inverosimile = kmh > KMH_MAX * 1.3;
 
+    /* v3.80.0 — DUE PIOGGE PRESENTATE COME UNA. "vicino" e' l'eco piu' vicino
+       in QUALUNQUE direzione; "arrivo" segue il raggio controvento dalla tua
+       posizione, quindi parla di un'altra cella, quasi sempre piu' lontana.
+       La scheda le appaiava — titolo "in arrivo fra 85 minuti", riga sotto "a
+       21 km" — e chi legge fa la divisione: ventun chilometri in ottantacinque
+       minuti sono quindici all'ora, contro i ventitre' stampati due centimetri
+       piu' giu'. Tre numeri veri che insieme dicono una cosa falsa.
+       La distanza della pioggia CHE ARRIVA si ricava dalla velocita' e dal
+       tempo, ed e' coerente per costruzione: distanza diviso velocita' da'
+       esattamente i minuti annunciati. */
+    const kmArrivo = arrivo !== null ? kmh * arrivo / 60 : null;
+
+    /* v3.80.0 — e l'orario d'arrivo porta l'incertezza della velocita' da cui
+       discende. Con 23 km/h e mezza casella di grana, l'errore e' 8 km/h, il
+       35 per cento: quegli 85 minuti stanno fra 63 e 130. "Verso le 21:28" era
+       una precisione al minuto costruita su un dato che la riga accanto
+       dichiarava incerto — la stessa cosa del "quindi non passera' di qui",
+       in forma numerica.
+       La propagazione e' quella di t = d/v con d fissa: t/(1+e) e t/(1-e). */
+    /* il tetto sta FUORI dal ternario: dentro, il ramo della velocita' nulla
+       restituiva 1 e arrivoMax diventava una divisione per zero. Oggi non ci
+       si arriva — con spostamento nullo "fermo" e' vero e arrivo resta null —
+       ma un Infinity che dipende da un'altra guardia lontana e' una mina che
+       costa un carattere disinnescare. */
+    const relErr = Math.min(0.9, kmh > 0 ? errKmh / kmh : 0.9);
+    const arrivoMin = arrivo !== null ? Math.max(1, Math.round(arrivo / (1 + relErr))) : null;
+    const arrivoMax = arrivo !== null ? Math.round(arrivo / (1 - relErr)) : null;
+
     /* v3.79.0 — UN GIUDIZIO CHE GUARDA ANCHE LA GRANA. nettezza dice quanto
        il minimo spicca fra tutti gli accostamenti, e sa dirlo bene: sul caso
        di Gaeta valeva 0,55-0,72, valori alti. Ma non sa su QUANTE caselle
@@ -3813,6 +3876,10 @@ async function radarCalcola() {
                 inverosimile,
                 nettezza: nett,
                 celle: sc.celle, direzioneIncerta, solido,   // v3.79.0
+                // v3.80.0 — la pioggia che arriva: distanza sua, e finestra
+                kmArrivo: inverosimile ? null : kmArrivo,
+                arrivoMin: inverosimile ? null : arrivoMin,
+                arrivoMax: inverosimile ? null : arrivoMax,
                 sopra, vicino, vicinoAng,
                 arrivo: inverosimile ? null : arrivo,
                 durata: inverosimile ? null : durata,
@@ -4036,15 +4103,48 @@ function renderRadar() {
        chiusa proprio questa cosa — "non reggono nemmeno i minuti d'arrivo" —
        ma la correzione era arrivata ai numeri della griglia e non al titolo,
        che e' la prima cosa che si legge. */
-    tit = `Pioggia in arrivo fra ${r.arrivo} minuti`;
-    colore = r.arrivo <= 30 ? "coral" : "amber";
-    sot = `Verso le <b>${orario(r.arrivo)}</b>, se continua a muoversi cos&igrave;. `
+    /* v3.80.1 — con la forbice larga il titolo dava ancora il valore centrale:
+       "fra 1 ora" mentre il vero intervallo era 36-180 minuti. Il titolo e' la
+       cosa che si legge, e li' un numero solo su una forbice che raddoppia
+       resta una promessa. Si da' il MINIMO, che e' anche il numero azionabile:
+       quanto tempo ho di sicuro. E arrotondato, perche' "al piu' presto fra
+       1 ora e 3 minuti" e' una precisione comica su una stima cosi'.
+       Anche il colore segue il minimo: se puo' arrivare fra venti minuti,
+       l'urgenza e' quella, non quella del valore centrale. */
+    const largo = r.arrivoMax !== null && r.arrivoMax - r.arrivoMin > r.arrivo * 0.3;
+    const arrot = (m) => (m >= 60 ? Math.round(m / 10) * 10 : Math.round(m / 5) * 5);
+    const presto = largo ? r.arrivoMin : r.arrivo;
+    tit = largo
+      ? `Pioggia in arrivo, al più presto fra ${quanto(arrot(r.arrivoMin))}`
+      : `Pioggia in arrivo fra ${quanto(r.arrivo)}`;
+    colore = presto <= 30 ? "coral" : "amber";
+    /* v3.80.0 — l'orario diventa una finestra quando il margine e' largo. Con
+       il 35 per cento di errore sulla velocita', "verso le 21:28" e' una
+       precisione che il dato non ha; sotto il 15 per cento la si tiene, perche'
+       li' l'ora esatta e' davvero l'informazione migliore.
+       Oltre le due ore il campionamento non guarda, quindi la finestra non
+       finge di sapere: dice che il bordo sta oltre. */
+    /* il titolo porta il bordo vicino della finestra, questo paragrafo porta
+       quello lontano: insieme dicono l'intervallo senza ripetersi. */
+    sot = (largo
+        ? (r.arrivoMax > 120
+            ? `Potrebbe arrivare gi&agrave; alle <b>${orario(r.arrivoMin)}</b>, ma il `
+              + `margine sulla velocit&agrave; &egrave; tale che pu&ograve; sconfinare oltre `
+              + `le due ore, dove il radar non guarda pi&ugrave;. `
+            : `Fra le <b>${orario(r.arrivoMin)}</b> e le <b>${orario(r.arrivoMax)}</b>, `
+              + `se continua a muoversi cos&igrave;. `)
+        : `Verso le <b>${orario(r.arrivo)}</b>, se continua a muoversi cos&igrave;. `)
         + (r.durata !== null
             ? `Dovrebbe durare <b>${quanto(r.durata)}</b> e finire verso le `
               + `<b>${orario(r.smette)}</b>.`
             : `Non si riesce a vedere dove finisce: la fascia di pioggia &egrave; pi&ugrave; larga `
-              + `di quanto arrivi lo sguardo, quindi metti in conto che duri parecchio.`)
-        + (fidati ? "" : ` Il calcolo per&ograve; &egrave; poco sicuro: prendilo con le molle.`);
+              + `di quanto arrivi lo sguardo, quindi metti in conto che duri parecchio.`);
+    /* v3.80.0 — via la coda "il calcolo pero' e' poco sicuro". La stessa
+       riserva compariva tre volte nella stessa schermata: qui, nel riquadro
+       dei valori ("prendilo con le molle / il calcolo e' incerto") e nel
+       confronto con le previsioni ("non e' misurato abbastanza bene per dire
+       la sua"). Il riquadro la dice con piu' spazio e in un posto fisso, dove
+       la si va a cercare: questa era quella di troppo. */
   } else if (nienteQui) {
     /* v3.73.0 — niente numeri quando non c'e' niente entro la portata utile:
        il fatto e' l'assenza di pioggia, non la distanza di un eco lontano */
@@ -4159,7 +4259,16 @@ function renderRadar() {
       sot.textContent = r.sopra
         ? "il radar vede pioggia sopra la zona"
         : (r.arrivo !== null
-            ? (dist ? "a " + dist + daDove : "in avvicinamento")
+            /* v3.80.0 — qui stava l'appaiamento: la distanza veniva da
+               r.vicino, cioe' dall'eco piu' vicino in qualunque direzione,
+               mentre il titolo sopra parla della cella che arriva, che sta
+               controvento e quasi sempre piu' lontano. Ora la distanza e'
+               quella della pioggia in arrivo, coerente con i minuti annunciati
+               perche' ne discende. L'eco piu' vicino resta nel riquadro
+               sotto, dove la didascalia dice che cos'e'. */
+            ? (r.kmArrivo !== null
+                ? "ora a " + r.kmArrivo.toFixed(0) + " km" + daDove
+                : "in avvicinamento" + daDove)
             /* v3.78.8 \u2014 il sottotitolo diceva "niente pioggia entro il raggio
                utile del radar" sotto un titolo che diceva "Nessuna pioggia nel
                raggio utile": le stesse parole in due corpi diversi, e nessuna

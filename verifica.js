@@ -2,8 +2,13 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.11.0
+   Versione: v1.12.0
    Build   : 2026-08-17 CEST
+
+   v1.12.0 — quattro regole sull'arrivo della pioggia. La scheda appaiava il
+   tempo d'arrivo con la distanza dell'eco piu' vicino, che sono due pioggie
+   diverse: 21 km in 85 minuti fanno 15 km/h contro i 23 stampati accanto.
+   Tre numeri veri che insieme dicevano una cosa falsa.
 
    v1.11.0 — quattro regole sulla grana della misura del movimento radar.
    Misurato sul campo: cinque scatti consecutivi con spostamento di una
@@ -346,6 +351,27 @@ regola("radar: un solo giudizio di solidita', letto dalla fonte",
 regola("radar: la freccia usa l'angolo misurato, non il nome del punto cardinale",
   "r.angoloMoto", "ricavarlo da indexOf sulla rosa lo riarrotonda a multipli di 45");
 
+/* v1.12.0 — tre regole sull'ARRIVO. La scheda appaiava il tempo d'arrivo con
+   la distanza dell'eco piu' vicino, che sono due pioggie diverse: 21 km in 85
+   minuti fanno 15 km/h, contro i 23 stampati due centimetri piu' giu'. Tre
+   numeri veri che insieme dicevano una cosa falsa. */
+regola("radar: la distanza della pioggia in arrivo discende dalla velocita'",
+  "const kmArrivo = arrivo !== null ? kmh * arrivo / 60",
+  "presa da r.vicino appaia l'eco piu' vicino con la cella che arriva, che sta controvento e piu' lontano");
+
+regola("radar: l'orario d'arrivo porta l'incertezza della velocita'",
+  "arrivo / (1 - relErr)",
+  "'verso le 21:28' era una precisione al minuto su una velocita' dichiarata incerta del 35 per cento");
+
+regola("radar: il tetto sull'errore relativo sta fuori dal ternario",
+  "Math.min(0.9, kmh > 0 ? errKmh / kmh : 0.9)",
+  "dentro, il ramo della velocita' nulla dava relErr 1 e arrivoMax diventava una divisione per zero");
+
+/* la prova sulla riserva ripetuta usa "nudo", che nasce piu' sotto: sta
+   insieme alle altre che ne dipendono. Scritta qui dava un TDZ — "Cannot
+   access 'nudo' before initialization" — cioe' esattamente il difetto che
+   questo file sorveglia dentro index.html e che nessuno sorveglia qui. */
+
 /* v1.6.0 — il testo e la mappa devono usare la stessa portata utile. Finche'
    solo il testo la conosceva, la scheda diceva "niente nel raggio utile" e
    accanto disegnava settecento chilometri di vuoto, inquadrati attorno a un
@@ -549,6 +575,15 @@ prova("radar: nessuna promessa sul futuro dove i numeri tacciono", () => {
   const m = nudo.match(/scarto\s*\?\s*""\s*:[^;]{0,120}/);
   return m ? "frase agganciata a 'scarto' invece che a senzaMoto: " + m[0].slice(0, 70)
            : true;
+});
+
+prova("radar: la riserva sul calcolo non si ripete nella stessa scheda", () => {
+  /* v1.12.0 — "prendilo con le molle" compariva nel paragrafo dell'arrivo, nel
+     riquadro dei valori e, con altre parole, nel confronto con le previsioni:
+     tre volte la stessa riserva in una schermata. Il riquadro la dice in un
+     posto fisso, dove la si va a cercare. */
+  const n = (nudo.match(/prendilo con le molle/g) || []).length;
+  return n > 1 ? n + " volte la stessa riserva: il riquadro dei valori basta" : true;
 });
 
 prova("radar: la portata utile non si riscrive a mano", () => {
