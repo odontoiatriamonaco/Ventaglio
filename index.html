@@ -1,9 +1,42 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.80.1 — il ReferenceError che il collaudo non poteva vedere
+  VENTAGLIO v3.81.0 — la legenda dei colori, con l'ordine misurato
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.81.0: la mappa mostrava quattro colori e non diceva che cosa volessero
+           dire. Ora in basso a sinistra c'e' una barra a sette bande con
+           'poca' e 'molta' ai capi — quell'angolo e' libero per costruzione,
+           perche' le etichette degli anelli stanno a destra.
+           L'ORDINE E' MISURATO, NON SUPPOSTO. La tavolozza e' di RainViewer,
+           non nostra, e a occhio avrei detto che il blu scuro fosse l'eco piu'
+           debole. E' il contrario. Per ogni tinta ho calcolato la distanza
+           media dai nuclei rossi su un campo di settecento chilometri, sul
+           principio che gli echi deboli circondano quelli forti: il ciano
+           chiaro sta a 45 pixel dai nuclei, il blu scuro a 22, il giallo a 19,
+           l'arancio a 11, il rosso a 0. Cinquecento nuclei nel campione.
+           Bande nette e non sfumate, perche' la tavolozza e' a passi discreti:
+           una sfumatura continua passerebbe per colori che sul radar non
+           esistono. E la barra porta lo stesso filtro dell'immagine —
+           saturazione, contrasto e luminosita' — cosi' mostra i colori come si
+           vedono sulla mappa e non come stanno nel file.
+           Quello che la legenda NON dice sono i millimetri all'ora. La
+           corrispondenza passa dai dBZ della tavolozza e poi da una
+           conversione approssimata: sarebbe un numero preciso e non
+           verificato, cioe' il difetto di questi due giorni in veste nuova.
+           Qui si sa l'ordine, non la scala, e la legenda dice solo l'ordine.
+           TROVATO MISURANDO, UN DIFETTO PIU' SERIO. Le tavole in uso sono
+           smussate ('1_1' nell'URL), e lo smussamento aggiunge un alone
+           terroso semitrasparente attorno a ogni eco: l'11 per cento dei pixel
+           non vuoti, con alfa fino a 190. L'app soglia sull'alfa a 40 e a 60,
+           quindi da mesi misura in parte quell'alone invece della pioggia — la
+           distanza dell'eco piu' vicino e' sottostimata e 'piove qui' puo'
+           scattare quando sei accanto a una cella, non sotto. Verificato che
+           l'alone e' rendering e non precipitazione: con 'smooth' a zero
+           scende da 2919 pixel a 107, mentre l'opzione 'snow' non cambia
+           nulla. NON corretto in questa versione: tocca la misura e va fatto
+           con calma, separando le tavole nette per il calcolo da quelle
+           smussate per la mappa, come si e' fatto per lo zoom.
   v3.80.1: la v3.80.0 non funzionava affatto. 'Radar non riuscito', a ogni
            calcolo, per un ReferenceError: avevo messo il conto della distanza
            d'arrivo subito dopo la velocita', che e' PRIMA che 'arrivo' esista.
@@ -1175,6 +1208,31 @@
      mappa: dimensione reale, nessuna deformazione, qualunque formato. */
   /* v3.72.0 — un valore che non vale non si stampa come se valesse */
   #radarOut .v.spento{color:var(--nebbia);opacity:.45}
+  /* v3.81.0 — LA LEGENDA. La mappa mostrava quattro colori senza dire che
+     cosa volessero dire. I colori sono quelli veri della tavolozza di
+     RainViewer, e l'ordine e' MISURATO: per ogni tinta si e' calcolata la
+     distanza media dai nuclei rossi su un campo di settecento chilometri, e
+     ne e' uscito che il ciano chiaro e' l'eco piu' DEBOLE — 45 pixel di
+     distanza media — mentre il blu scuro e' piu' forte, a 22. A occhio avrei
+     detto il contrario. Poi giallo a 19, arancio a 11, rosso a 0.
+     Bande nette e non sfumate, perche' la tavolozza e' a passi discreti:
+     una sfumatura continua passerebbe per colori che sul radar non esistono.
+     E la barra porta lo stesso filtro dell'immagine, cosi' mostra i colori
+     come si vedono sulla mappa e non come stanno nel file.
+     Niente millimetri all'ora: quella corrispondenza passa dai dBZ della
+     tavolozza e da una conversione approssimata, e sarebbe un numero preciso
+     e non verificato. Qui si sa l'ordine, non la scala. */
+  .radarbtn .mappona .legenda{position:absolute;left:10px;bottom:9px;width:46%;
+    display:flex;align-items:center;gap:6px;pointer-events:none}
+  .radarbtn .mappona .legenda i{font-style:normal;font-family:"IBM Plex Mono",monospace;
+    font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#DCE8E6;
+    text-shadow:0 0 3px #08171F,0 0 3px #08171F,0 0 5px #08171F}
+  .radarbtn .mappona .legenda b{flex:1;height:5px;border-radius:3px;
+    filter:saturate(1.35) contrast(1.22) brightness(1.28);
+    box-shadow:0 0 0 1px rgba(8,23,31,.6);
+    background:linear-gradient(90deg,#88ddee 0 14%,#00a3e0 14% 28%,
+      #0077aa 28% 42%,#004a70 42% 57%,#ffee00 57% 71%,#ffaa00 71% 85%,
+      #f23600 85% 100%)}
   .radarbtn .mappona .ets{position:absolute;inset:0;pointer-events:none}
   .radarbtn .mappona .ets span{position:absolute;transform:translate(-50%,-50%);
     white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:10px;
@@ -1954,7 +2012,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.80.1 &middot; build 2026-08-17<br>
+v3.81.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -4525,7 +4583,10 @@ function renderRadar() {
               + (e[1] / 160 * 100).toFixed(2) + '%;top:' + (e[2] / 90 * 100).toFixed(2) + '%">'
               + e[3] + '</span>';
           }).join("")
-        + '</span>';
+        + '</span>'
+        /* v3.81.0 — la legenda, in basso a sinistra: le etichette degli anelli
+           stanno a destra per costruzione, quindi quell'angolo e' libero. */
+        + '<span class="legenda"><i>poca</i><b></b><i>molta</i></span>';
       mp.style.display = "block";
     }
   }
