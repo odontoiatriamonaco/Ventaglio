@@ -1,9 +1,30 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.82.0 — la mappa si muove, perche' si e' mossa
+  VENTAGLIO v3.82.1 — le scritte erano finite sotto la mappa
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.82.1: dalla v3.82.0 il 'tu' al centro, le distanze degli anelli, la
+           distanza della pioggia e tutta la legenda dei colori erano
+           spariti. Segnalato da chi guardava l'app, non dal collaudo.
+           Per impilare i due fotogrammi dell'animazione ho dato loro uno
+           z-index, 1 e 2. Mi sono ricordato di alzare l'SVG con gli anelli e
+           la freccia, e ho dimenticato le scritte HTML e la legenda: un
+           elemento posizionato senza z-index viene dipinto SOTTO chiunque ne
+           abbia uno positivo. Cosi' meta' dei riferimenti della mappa e' rimasta
+           nascosta sotto l'immagine per una versione intera — e la legenda,
+           costruita due versioni prima proprio perche' mancava, e' durata
+           poche ore.
+           Non era una svista qualsiasi: e' la firma di questi giorni. Avevo
+           alzato la cosa a cui stavo pensando invece della categoria a cui
+           apparteneva. Ora lo z-index di ciascuno sta dentro la sua unica
+           regola, non in una riga aggiunta a parte: lo stesso selettore in due
+           blocchi e' gia' il difetto, prima ancora che i numeri sbaglino.
+           verifica.js v1.14.0 confronta i numeri fra loro e pretende che tutto
+           cio' che sta in sovrimpressione stia sopra i fotogrammi. Nessun
+           controllo poteva vederlo prima: sintassi valida, graffe bilanciate,
+           elementi tutti al loro posto nel DOM. E' impilamento, e si coglie
+           solo guardando i numeri insieme.
   v3.82.0: la mappa mostrava un istante fermo e diceva a parole che la pioggia
            si sposta verso nord-est. Ora lo si vede.
            IL BIVIO, CHE E' TUTTO. Il modo facile era far scivolare l'immagine
@@ -1233,7 +1254,7 @@
     filter:saturate(1.35) contrast(1.22) brightness(1.28)}
   .radarbtn .mappona .vuota{display:block;width:100%;height:100%;
     background:repeating-linear-gradient(45deg,#0C1E28 0 6px,#0A1922 6px 12px)}
-  .radarbtn .mappona .sopra{position:absolute;inset:0;width:100%;height:100%}
+  .radarbtn .mappona .sopra{position:absolute;inset:0;width:100%;height:100%;z-index:3}
   /* v3.82.0 — L'ANIMAZIONE. Due fotogrammi radar veri, a venti minuti l'uno
      dall'altro, alternati sul posto: non e' una simulazione dello spostamento,
      e' lo spostamento. Il fotogramma di PRIMA sta sotto e resta fermo; quello
@@ -1252,7 +1273,15 @@
   .radarbtn .mappona.anima img.prima{position:absolute;inset:0;z-index:1}
   .radarbtn .mappona.anima img.adesso{position:relative;z-index:2;
     animation:radarLoop 2.6s linear infinite}
-  .radarbtn .mappona .sopra{z-index:3}
+  /* v3.82.1 — e SOPRA le immagini ci va tutto il resto, non solo l'SVG.
+     Dando lo z-index ai due fotogrammi mi sono ricordato di alzare i cerchi e
+     la freccia, che stanno nell'SVG, e ho dimenticato le scritte HTML e la
+     legenda: un elemento posizionato senza z-index viene dipinto SOTTO
+     chiunque ne abbia uno positivo, quindi "tu", le distanze degli anelli e
+     la barra dei colori sono finite sotto la mappa. Invisibili per una
+     versione intera.
+     Qui non basta ricordarsi: le tre cose che stanno in sovrimpressione
+     salgono insieme, e il collaudo ora verifica che nessuna resti indietro. */
   /* Il tempo non e' simmetrico, ed e' voluto. Con una dissolvenza uguale nei
      due sensi la nuvola sembrerebbe oscillare avanti e indietro; qui il
      passaggio da PRIMA a ADESSO e' lento e l'occhio lo segue, il ritorno e'
@@ -1289,7 +1318,7 @@
      Niente millimetri all'ora: quella corrispondenza passa dai dBZ della
      tavolozza e da una conversione approssimata, e sarebbe un numero preciso
      e non verificato. Qui si sa l'ordine, non la scala. */
-  .radarbtn .mappona .legenda{position:absolute;left:10px;bottom:9px;width:46%;
+  .radarbtn .mappona .legenda{position:absolute;left:10px;bottom:9px;width:46%;z-index:4;
     display:flex;align-items:center;gap:6px;pointer-events:none}
   .radarbtn .mappona .legenda i{font-style:normal;font-family:"IBM Plex Mono",monospace;
     font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#DCE8E6;
@@ -1300,7 +1329,7 @@
     background:linear-gradient(90deg,#88ddee 0 14%,#00a3e0 14% 28%,
       #0077aa 28% 42%,#004a70 42% 57%,#ffee00 57% 71%,#ffaa00 71% 85%,
       #f23600 85% 100%)}
-  .radarbtn .mappona .ets{position:absolute;inset:0;pointer-events:none}
+  .radarbtn .mappona .ets{position:absolute;inset:0;pointer-events:none;z-index:4}
   .radarbtn .mappona .ets span{position:absolute;transform:translate(-50%,-50%);
     white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:10px;
     color:#DCE8E6;text-shadow:0 0 3px #08171F,0 0 3px #08171F,0 0 5px #08171F}
@@ -2079,7 +2108,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.82.0 &middot; build 2026-08-17<br>
+v3.82.1 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 

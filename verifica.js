@@ -2,7 +2,7 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.13.0
+   Versione: v1.14.0
    Build   : 2026-08-17 CEST
 
    v1.12.0 — quattro regole sull'arrivo della pioggia. La scheda appaiava il
@@ -187,6 +187,44 @@ prova("ogni id usato dal JS esiste nell'HTML", () => {
   const usati = new Set([...js.matchAll(/\$\("([^"]+)"\)/g)].map(m => m[1]));
   const mancanti = [...usati].filter(x => !definiti.has(x));
   return mancanti.length ? "mancanti: " + mancanti.join(", ") : true;
+});
+
+prova("radar: le scritte della mappa stanno sopra i fotogrammi", () => {
+  /* v1.14.0 — la v3.82.0 ha dato uno z-index ai due fotogrammi per poterli
+     impilare. Gli anelli e la freccia, che stanno nell SVG, sono stati
+     alzati; le scritte HTML e la legenda no. Un elemento posizionato senza
+     z-index viene dipinto SOTTO chiunque ne abbia uno positivo, quindi il
+     "tu" al centro, le distanze degli anelli e la barra dei colori sono
+     finite sotto la mappa, invisibili per una versione intera.
+     Nessun controllo poteva vederlo: sintassi valida, graffe bilanciate,
+     elementi tutti al loro posto nel DOM. E impilamento, e lunico modo di
+     coglierlo e confrontare i numeri fra loro.
+     Niente regex costruite dal selettore: si prende il blocco che lo
+     contiene e ci si legge dentro. Meno da sbagliare. */
+  const z = (sel) => {
+    const blocco = css.split("}").find((b) => b.includes(sel + "{"));
+    if (!blocco) return undefined;
+    const m = /z-index: *([0-9]+)/.exec(blocco);
+    return m ? Number(m[1]) : null;
+  };
+  const sopra = [".radarbtn .mappona .sopra",
+                 ".radarbtn .mappona .ets",
+                 ".radarbtn .mappona .legenda"];
+  const a = z(".radarbtn .mappona.anima img.prima");
+  const b = z(".radarbtn .mappona.anima img.adesso");
+  if (a === undefined || b === undefined) return "regole dei fotogrammi non trovate nel CSS";
+  const fotogrammi = Math.max(a || 0, b || 0);
+  if (!fotogrammi) return true;          // niente impilamento, niente problema
+  const guai = [];
+  for (const sel of sopra) {
+    const v = z(sel), nome = sel.split(" ").pop();
+    if (v === undefined) guai.push(nome + " non ha una regola sua");
+    else if (v === null) guai.push(nome + " senza z-index");
+    else if (v <= fotogrammi) guai.push(nome + " a " + v);
+  }
+  return guai.length
+    ? "sotto i fotogrammi (z " + fotogrammi + "): " + guai.join(", ")
+    : true;
 });
 
 prova("ogni animazione CSS ha i suoi keyframes", () => {
