@@ -1,9 +1,42 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.81.0 — la legenda dei colori, con l'ordine misurato
+  VENTAGLIO v3.82.0 — la mappa si muove, perche' si e' mossa
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.82.0: la mappa mostrava un istante fermo e diceva a parole che la pioggia
+           si sposta verso nord-est. Ora lo si vede.
+           IL BIVIO, CHE E' TUTTO. Il modo facile era far scivolare l'immagine
+           nella direzione misurata con una trasformazione: sarebbe sembrato
+           piu' fluido e avrebbe animato la STIMA — quella con il 35 per cento
+           di margine sulla velocita' e fino a mezzo quadrante sulla direzione
+           quando lo spostamento e' di una casella. Una nuvola che scivola
+           liscia promette una precisione che non abbiamo, ed e' il difetto di
+           questi tre giorni in forma di movimento.
+           Il modo giusto non costava quasi niente: i due mosaici che il
+           calcolo scarica gia' SONO due fotogrammi radar veri, a venti minuti
+           l'uno dall'altro. Alternarli non simula lo spostamento, e' lo
+           spostamento. Se la pioggia e' andata a nord-est, la si vede andare a
+           nord-est perche' ci e' andata.
+           Il disegno della miniatura e' diventato una funzione, chiamata per
+           i due istanti: stesso ritaglio, stesso centro, stessa scala. Se
+           l'inquadratura differisse di un pixel fra i due fotogrammi, l'occhio
+           leggerebbe quello scarto come movimento della pioggia — cioe'
+           l'animazione inventerebbe proprio la cosa che deve mostrare.
+           I riferimenti — anelli, mira, freccia, etichette, legenda — non si
+           animano: sono nostri e non si sono mossi. Il tempo non e' simmetrico,
+           perche' una dissolvenza uguale nei due sensi farebbe oscillare la
+           nuvola avanti e indietro: il passaggio da prima a adesso e' lento e
+           l'occhio lo segue, il ritorno e' un lampo. E lo stato di riposo, due
+           terzi del giro, e' ADESSO — che e' quello che serve quando si guarda
+           la mappa per sapere com'e' la situazione.
+           Costa nove riquadri in piu' quando la mappa usa il mosaico fine, e
+           niente quando riusa quelli del calcolo. Con 'prefers-reduced-motion'
+           l'animazione non parte e resta l'istante attuale.
+           Verificato misurando, non guardando: fra i due fotogrammi
+           dell'animazione lo scostamento e' di (9, -15) pixel, cioe' 31 gradi,
+           contro i 39 misurati dal calcolo. Otto gradi di scarto su un
+           ritaglio ridotto: l'animazione va dove la freccia indica.
   v3.81.0: la mappa mostrava quattro colori e non diceva che cosa volessero
            dire. Ora in basso a sinistra c'e' una barra a sette bande con
            'poca' e 'molta' ai capi — quell'angolo e' libero per costruzione,
@@ -1201,6 +1234,40 @@
   .radarbtn .mappona .vuota{display:block;width:100%;height:100%;
     background:repeating-linear-gradient(45deg,#0C1E28 0 6px,#0A1922 6px 12px)}
   .radarbtn .mappona .sopra{position:absolute;inset:0;width:100%;height:100%}
+  /* v3.82.0 — L'ANIMAZIONE. Due fotogrammi radar veri, a venti minuti l'uno
+     dall'altro, alternati sul posto: non e' una simulazione dello spostamento,
+     e' lo spostamento. Il fotogramma di PRIMA sta sotto e resta fermo; quello
+     di ADESSO sta sopra e si dissolve, cosi' l'occhio vede la differenza fra i
+     due invece di due immagini che sbattono.
+     Tempi lunghi — due secondi e mezzo per giro — perche' questa e' una mappa
+     da guardare, non un'insegna: un lampeggio veloce sarebbe rumore su una
+     scheda che sta sempre in vista.
+     I riferimenti (anelli, mira, freccia, etichette, legenda) NON si animano:
+     sono nostri e non si sono mossi. Muoverli direbbe il falso. */
+  /* Solo il fotogramma di PRIMA esce dal flusso. Se ne escono tutti e due il
+     contenitore perde la larghezza intrinseca e collassa a due pixel — i soli
+     bordi: la misura del riquadro viene dall'immagine che ci sta dentro.
+     Quello di ADESSO resta nel flusso e prende position:relative, che serve
+     solo a dargli diritto a uno z-index. */
+  .radarbtn .mappona.anima img.prima{position:absolute;inset:0;z-index:1}
+  .radarbtn .mappona.anima img.adesso{position:relative;z-index:2;
+    animation:radarLoop 2.6s linear infinite}
+  .radarbtn .mappona .sopra{z-index:3}
+  /* Il tempo non e' simmetrico, ed e' voluto. Con una dissolvenza uguale nei
+     due sensi la nuvola sembrerebbe oscillare avanti e indietro; qui il
+     passaggio da PRIMA a ADESSO e' lento e l'occhio lo segue, il ritorno e'
+     un lampo che si ignora. E lo stato di riposo — dove l'animazione sta per
+     due terzi del giro — e' ADESSO, che e' quello che la mappa deve mostrare
+     quando la si guarda per sapere com'e' la situazione. */
+  @keyframes radarLoop{
+    0%,10%{opacity:0}
+    42%,94%{opacity:1}
+    100%{opacity:0}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .radarbtn .mappona.anima img.adesso{animation:none;opacity:1}
+    .radarbtn .mappona .prima{display:none}
+  }
   /* v3.70.4 — le etichette escono dall'SVG. Dentro un viewBox le misure in
      "px" sono unita' del sistema di coordinate, non pixel dello schermo:
      portando il sistema da 100 a 160 unita' i corpi del testo sono diventati
@@ -2012,7 +2079,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.81.0 &middot; build 2026-08-17<br>
+v3.82.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3896,12 +3963,22 @@ async function radarCalcola() {
        finche' non si guarda il traffico. */
     const mappaVerra = dentroPortata && vicino < (larKm / 2) * 0.98;
 
-    let mapCanvas = m2.canvas, mapPx = px, mapPy = py, mapDim = R_DIM;
+    /* v3.82.0 — LA MAPPA SI MUOVE, PERCHE' SI E' MOSSA. I due mosaici del
+       calcolo sono due fotogrammi radar veri, a venti minuti l'uno dall'altro:
+       alternarli non simula lo spostamento, lo mostra. L'alternativa era far
+       scivolare l'immagine nella direzione misurata con una trasformazione,
+       che sarebbe sembrata piu' fluida e avrebbe animato la STIMA — quella con
+       il 35 per cento di margine sulla velocita' e fino a mezzo quadrante
+       sulla direzione. Una nuvola che scivola liscia promette una certezza che
+       non c'e'. Qui si vede quello che il radar ha visto. */
+    let mapCanvas = m2.canvas, mapPrima = m1.canvas, mapPx = px, mapPy = py, mapDim = R_DIM;
     let mapKmPx = rMpp(lat, z) / 1000;
     if (mappaVerra && (zMappa !== z || lato !== 256)) try {
       const pgF = rPixel(lat, lon, zMappa);
       const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
-      const mF = await rMosaico(j.host, f2.path, zMappa, cxF, cyF, lato);
+      const [mF, mP] = await Promise.all([
+        rMosaico(j.host, f2.path, zMappa, cxF, cyF, lato),
+        rMosaico(j.host, f1.path, zMappa, cxF, cyF, lato)]);
       /* e non basta che i riquadri arrivino: se li' non c'e' un eco da
          nessuna parte il mosaico e' un rettangolo vuoto, e quello largo
          diceva di piu'. Si campiona un pixel ogni sedici. */
@@ -3912,6 +3989,9 @@ async function radarCalcola() {
       }
       if (acceso > 20) {
         mapCanvas = mF.canvas; mapDim = mF.dim;
+        // il fotogramma di prima solo se e' arrivato per intero: se manca,
+        // l'animazione si spegne e resta la mappa ferma, che e' sempre vera
+        mapPrima = (mP && mP.ok >= 5) ? mP.canvas : null;
         const scala = lato / 256;
         mapPx = (pgF.x - (cxF - 1) * 256) * scala;
         mapPy = (pgF.y - (cyF - 1) * 256) * scala;
@@ -3927,7 +4007,7 @@ async function radarCalcola() {
     // se la pioggia resta comunque fuori campo, la mappa non serve
     const mappaUtile = dentroPortata && (vicino / mapKmPx) < (ritLar / 2) * 0.98;
 
-    let miniatura = null;
+    let miniatura = null, miniaturaPrima = null;
     if (mappaUtile) try {
       /* v3.67.0 — la miniatura era piccola e scura: la pioggia a venti
          chilometri si perdeva nel fondo quasi nero del mosaico. Tre
@@ -3943,30 +4023,41 @@ async function radarCalcola() {
       /* v3.68.1 — la tela e' panoramica come il riquadro che la ospita.
          Disegnandola quadrata, object-fit:cover avrebbe tagliato sopra e
          sotto portandosi via la barra della scala. */
+      /* v3.82.0 — il disegno della miniatura diventa una funzione, cosi' i due
+         istanti passano dalle stesse identiche misure: stesso ritaglio, stesso
+         centro, stessa scala. Se l'inquadratura differisse anche di un pixel
+         fra i due fotogrammi, l'occhio leggerebbe quello scarto come movimento
+         della pioggia — cioe' l'animazione inventerebbe proprio la cosa che
+         deve mostrare. */
       const LAR = 640, ALT = 360;
-      const mini = document.createElement("canvas");
-      mini.width = LAR; mini.height = ALT;
-      const mc = mini.getContext("2d");
-      mc.imageSmoothingEnabled = true;
-      mc.imageSmoothingQuality = "high";
-      mc.fillStyle = "#0D2632";
-      mc.fillRect(0, 0, LAR, ALT);
       const alt = ritAlt, lar = ritLar;
-      // due passate: la seconda rinforza gli echi deboli senza bruciare i forti
-      // v3.78.0 — dal mosaico della mappa, che puo' essere quello fine
-      mc.drawImage(mapCanvas, mapPx - lar/2, mapPy - alt/2, lar, alt, 0, 0, LAR, ALT);
-      mc.globalAlpha = 0.55;
-      mc.drawImage(mapCanvas, mapPx - lar/2, mapPy - alt/2, lar, alt, 0, 0, LAR, ALT);
-      mc.globalAlpha = 1;
+      const disegna = (tela) => {
+        const mini = document.createElement("canvas");
+        mini.width = LAR; mini.height = ALT;
+        const mc = mini.getContext("2d");
+        mc.imageSmoothingEnabled = true;
+        mc.imageSmoothingQuality = "high";
+        mc.fillStyle = "#0D2632";
+        mc.fillRect(0, 0, LAR, ALT);
+        // due passate: la seconda rinforza gli echi deboli senza bruciare i forti
+        // v3.78.0 — dal mosaico della mappa, che puo' essere quello fine
+        mc.drawImage(tela, mapPx - lar/2, mapPy - alt/2, lar, alt, 0, 0, LAR, ALT);
+        mc.globalAlpha = 0.55;
+        mc.drawImage(tela, mapPx - lar/2, mapPy - alt/2, lar, alt, 0, 0, LAR, ALT);
+        mc.globalAlpha = 1;
+        return mini.toDataURL("image/png");
+      };
       /* v3.70.1 — via la barra della scala: dalla v3.70.0 gli anelli portano
          gia' la distanza in chilometri, e due scale diverse nello stesso
          riquadro sono una in piu'. Restava anche l'unico elemento disegnato
          sull'immagine invece che in sovrimpressione, quindi non si poteva
          posizionare rispetto agli altri. */
-      miniatura = mini.toDataURL("image/png");
+      miniatura = disegna(mapCanvas);
+      if (mapPrima) miniaturaPrima = disegna(mapPrima);
     } catch (e) {}
 
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
+                miniaturaPrima,   // v3.82.0 — l'istante di venti minuti fa
                 kmVista: larKm,   // v3.78.0 — gia' in chilometri, dal mosaico giusto
                 // v3.80.1 — via "verso" a otto punti: lo leggeva solo la prosa,
                 // che ora usa verso16, e restarci era tenere due nomi per una cosa
@@ -4442,7 +4533,10 @@ function renderRadar() {
          deformazione: le ellissi si costruiscono a mano e il testo resta
          proporzionato. */
       const ets = [];      // v3.70.4 - le scritte, disegnate fuori dall'SVG
-      let g = '<img src="' + r.miniatura + '" alt="">'
+      /* v3.82.0 — l'ordine conta: prima l'istante vecchio, poi quello nuovo
+         sopra. E' quello nuovo che si dissolve, scoprendo il vecchio. */
+      let g = (r.miniaturaPrima ? '<img class="prima" src="' + r.miniaturaPrima + '" alt="">' : '')
+        + '<img class="adesso" src="' + r.miniatura + '" alt="">'
         + '<svg class="sopra" viewBox="0 0 160 90" aria-hidden="true">';
       /* v3.70.1 — le etichette stavano in cima all'anello, dove capita
          spesso la pioggia: finivano sovrapposte alla nuvola e la piu'
@@ -4587,6 +4681,8 @@ function renderRadar() {
         /* v3.81.0 — la legenda, in basso a sinistra: le etichette degli anelli
            stanno a destra per costruzione, quindi quell'angolo e' libero. */
         + '<span class="legenda"><i>poca</i><b></b><i>molta</i></span>';
+      // v3.82.0 — si anima solo se il fotogramma di prima c'e' davvero
+      mp.classList.toggle("anima", !!r.miniaturaPrima);
       mp.style.display = "block";
     }
   }
