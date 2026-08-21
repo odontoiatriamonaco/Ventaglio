@@ -35,7 +35,7 @@
 
 /* v1.1.0 — va cambiata a ogni pubblicazione: e' cio' che fa ripulire
    le vecchie copie all'attivazione. */
-const CACHE = "ventaglio-2026-08-17-g";
+const CACHE = "ventaglio-2026-08-17-h";
 const GUSCIO = ["./", "./index.html"];
 
 self.addEventListener("install", e=>{

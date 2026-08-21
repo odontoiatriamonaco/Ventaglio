@@ -1,9 +1,40 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.83.0 — il riquadro e' 16:9, i controlli erano 1:1
+  VENTAGLIO v3.84.0 — le frecce vanno dove c'e' la pioggia, e sono piu' di una
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.84.0: la freccia stava su un eco pallido in basso mentre il banco grosso,
+           in alto a sinistra, restava muto. Il difetto non era la posizione:
+           era che una freccia sola diceva una cosa che il dato non dice.
+           rScostamento cicla su TUTTA la griglia. Quello che misura non e' il
+           moto di una cella, e' la deriva media dell'intero campo: un vettore
+           unico per tutto cio' che si vede. Appiccicarlo all'eco piu' vicino
+           lo faceva leggere come 'questa cella va di la'', che e' piu' di
+           quanto si sappia — e per giunta l'eco piu' vicino e' spesso un
+           puntino, mentre l'occhio va sul banco.
+           Ora si cercano i punti dove la pioggia c'e' davvero, campionando il
+           mosaico della mappa su una griglia, e si mette una freccia su
+           ciascuno. Frecce parallele sparse sui banchi sono il disegno onesto
+           di un vettore unico: dicono 'tutto questo si muove cosi''.
+           La soglia e' 200 sull'alfa, perche' l'eco vero sta sopra i 200 e la
+           famiglia semitrasparente fino a 190 e' l'alone dello smussamento,
+           non precipitazione — misurato in v3.81.0. Al massimo sette, mai a
+           meno di ventiquattro unita' l'una dall'altra, mai addosso alla mira
+           o alla legenda.
+           E si scelgono le PIU' BAGNATE, non le prime che capitano scorrendo
+           la griglia: quello era un ordine geografico, e con la pioggia
+           dappertutto riempiva sempre la meta' alta lasciando muta quella
+           bassa.
+           Cadono cosi' i due casi speciali di prima — la freccia agganciata
+           al bersaglio e quella centrata quando piove sopra — e con loro bx,
+           che non leggeva piu' nessuno. Resta un ripiego: se nessuna freccia
+           cade su pioggia ma il radar la vede sopra la testa, se ne mette una
+           accanto alla mira.
+           Verificato sui dati veri: la freccia cade su 81 pixel di pioggia su
+           81, a cinquanta unita' dalla mira. E a calcolo, con la pioggia
+           dappertutto: sette frecce, nessuna coppia sotto le ventiquattro
+           unita', nessuna addosso al centro.
   v3.83.0: con la pioggia a 121 km verso nord la freccia si vedeva a meta',
            tagliata dal bordo alto, e con lei il bersaglio e il filo.
            La causa: quanto ci sta dentro la mappa veniva deciso confrontando
@@ -2132,7 +2163,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.83.0 &middot; build 2026-08-17<br>
+v3.84.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -4076,7 +4107,7 @@ async function radarCalcola() {
     // se la pioggia resta comunque fuori campo, la mappa non serve
     const mappaUtile = dentroPortata && (raggioLar / mapKmPx) < (ritLar / 2) * 0.98;
 
-    let miniatura = null, miniaturaPrima = null;
+    let miniatura = null, miniaturaPrima = null, frecce = [];
     if (mappaUtile) try {
       /* v3.67.0 — la miniatura era piccola e scura: la pioggia a venti
          chilometri si perdeva nel fondo quasi nero del mosaico. Tre
@@ -4123,10 +4154,59 @@ async function radarCalcola() {
          posizionare rispetto agli altri. */
       miniatura = disegna(mapCanvas);
       if (mapPrima) miniaturaPrima = disegna(mapPrima);
+
+      /* v3.84.0 — LE FRECCE VANNO DOVE C'E' LA PIOGGIA, E SONO PIU' DI UNA.
+         rScostamento cicla su tutta la griglia: quello che misura non e' la
+         velocita' di una cella, e' la deriva MEDIA dell'intero campo. Una
+         freccia sola, appiccicata all'eco piu' vicino, prometteva percio' una
+         specificita' che il dato non ha — diceva 'questa cella va di la'',
+         mentre la misura dice 'tutto va di la''. E finiva su echi minuscoli
+         mentre il banco grosso, dove l'occhio va per primo, restava muto.
+         Ora si cercano i posti dove la pioggia c'e' davvero e si mette una
+         freccia su ciascuno: tante frecce parallele sono il disegno onesto di
+         un vettore unico applicato a tutto il campo.
+         La soglia e' 200 sull'alfa perche' sopra i 200 c'e' l'eco vero: la
+         famiglia semitrasparente fino a 190 e' l'alone dello smussamento, non
+         precipitazione (misurato in v3.81.0). */
+      const gctx = mapCanvas.getContext('2d');
+      const px0 = mapPx - ritLar / 2, py0 = mapPy - ritAlt / 2;
+      /* quanta pioggia c'e' in quel punto, non solo se ce n'e': il conteggio
+         serve a ORDINARE i candidati, cosi' le sette frecce vanno sui banchi
+         piu' grossi invece che sui primi che capitano scorrendo la griglia —
+         che era un ordine geografico, e riempiva sempre la meta' alta. */
+      const quantaPioggia = (vx, vy) => {
+        const sx = Math.round(px0 + (vx / 160) * ritLar);
+        const sy = Math.round(py0 + (vy / 90) * ritAlt);
+        if (sx < 3 || sy < 3 || sx >= mapDim - 3 || sy >= mapDim - 3) return 0;
+        const d = gctx.getImageData(sx - 2, sy - 2, 5, 5).data;
+        let n = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i] >= 200) n++;
+        return n;   // su 25
+      };
+      const cand = [];
+      for (let vy = 16; vy <= 74; vy += 14.5)
+        for (let vx = 18; vx <= 142; vx += 20.7) {
+          // niente frecce addosso alla mira, alle sue scritte o alla legenda
+          if (Math.hypot(vx - 80, vy - 45) < 14) continue;
+          if (vx < 78 && vy > 70) continue;
+          const n = quantaPioggia(vx, vy);
+          if (n >= 13) cand.push({ vx, vy, n });   // la maggioranza dei 25
+        }
+      // dalle piu' bagnate alle meno, e al massimo sette ben distanziate:
+      // una selva di frecce non si legge
+      cand.sort((x, y) => y.n - x.n);
+      const scelte = [];
+      for (const c of cand) {
+        if (scelte.length >= 7) break;
+        if (scelte.some((s2) => Math.hypot(s2.vx - c.vx, s2.vy - c.vy) < 24)) continue;
+        scelte.push(c);
+      }
+      frecce = scelte.map((c) => [+c.vx.toFixed(1), +c.vy.toFixed(1)]);
     } catch (e) {}
 
     S.radar = { stato:"ok", ora:f2.time, dt, z, kmh, errKmh, fermo, miniatura,
                 miniaturaPrima,   // v3.82.0 — l'istante di venti minuti fa
+                frecce,           // v3.84.0 — dove c'e' pioggia, in unita' del disegno
                 kmVista: larKm,   // v3.78.0 — gia' in chilometri, dal mosaico giusto
                 // v3.80.1 — via "verso" a otto punti: lo leggeva solo la prosa,
                 // che ora usa verso16, e restarci era tenere due nomi per una cosa
@@ -4637,7 +4717,9 @@ function renderRadar() {
       // il segno che collega te alla pioggia piu' vicina
       // v3.70.5 — dove sta la pioggia piu' vicina
       // v3.78.3 — sottoLaMira serve anche alla freccia, quindi vive qui
-      let bx = null, by = null, sottoLaMira = false;
+      // v3.84.0 — via bx: le frecce non partono piu' dal bersaglio, quindi
+      // nessuno lo leggeva piu'. Resta by, che serve a scansare il "tu".
+      let by = null, sottoLaMira = false;
       /* v3.83.0 — la prova di visibilita' era 'rr(vicino) < 74', cioe' un
          confronto con la meta' LARGHEZZA del sistema di coordinate. Vale per
          un eco a est; per uno a nord no, perche' in verticale ci sono 45
@@ -4653,7 +4735,7 @@ function renderRadar() {
         const d = dEco;                                // lunghezza del filo
         const ex = CX + Math.sin(a) * d;
         const ey = CY - Math.cos(a) * d;
-        bx = ex; by = ey;
+        by = ey;
         /* v3.70.1 — il bersaglio era grande quanto la mira e si confondeva
            con essa: qui e' piu' piccolo, e accanto compare la distanza,
            che e' l'informazione per cui il filo esiste. */
@@ -4704,56 +4786,36 @@ function renderRadar() {
          indicasse dove va la pioggia o da dove arriva. Ora e' piccola,
          parte dal bersaglio e punta verso di te: dice il verso del
          movimento nel punto in cui il movimento conta. */
-      if (ang !== null && bx !== null && !sottoLaMira) {
-        /* v3.77.1 — due difetti nella stessa freccia, che si coprivano a
-           vicenda. Puntava all'INVERSO: dentro un SVG l'asse y cresce verso
-           il basso, quindi il tracciato "M0 0 L0 10" nasce rivolto a sud e
-           rotate(ang) lo porta a ang+180. Con la pioggia in arrivo da nord
-           la freccia indicava nord, e la riga sotto — anch'essa rovesciata —
-           diceva "da sud": due errori che si confermavano a vicenda e
-           sembravano coerenti.
-           E partiva dal bersaglio venendo verso di te: con l'inquadratura
-           stretta della v3.77.0 il bersaglio dista poche unita' dal centro,
-           quindi la freccia finiva addosso alla mira e all'etichetta della
-           distanza. Ora sta tutta al di la' del bersaglio, dalla parte da
-           cui la pioggia arriva, con la punta che si ferma su di esso: il
-           centro resta libero e la lunghezza segue la distanza. */
+      /* v3.84.0 — UNA FRECCIA SU OGNI BANCO, NON UNA SOLA SULL'ECO VICINO.
+         Fin qui la freccia era agganciata al bersaglio, e quando la pioggia
+         stava addosso al centro. Ma rScostamento cicla su TUTTA la griglia:
+         quello che misura non e' il moto di una cella, e' la deriva media
+         dell'intero campo. Una freccia sola su un eco prometteva percio' una
+         cosa che il dato non dice, e per giunta finiva sull'eco piu' vicino,
+         che spesso e' un puntino, mentre il banco grosso restava muto.
+         Frecce parallele sparse sulla pioggia sono il disegno onesto di un
+         vettore unico: dicono 'tutto questo si muove cosi''.
+         Se non ne cade nessuna dove c'e' pioggia — succede se gli echi stanno
+         tutti addosso al centro o ai bordi — se ne mette una accanto alla
+         mira, che e' meglio di nessuna indicazione. */
+      if (ang !== null) {
         const mx = Math.sin(ang * Math.PI / 180), my = -Math.cos(ang * Math.PI / 180);
-        /* v3.83.0 — la coda sta sopravvento, cioe' PIU' IN LA' del bersaglio:
-           con l'eco vicino al bordo usciva dalla cornice e si vedeva mezza
-           freccia. Si accorcia finche' non ci sta, e sotto le tre unita' si
-           rinuncia: una freccia lunga un pixel non indica niente. */
-        let lung = Math.max(5, Math.min(12, rr(r.vicino) * 0.8));
-        while (lung > 3 && !dentroCornice(bx - mx * lung, by - my * lung)) lung -= 1;
-        const tx = bx - mx * lung, ty = by - my * lung;   // la coda, sopravvento
-        g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
-          + 'rotate(' + (ang + 180).toFixed(1) + ')">'
-          + '<path d="M0 0 L0 ' + lung.toFixed(1) + '" class="dir"/>'
-          + '<path d="M-2.6 ' + (lung - 3.4).toFixed(1) + ' L0 ' + lung.toFixed(1)
-          + ' L2.6 ' + (lung - 3.4).toFixed(1) + '" class="dir"/></g>';
-      } else if (ang !== null && alCentro) {
-        /* v3.78.3 — e lo stesso vale quando l'eco e' cosi' vicino da stare
-           sotto la mira. Con la pioggia a due chilometri la punta atterrava
-           addosso al centro e la freccia si leggeva come "sta arrivando",
-           mentre il titolo diceva "ma si allontana": la convenzione "coda
-           sopravvento, punta sul bersaglio" regge finche' il bersaglio e'
-           distinguibile da te, e sotto i tre chilometri non lo e' piu'.
-           Li' la freccia si ancora al centro e punta in fuori, che dice la
-           stessa cosa senza poterla capovolgere. */
-        /* v3.78.0 — QUANDO PIOVE SOPRA DI TE LA MAPPA RESTAVA SENZA FRECCIA.
-           Il filo e il bersaglio si disegnano solo per un eco distante, e la
-           freccia era agganciata al bersaglio: con la pioggia sulla testa
-           sparivano tutti e tre, cioe' proprio nel momento in cui "da che
-           parte se ne va" e' la domanda. La risposta era gia' misurata e
-           stava solo scritta nel riquadro sotto, "si sposta verso sud".
-           Qui non c'e' un bersaglio da collegare — la pioggia e' addosso —
-           quindi la freccia parte appena fuori dalla mira e punta dove va. */
-        const mx = Math.sin(ang * Math.PI / 180), my = -Math.cos(ang * Math.PI / 180);
-        const tx = CX + mx * 4.5, ty = CY + my * 4.5;
-        g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
-          + 'rotate(' + (ang + 180).toFixed(1) + ')">'
-          + '<path d="M0 0 L0 13" class="dir"/>'
-          + '<path d="M-2.6 9.6 L0 13 L2.6 9.6" class="dir"/></g>';
+        const posti = (r.frecce && r.frecce.length)
+          ? r.frecce
+          : (r.sopra ? [[CX + mx * 9, CY + my * 9]] : []);
+        for (const [vx, vy] of posti) {
+          // la coda sta sopravvento, la punta dove si va; si accorcia se sborda
+          let lung = 11;
+          while (lung > 3 && !(dentroCornice(vx - mx * lung / 2, vy - my * lung / 2)
+                            && dentroCornice(vx + mx * lung / 2, vy + my * lung / 2))) lung -= 1;
+          if (lung <= 3) continue;
+          const tx = vx - mx * lung / 2, ty = vy - my * lung / 2;
+          g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
+            + 'rotate(' + (ang + 180).toFixed(1) + ')">'
+            + '<path d="M0 0 L0 ' + lung.toFixed(1) + '" class="dir"/>'
+            + '<path d="M-2.2 ' + (lung - 3).toFixed(1) + ' L0 ' + lung.toFixed(1)
+            + ' L2.2 ' + (lung - 3).toFixed(1) + '" class="dir"/></g>';
+        }
       }
       mp.innerHTML = g + '</svg><span class="ets">'
         + ets.map(function(e){
