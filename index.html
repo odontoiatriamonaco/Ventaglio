@@ -1,9 +1,33 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.82.1 — le scritte erano finite sotto la mappa
+  VENTAGLIO v3.83.0 — il riquadro e' 16:9, i controlli erano 1:1
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
+  v3.83.0: con la pioggia a 121 km verso nord la freccia si vedeva a meta',
+           tagliata dal bordo alto, e con lei il bersaglio e il filo.
+           La causa: quanto ci sta dentro la mappa veniva deciso confrontando
+           la distanza dell'eco con la sola META' LARGHEZZA, in ogni
+           direzione. Ma il riquadro e' panoramico: in verticale il campo e'
+           9/16 di quello orizzontale, quindi un eco a nord esce dalla
+           cornice a poco piu' della meta' della distanza a cui esce uno a
+           est. Quattro controlli diversi facevano tutti la stessa
+           semplificazione — l'inquadratura che si allarga, i due 'la mappa
+           serve', e la prova di visibilita' del bersaglio, che confrontava
+           il raggio con 74 su un sistema che in verticale ne ha 45.
+           Ora si calcola quanta larghezza serve perche' l'eco entri nella
+           sua direzione vera: chi punta a nord o a sud ne chiede 16/9. E il
+           bersaglio non si prova piu' con un raggio ma guardando dove cade
+           davvero il punto.
+           La freccia aveva un difetto suo, indipendente: la coda sta
+           sopravvento, cioe' PIU' IN LA' del bersaglio, quindi anche con
+           l'eco appena dentro poteva uscire. Ora si accorcia finche' non ci
+           sta, e sotto le tre unita' si rinuncia — una freccia lunga un
+           pixel non indica niente.
+           Misurato: con l'eco a 121 km, su dodici direzioni, SEI venivano
+           disegnate fuori cornice — tutte quelle con una componente nord o
+           sud. Ora nessuna. Per l'eco a nord il campo si allarga da 378 a
+           581 km, che e' quanto serve perche' ci entri.
   v3.82.1: dalla v3.82.0 il 'tu' al centro, le distanze degli anelli, la
            distanza della pioggia e tutta la legenda dei colori erano
            spariti. Segnalato da chi guardava l'app, non dal collaudo.
@@ -2108,7 +2132,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.82.1 &middot; build 2026-08-17<br>
+v3.83.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3961,10 +3985,26 @@ async function radarCalcola() {
        Ora il criterio e' uno solo. Vale il principio della v3.71.0: una
        mappa vuota dice meno della riga di testo che le sta sopra. */
     const dentroPortata = vicino !== Infinity && vicino <= PORTATA_UTILE;
+
+    /* v3.83.0 — IL RIQUADRO E' 16:9, I CONTROLLI ERANO 1:1. Quanto ci sta
+       dentro veniva deciso confrontando la distanza dell'eco con la sola
+       META' LARGHEZZA, in ogni direzione. Ma in verticale il campo e' 9/16 di
+       quello orizzontale: un eco a nord esce dalla cornice a poco piu' della
+       meta' della distanza a cui esce uno a est. Con la pioggia a 121 km
+       verso nord il bersaglio, il filo e la freccia finivano oltre il bordo
+       alto, e si vedeva spuntare mezza freccia.
+       Qui si calcola quanta larghezza serve perche' l'eco entri nella sua
+       direzione vera: chi punta a nord o a sud ne chiede 16/9. */
+    const larNecessaria = (km, ang) => {
+      if (km === Infinity || ang === null) return 0;
+      const a = ang * Math.PI / 180;
+      return km * Math.max(Math.abs(Math.sin(a)), Math.abs(Math.cos(a)) * 16 / 9);
+    };
+    const raggioLar = larNecessaria(vicino, vicinoAng);
     let larKm = larDef;
     if (dentroPortata) {
       // larghezza necessaria perche' l'eco stia dentro con un margine
-      const serveKm = vicino * 1.35 * 2;
+      const serveKm = raggioLar * 1.35 * 2;
       if (serveKm > larKm) larKm = serveKm;
       /* v3.77.0 — e il contrario, che mancava: l'inquadratura sapeva
          allargarsi per la pioggia lontana ma non stringersi per quella
@@ -3990,7 +4030,7 @@ async function radarCalcola() {
        avere il mosaico: nove riquadri da 512 sono un quarto di megabyte, e
        chiederli per poi nasconderli e' il genere di spreco che non si vede
        finche' non si guarda il traffico. */
-    const mappaVerra = dentroPortata && vicino < (larKm / 2) * 0.98;
+    const mappaVerra = dentroPortata && raggioLar < (larKm / 2) * 0.98;
 
     /* v3.82.0 — LA MAPPA SI MUOVE, PERCHE' SI E' MOSSA. I due mosaici del
        calcolo sono due fotogrammi radar veri, a venti minuti l'uno dall'altro:
@@ -4034,7 +4074,7 @@ async function radarCalcola() {
     if (ritAlt > mapDim) { ritAlt = mapDim; ritLar = ritAlt * 640 / 360; }
     larKm = ritLar * mapKmPx;
     // se la pioggia resta comunque fuori campo, la mappa non serve
-    const mappaUtile = dentroPortata && (vicino / mapKmPx) < (ritLar / 2) * 0.98;
+    const mappaUtile = dentroPortata && (raggioLar / mapKmPx) < (ritLar / 2) * 0.98;
 
     let miniatura = null, miniaturaPrima = null;
     if (mappaUtile) try {
@@ -4598,9 +4638,19 @@ function renderRadar() {
       // v3.70.5 — dove sta la pioggia piu' vicina
       // v3.78.3 — sottoLaMira serve anche alla freccia, quindi vive qui
       let bx = null, by = null, sottoLaMira = false;
-      if (!r.sopra && r.vicinoAng !== null && r.vicino !== Infinity && rr(r.vicino) < 74) {
-        const a = r.vicinoAng * Math.PI / 180;
-        const d = rr(r.vicino);                        // lunghezza del filo
+      /* v3.83.0 — la prova di visibilita' era 'rr(vicino) < 74', cioe' un
+         confronto con la meta' LARGHEZZA del sistema di coordinate. Vale per
+         un eco a est; per uno a nord no, perche' in verticale ci sono 45
+         unita' e non 80. Ora si calcola dove cade il bersaglio e si guarda se
+         quel punto sta davvero nella cornice. */
+      const dentroCornice = (x, y) => x > 6 && x < 154 && y > 6 && y < 84;
+      const angEco = r.vicinoAng === null ? null : r.vicinoAng * Math.PI / 180;
+      const dEco = r.vicino === Infinity ? null : rr(r.vicino);
+      const exEco = angEco === null ? null : CX + Math.sin(angEco) * dEco;
+      const eyEco = angEco === null ? null : CY - Math.cos(angEco) * dEco;
+      if (!r.sopra && angEco !== null && dentroCornice(exEco, eyEco)) {
+        const a = angEco;
+        const d = dEco;                                // lunghezza del filo
         const ex = CX + Math.sin(a) * d;
         const ey = CY - Math.cos(a) * d;
         bx = ex; by = ey;
@@ -4669,7 +4719,12 @@ function renderRadar() {
            cui la pioggia arriva, con la punta che si ferma su di esso: il
            centro resta libero e la lunghezza segue la distanza. */
         const mx = Math.sin(ang * Math.PI / 180), my = -Math.cos(ang * Math.PI / 180);
-        const lung = Math.max(5, Math.min(12, rr(r.vicino) * 0.8));
+        /* v3.83.0 — la coda sta sopravvento, cioe' PIU' IN LA' del bersaglio:
+           con l'eco vicino al bordo usciva dalla cornice e si vedeva mezza
+           freccia. Si accorcia finche' non ci sta, e sotto le tre unita' si
+           rinuncia: una freccia lunga un pixel non indica niente. */
+        let lung = Math.max(5, Math.min(12, rr(r.vicino) * 0.8));
+        while (lung > 3 && !dentroCornice(bx - mx * lung, by - my * lung)) lung -= 1;
         const tx = bx - mx * lung, ty = by - my * lung;   // la coda, sopravvento
         g += '<g transform="translate(' + tx.toFixed(1) + ' ' + ty.toFixed(1) + ') '
           + 'rotate(' + (ang + 180).toFixed(1) + ')">'
