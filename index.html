@@ -1,6 +1,39 @@
 <!DOCTYPE html>
 <!--
   ============================================================
+  VENTAGLIO v3.86.0 — quanto lontano si vede, qui
+  File  : ventaglio-v3.html
+  Build : 2026-08-17 CEST
+  v3.86.0: la pagella vota questa app, e per farlo deve aspettare che i giorni
+           passino: a installazione nuova e' vuota e resta magra per settimane.
+           C'e' pero' una domanda vicina a cui si puo' rispondere subito, e che
+           serve a dare una scala ai suoi numeri: quanto lontano vale la pena
+           guardare, in QUESTO punto. Un errore medio di un grado e mezzo non
+           dice niente da solo; sapere che a Gaeta a un giorno si sbaglia di
+           0,7 e a Bolzano di 1,5 lo colloca.
+           L'archivio delle corse gia' emesse esiste ed e' pubblico. Una
+           richiesta sola, duecento kilobyte in un quarto di secondo, porta
+           novanta giorni di previsioni realmente emesse a ciascun anticipo,
+           per i centri dell'app. Si confrontano con la rianalisi e si vede
+           come cresce l'errore.
+           Misurato su cinque localita': Palermo 0,63 · Gaeta 0,70 · Milano
+           0,94 · Londra 1,31 · Bolzano 1,45, a un giorno di anticipo.
+           L'ordine e' quello che ci si aspetta, dal mare aperto al fondovalle.
+           TRE COSE CHE L'ARCHIVIO NON DA', e sono scritte nella scheda. Non ha
+           i singoli membri, quindi la misura riguarda i run dei centri e non
+           la mediana delle simulazioni che il verdetto mostra: percio' questa
+           NON e' la pagella e non la sostituisce. Un centro dei quattro non ha
+           corse archiviate affatto e un altro si ferma al quarto giorno,
+           quindi oltre i quattro non si misura: due centri non fanno un
+           consenso, e una misura che cambia natura mentre il grafico prosegue
+           e' il modo piu' silenzioso di mentire. E il metro resta ERA5-Land,
+           col suo errore, gia' dichiarato nella scheda della taratura.
+           Un difetto trovato provando: la frase di chiusura diceva 'resta
+           sotto i due gradi fino a quattro giorni' anche quando i quattro
+           giorni erano semplicemente l'ultimo che si riesce a guardare. Non
+           e' un confine trovato, e' un confine che sta oltre lo sguardo: due
+           frasi diverse, e su cinque localita' usciva sempre la prima. Ora si
+           distinguono.
   VENTAGLIO v3.85.0 — cio' che il confronto con le altre fonti ha insegnato
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
@@ -2071,6 +2104,22 @@
     <div id="pagella" style="margin-top:16px"></div>
   </section>
 
+  <!-- v3.86.0 — la pagella qui sopra vota QUESTA app, e per farlo deve
+       aspettare che passino i giorni. Questa scheda risponde a una domanda
+       diversa e la puo' rispondere subito, perche' l'archivio delle corse
+       passate esiste: quanto lontano vale la pena guardare, in questo posto.
+       Sono due cose distinte e restano distinte: qui si misurano i run dei
+       quattro centri, non la mediana delle simulazioni che l'app mostra. -->
+  <section class="card full">
+    <h2>Quanto lontano si vede, qui</h2>
+    <p class="note">Le previsioni non sbagliano allo stesso modo dappertutto: sul mare aperto si vede lontano, in un fondovalle molto meno. Questa misura scarica novanta giorni di previsioni <strong>realmente emesse</strong> per questo punto &mdash; quelle di un giorno prima, di due, di tre, di quattro &mdash; e le confronta con quello che &egrave; successo. Dice fino a che giorno il numero grande vale qualcosa.</p>
+    <div class="azioni" style="margin-top:14px">
+      <button class="ghost" id="storBtn">Misura</button>
+      <span id="storStatus" class="note"></span>
+    </div>
+    <div id="storOut" style="margin-top:16px"></div>
+  </section>
+
   <section class="card full">
     <h2>Limiti dichiarati</h2>
     <p class="note">La verit&agrave; di riferimento &egrave; ERA5-Land: una <strong>rianalisi</strong>, non una stazione. Affidabile sulla temperatura, mediocre sulla precipitazione &mdash; per questo la correzione di bias si applica solo alla temperatura e le probabilit&agrave; di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave; verificata. Quando usi il pulsante della posizione, le coordinate vengono inviate a un servizio di geocodifica inversa (BigDataCloud, in alternativa OpenStreetMap) al solo scopo di ricavare il nome del comune. La calibrazione usa i deterministici archiviati come proxy della dispersione fra le simulazioni, perch&eacute; l'archivio delle simulazioni non &egrave; gratuito. Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore meno.</p>
@@ -2210,7 +2259,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.85.0 &middot; build 2026-08-17<br>
+v3.86.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -5193,6 +5242,144 @@ async function calibra(){
   btn.disabled=false;
 }
 
+/* ============================================================
+   v3.86.0 — QUANTO LONTANO SI VEDE, QUI
+   La pagella vota questa app, e per farlo deve aspettare che i giorni
+   passino: a installazione nuova e' vuota e resta magra per settimane.
+   Questa misura risponde a una domanda diversa e la puo' rispondere subito,
+   perche' le corse gia' emesse sono archiviate: quanto cresce l'errore con
+   l'anticipo, in QUESTO punto.
+   Serve a dare una scala. Un errore medio di un grado e mezzo non dice
+   niente da solo; sapere che qui a un giorno si sbaglia di 0,9 e a cinque di
+   2,4 dice fino a dove vale la pena guardare.
+   ONESTA' DELLA MISURA, e va tenuta ferma: qui si verificano i run
+   DETERMINISTICI dei quattro centri, non la mediana delle simulazioni che
+   l'app mostra, perche' l'archivio dei singoli membri non e' pubblico. E il
+   metro e' ERA5-Land, che ha un errore suo, diverso da posto a posto.
+   Percio' questa scheda NON e' la pagella e non la sostituisce: quella dice
+   come se l'e' cavata l'app, questa dice quanto e' difficile prevedere qui.
+   ============================================================ */
+const PREV = "https://previous-runs-api.open-meteo.com/v1/forecast";
+/* v3.86.0 — gli anticipi si fermano a quattro, e non per scelta: misurato
+   sull'archivio, gfs025 non ha corse passate affatto (zero giorni a ogni
+   anticipo) e icon_eu si ferma al quarto, che e' il suo orizzonte. Oltre
+   restano due centri soli, e due non fanno un consenso: la misura
+   sembrerebbe continuare mentre invece cambierebbe di natura, che e' il
+   modo piu' silenzioso di mentire con un grafico. */
+const ANTICIPI = [1, 2, 3, 4];
+
+async function misuraStorico(){
+  if(!S.loc) return;
+  const btn=$("storBtn"), st=$("storStatus");
+  btn.disabled=true;
+  try{
+    st.textContent="Scarico le previsioni archiviate…";
+    const per="latitude="+S.loc.latitude+"&longitude="+S.loc.longitude
+      +"&timezone="+encodeURIComponent(S.tz);
+    const serie=ANTICIPI.map(n=>"temperature_2m_previous_day"+n).join(",");
+    const modelli=ENSEMBLES.map(e=>e.id).join(",");
+    /* una richiesta sola per tutti e quattro i centri e tutti gli anticipi:
+       misurata, sono duecento kilobyte in un quarto di secondo. */
+    const j=await jget(PREV+"?"+per+"&past_days=92&forecast_days=1&hourly="+serie
+      +"&models="+modelli);
+    if(!j||!j.hourly) throw new Error("l'archivio non ha risposto");
+
+    /* le serie tornano col nome del centro in coda. Da ognuna si ricava la
+       massima del giorno, che e' la grandezza che l'app mostra. */
+    const mx={};
+    for(const e of ENSEMBLES) for(const n of ANTICIPI){
+      const col=j.hourly["temperature_2m_previous_day"+n+"_"+e.id];
+      if(!col) continue;
+      j.hourly.time.forEach((t,i)=>{
+        const v=col[i]; if(v===null||v===undefined) return;
+        const g=t.slice(0,10);
+        mx[n]=mx[n]||{}; mx[n][g]=mx[n][g]||{};
+        if(mx[n][g][e.id]===undefined||v>mx[n][g][e.id]) mx[n][g][e.id]=v;
+      });
+    }
+
+    st.textContent="Recupero le osservazioni…";
+    const gg=Object.keys(mx[ANTICIPI[0]]||{}).sort();
+    if(!gg.length) throw new Error("nessuna corsa archiviata per questo punto");
+    const oss=await jget(ARCH+"?"+per+"&start_date="+gg[0]+"&end_date="+gg[gg.length-1]
+      +"&daily=temperature_2m_max&models=era5_land");
+    const vero={};
+    ((oss&&oss.daily&&oss.daily.time)||[]).forEach((t,i)=>{
+      const v=oss.daily.temperature_2m_max[i];
+      if(v!==null&&v!==undefined) vero[t]=v;
+    });
+    if(!Object.keys(vero).length) throw new Error("la rianalisi non copre questo punto");
+
+    const righe=[];
+    for(const n of ANTICIPI){
+      const err=[], quanti=[0];
+      for(const g of Object.keys(mx[n]||{})){
+        if(vero[g]===undefined) continue;
+        const v=Object.values(mx[n][g]);
+        if(v.length<3) continue;      // meno di tre centri non e' un consenso
+        quanti.push(v.length);
+        err.push(quantile(v,.5)-vero[g]);
+      }
+      if(err.length>=20) righe.push({ n, centri:Math.max(...quanti), mae:media(err.map(Math.abs)),
+                                      bias:media(err), giorni:err.length });
+    }
+    if(!righe.length) throw new Error("campione troppo piccolo per dire qualcosa");
+    S.storico={ righe, quando:new Date().toISOString() };
+    st.textContent="";
+    renderStorico();
+  }catch(e){
+    st.textContent="Misura non riuscita: "+(e.message||e);
+  }
+  btn.disabled=false;
+}
+
+function renderStorico(){
+  const el=$("storOut"); if(!el) return;
+  const st=S.storico; if(!st){ el.innerHTML=""; return; }
+  const barra=(m)=>{
+    const w=Math.min(100, m/4*100);
+    const col=m<1.2?"var(--verderame)":m<2.2?"var(--ottone)":"var(--corallo)";
+    return '<span style="display:inline-block;height:6px;border-radius:3px;width:'
+      +w.toFixed(0)+'%;background:'+col+'"></span>';
+  };
+  /* la soglia dei due gradi non e' un'opinione: e' l'ordine di grandezza entro
+     cui due fonti indipendenti si somigliano ancora. Sopra, la previsione
+     smette di distinguere una giornata dall'altra. */
+  /* v3.86.0 — attenzione a non spacciare un limite NON TROVATO per un limite
+     trovato. Se l'errore resta sotto i due gradi fino all'ultimo anticipo che
+     si riesce a misurare, non si e' scoperto che li' finisce l'utilita': si e'
+     scoperto che il confine sta oltre il nostro sguardo. Sono due frasi
+     diverse, e provando su cinque localita' usciva sempre la prima. */
+  const sotto=st.righe.filter(r=>r.mae<2).map(r=>r.n);
+  const ultimo=st.righe[st.righe.length-1].n;
+  const utile=sotto.pop();
+  const finoInFondo=utile===ultimo;
+  el.innerHTML=
+    '<div class="blocco">'
+    +st.righe.map(r=>
+      '<div class="calrow"><span>'+(r.n===1?"Un giorno prima":r.n+" giorni prima")
+      +'</span><b>&plusmn;'+r.mae.toFixed(1)+' &deg;C</b></div>'
+      +'<div style="margin:2px 0 10px">'+barra(r.mae)+'</div>').join("")
+    +'<p class="note" style="margin-top:6px">Errore medio sulla massima, su '
+    +st.righe[0].giorni+' giorni. '
+    +(!utile?'Qui si superano i due gradi gi&agrave; al primo giorno: posto difficile.'
+       :finoInFondo?'Fin dove si riesce a misurare &mdash; <b>'+ultimo+' giorni</b> '
+          +'di anticipo &mdash; l&#39;errore resta sotto i due gradi. Dove stia il '
+          +'confine, qui, non si vede: sta oltre.'
+       :'Qui la previsione resta sotto i due gradi fino a <b>'
+          +(utile===1?"un giorno":utile+" giorni")+'</b> di anticipo. Al giorno '
+          +'dopo si superano: da li&#39; il numero indica la tendenza, non la giornata.')
+    +'</p>'
+    +'<p class="note" style="margin:10px 0 0">Oltre i quattro giorni non si misura: nell&#39;archivio delle corse passate un centro dei quattro manca del tutto e un altro si ferma qui, e due soli non fanno un consenso. Il ventaglio del verdetto arriva comunque a sette giorni &mdash; semplicemente, l&#39;errore di quei giorni non &egrave; misurabile con questo metodo.</p></div>'
+    +'<p class="note" style="margin-top:14px"><b>Che cosa &egrave; stato misurato.</b> '
+    +'I run dei quattro centri, non la mediana delle simulazioni che vedi nel '
+    +'verdetto: l&#39;archivio dei singoli membri non &egrave; pubblico. E il metro '
+    +'&egrave; ERA5-Land, che ha un errore suo. Quindi questa non &egrave; la '
+    +'pagella dell&#39;app &mdash; quella sta qui sopra e vota lei. Questa dice '
+    +'quanto &egrave; difficile prevedere in questo punto, che &egrave; una '
+    +'domanda diversa.</p>';
+}
+
 /* ---------- avvio ---------- */
 $("q").addEventListener("input",e=>{ clearTimeout(tS); const v=e.target.value; tS=setTimeout(()=>cerca(v),280); });
 $("q").addEventListener("keydown",e=>{
@@ -5347,6 +5534,7 @@ window.addEventListener("resize", ()=>{
 })();
 
 $("calBtn").onclick=calibra;
+$("storBtn").onclick=misuraStorico;   // v3.86.0
 ["bande","scenari","fili"].forEach(k=>$("v_"+k).onclick=()=>setVista(k));
 $("t_reale").onclick=()=>setVar("T");
 $("bvCerca").onclick=()=>{ $("q").focus(); $("q").scrollIntoView({block:"center",behavior:"smooth"}); };
