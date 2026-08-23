@@ -1,7 +1,54 @@
 <!DOCTYPE html>
 <!--
   ============================================================
-  VENTAGLIO v3.84.0 — le frecce vanno dove c'e' la pioggia, e sono piu' di una
+  VENTAGLIO v3.85.0 — cio' che il confronto con le altre fonti ha insegnato
+  File  : ventaglio-v3.html
+  Build : 2026-08-17 CEST
+  v3.85.0: nato da un confronto vero: sei localita', contro MET Norway,
+           l'Aeronautica Militare, quattro modelli deterministici nazionali e
+           trenta giorni di verifica contro le osservazioni aeroportuali.
+           L'esito generale e' buono — dieci scarti su dodici entro due gradi,
+           e a Milano e Bolzano l'app coincide con il servizio meteorologico
+           nazionale entro due decimi. Ma tre cose sono emerse.
+           IL METRO DI PARAGONE HA UN ERRORE SUO. La taratura misura contro
+           ERA5-Land, e confrontando ERA5-Land con i METAR degli aeroporti si
+           vede che sbaglia in modo diverso da punto a punto: perfetto a Milano
+           Linate (otto centesimi sulla massima), freddo di 1,6 a Roma, di 2,4
+           a Bolzano — fino a 3,5 nel pomeriggio, perche' schiaccia il ciclo
+           diurno del fondovalle — e caldo di 3,5 a Punta Raisi. Dove il metro
+           e' freddo, la taratura impara che i modelli sono caldi e li
+           raffredda: trasferisce nel numero mostrato l'errore della rianalisi.
+           E c'e' un secondo scarto: il bias si stima sui DETERMINISTICI
+           archiviati ma si applica alla mediana dell'ENSEMBLE, e a Palermo le
+           due popolazioni distano quattro gradi e mezzo — li' la correzione e'
+           cieca proprio dove servirebbe. Nessuna delle due si puo' risolvere
+           con i dati disponibili gratuitamente; entrambe ora sono scritte
+           nella scheda della taratura, non solo nella nota legale in fondo.
+           L'ALONE NON E' PIOGGIA. Le tavole radar erano chieste smussate, e lo
+           smussamento aggiunge attorno a ogni eco una frangia semitrasparente
+           con alfa fino a 190, mentre il calcolo soglia a 40 e a 60: misurava
+           in parte quella frangia. Misurato: 2919 pixel di frangia con lo
+           smussamento acceso, 107 spento. Ora il calcolo va sul netto e la
+           mappa resta sul morbido, e la mappa scarica sempre il suo mosaico
+           invece di riciclare quello del calcolo. E' la terza separazione
+           dello stesso tipo, dopo lo zoom e la dimensione dei riquadri.
+           LA FRASE DEI MILLIMETRI. Diceva 'nel caso piu' probabile cadono X
+           mm' con X mediana su tutti i membri, asciutti compresi: sotto il
+           cinquanta per cento di probabilita' quel numero e' zero, subito dopo
+           aver detto che trenta prove su cento vedono pioggia. Vero alla
+           lettera, fuorviante da leggere. Ora usa la mediana fra i soli membri
+           bagnati, che esisteva gia', e tace quando non c'e' niente da dire.
+           E UNA COSA COSTRUITA E BUTTATA. Avevo scritto un avviso che diceva
+           'i centri non concordano' quando le mediane dei quattro ensemble si
+           separano, convinto che a Palermo la mediana del gruppone stesse
+           scegliendo una fazione. Provato su cinque localita': compariva in
+           undici casi su quindici, e guardando i numeri la spiegazione non
+           reggeva — a Palermo TUTTI e quattro gli ensemble sono caldi, anche
+           il piu' freddo, perche' girano a maglia piu' larga dei deterministici
+           e mettono la citta' in una cella d'entroterra. Un avviso quasi sempre
+           acceso, giustificato da una diagnosi sbagliata, e' peggio di nessun
+           avviso: non e' stato pubblicato.
+  v3.84.0 — le frecce vanno dove c'e' la pioggia, e sono piu' di una
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
   v3.84.0: la freccia stava su un eco pallido in basso mentre il banco grosso,
@@ -2163,7 +2210,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.84.0 &middot; build 2026-08-17<br>
+v3.85.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2812,7 +2859,9 @@ function renderVerdetto(){
   const R = raffFinestra(S.dayIdx).map(x=>x*fattoreW());   // v3.43.0
   const pRaff = s => R.length ? Math.round(100*R.filter(x=>x>=s).length/R.length) : null;
   const raffMed = R.length ? quantile(R,.5) : null;
-  const mediana=quantile(PS,.5)*kP, q90=quantile(PS,.9)*kP;   // v3.37.0
+  // v3.86.0 — via la mediana su tutti i membri: la usava una frase sola, che
+  // ora passa da mmTipici. Il novantesimo resta, e' il "se va male".
+  const q90=quantile(PS,.9)*kP;   // v3.37.0
   const cls=v=>v>60?"coral":v>30?"amber":"teal";
 
   // percepita: mediana fra le simulazioni se disponibile, altrimenti modello singolo
@@ -3136,8 +3185,18 @@ function renderVerdetto(){
     +"<br><br>Riportate a 100 per comodit&agrave;, "+perTit
     +": <b>"+su100(p1)+"</b> vedono almeno un po' di pioggia, <b>"+su100(p5)
     +"</b> un rovescio, <b>"+su100(p15)+"</b> un nubifragio. "
-    +"Nel caso pi&ugrave; probabile cadono <b>"+mediana.toFixed(0)+" mm</b> d'acqua, cio&egrave; "
-    +acqua(mediana)+"; se va male, fino a <b>"+q90.toFixed(0)+" mm</b>, "+acqua(q90)+"."
+    /* v3.86.0 — diceva "nel caso piu' probabile cadono X mm" con X mediana su
+       TUTTI i membri, asciutti compresi. Sotto il 50 per cento di probabilita'
+       quel numero e' zero, e la frase usciva subito dopo aver detto che trenta
+       prove su cento vedono pioggia: "il caso piu' probabile" era vero alla
+       lettera — l'esito singolo piu' probabile e' l'asciutto — ma si legge come
+       "se piove, aspettati tanto cosi'", che e' un'altra domanda.
+       La risposta a quella domanda esiste gia' ed e' mmTipici, la mediana fra
+       i soli membri bagnati, usata qui sopra per dire se e' poca acqua o un
+       nubifragio. Ora la frase parla solo quando c'e' di che parlare. */
+    +(mmTipici===null ? "Nessuna simulazione arriva a un millimetro. "
+       : "Nelle prove in cui piove cadono <b>"+mmTipici.toFixed(0)+" mm</b> d'acqua, cio&egrave; "
+       +acqua(mmTipici)+"; se va male, fino a <b>"+q90.toFixed(0)+" mm</b>, "+acqua(q90)+".")
     +(raffMed===null?"":" Nelle ore che restano il vento supera i 40 all'ora &mdash; quello che porta via l'ombrellone &mdash; in <b>"
       +pRaff(40)+"</b> prove su 100.");
 
@@ -3389,7 +3448,46 @@ function renderCal(){
         + "fa perch&eacute; la rianalisi usata come metro di paragone arriva con quel ritardo.")
     + '</div>';
 
-  $("calOut").innerHTML = frase + chiaro
+  /* v3.86.0 — IL METRO DI PARAGONE HA UN ERRORE SUO, E VA DETTO NELLA SCHEDA.
+     Finora stava solo nella nota legale in fondo alla pagina, dove nessuno la
+     cerca, e diceva 'affidabile sulla temperatura'. Misurato invece contro le
+     osservazioni vere degli aeroporti — i METAR, che in Italia produce
+     l'Aeronautica Militare — ERA5-Land sbaglia in modo diverso da punto a
+     punto: a Milano Linate e' perfetto, otto centesimi di grado sulla massima;
+     a Roma Ciampino e' freddo di 1,6; a Bolzano di 2,4, e nel pomeriggio
+     arriva a 3,5 perche' schiaccia il ciclo diurno del fondovalle; a Palermo
+     e' caldo di 3,5 sul punto dell'aeroporto.
+     Questo entra dritto nel bias: se il metro e' freddo, la taratura impara
+     che i modelli sono caldi e li raffredda, cioe' trasferisce nel numero
+     mostrato l'errore della rianalisi. E c'e' un secondo scarto, misurato
+     anche quello: il bias si stima sui modelli DETERMINISTICI archiviati ma si
+     applica alla mediana dell'ENSEMBLE, e le due popolazioni possono distare
+     parecchio — a Palermo quattro gradi e mezzo, il che rende la correzione
+     cieca proprio dove servirebbe.
+     Nessuna delle due cose si puo' risolvere con i dati disponibili: l'archivio
+     dei membri d'ensemble non e' gratuito e non esiste una rete di osservazioni
+     storiche interrogabile per qualunque punto. Ma chi legge un numero corretto
+     ha diritto di sapere contro che cosa e' stato corretto. */
+  const limite = '<div class="blocco" style="margin-top:16px">'
+    + '<p class="note" style="margin:0"><b>Contro che cosa e&#39; tarata.</b> '
+    + 'Il metro di paragone &egrave; ERA5-Land, una rianalisi: un modello che '
+    + 'ricostruisce il passato, non un termometro. Ha un errore suo, e cambia '
+    + 'da posto a posto: confrontata con le osservazioni degli aeroporti '
+    + '&egrave; esatta a Milano entro un decimo di grado, ma fredda di un grado '
+    + 'e mezzo a Roma e di due e mezzo nei fondovalle alpini, dove appiattisce '
+    + 'il caldo del pomeriggio. Dove il metro &egrave; freddo, questa taratura '
+    + 'impara che i modelli sono caldi e li raffredda: una parte della '
+    + 'correzione qui sopra pu&ograve; essere l&#39;errore della rianalisi, non '
+    + 'quello delle previsioni.</p>'
+    + '<p class="note" style="margin:10px 0 0">E il bias &egrave; misurato sui '
+    + 'modelli deterministici archiviati, mentre il numero grande viene dalla '
+    + 'mediana delle simulazioni. Di solito le due popolazioni si somigliano; '
+    + 'dove non si somigliano &mdash; succede sulle coste, dove le simulazioni '
+    + 'girano a maglia pi&ugrave; larga &mdash; la correzione &egrave; misurata '
+    + 'su una cosa e applicata a un&#39;altra, e non pu&ograve; vedere lo '
+    + 'scarto. Serve saperlo per non fidarsi del decimo di grado.</p></div>';
+
+  $("calOut").innerHTML = frase + chiaro + limite
     + '<div class="azioni" style="margin-top:16px">'
     + '<button class="ghost" id="numBtn" aria-expanded="false" aria-controls="calNumeri">'
     + '<svg class="gicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
@@ -3609,6 +3707,19 @@ function renderPagella(){
    ============================================================ */
 const RV_MAPPE = "https://api.rainviewer.com/public/weather-maps.json";
 const R_LATO = 3, R_DIM = 256 * R_LATO, R_RID = 6;
+/* v3.86.0 — L'ALONE NON E' PIOGGIA. Le tavole erano chieste smussate, e lo
+   smussamento aggiunge attorno a ogni eco una frangia semitrasparente con
+   alfa fino a 190. Il calcolo soglia l'alfa a 40 e a 60, quindi misurava in
+   parte quella frangia invece della pioggia: la distanza dell'eco piu' vicino
+   usciva sottostimata, e 'piove qui' poteva scattare stando ACCANTO a una
+   cella invece che sotto.
+   Misurato prima di intervenire: con lo smussamento acceso i pixel della
+   frangia sono 2919 in un riquadro, spento sono 107. L'opzione della neve,
+   provata a parte, non cambia nulla: in agosto, ovviamente.
+   Da qui il calcolo va sul NETTO e la mappa resta sul MORBIDO. E' la stessa
+   separazione gia' fatta per lo zoom e per la dimensione dei riquadri, e per
+   la stessa ragione: chi misura e chi mostra vogliono cose diverse. */
+const R_NETTO = "0_1", R_MORBIDO = "1_1";
 /* v3.73.0 — oltre questa distanza il fascio radar scruta sopra i tremila
    metri: vede le cime delle nubi, non la pioggia che tocca terra.
    v3.78.4 — e sta QUI, non dentro renderRadar, perche' la usano in due: il
@@ -3665,7 +3776,7 @@ const rVerso16 = (ang) => R_ROSA16[Math.round(((ang % 360) + 360) % 360 / 22.5) 
 
 async function rFirma(host, path, z, x, y) {
   const b = new Uint8Array(await (await fetch(
-    `${host}${path}/256/${z}/${x}/${y}/4/1_1.png`)).arrayBuffer());
+    `${host}${path}/256/${z}/${x}/${y}/4/${R_NETTO}.png`)).arrayBuffer());
   let s = 0; for (let i = 0; i < b.length; i++) s = (s * 31 + b[i]) >>> 0;
   return s.toString(16);
 }
@@ -3697,8 +3808,8 @@ async function rZoom(host, p1, p2, lat, lon) {
    lo stesso riquadro, alla stessa area di terreno, anche a 512 e 1024 pixel:
    il calcolo continua a lavorare sui 256, che gli bastano, mentre la mappa
    puo' chiedere il doppio e smettere di essere sfocata da noi. */
-async function rMosaico(host, path, z, cx, cy, lato) {
-  const L = lato || 256, DIM = L * R_LATO;
+async function rMosaico(host, path, z, cx, cy, lato, resa) {
+  const L = lato || 256, DIM = L * R_LATO, RES = resa || R_NETTO;
   const c = document.createElement("canvas");
   c.width = c.height = DIM;
   const g = c.getContext("2d", { willReadFrequently: true });
@@ -3709,7 +3820,7 @@ async function rMosaico(host, path, z, cx, cy, lato) {
     im.crossOrigin = "anonymous";
     im.onload = () => { g.drawImage(im, i * L, j * L); ok++; ris(); };
     im.onerror = () => ris();
-    im.src = `${host}${path}/${L}/${z}/${cx - 1 + i}/${cy - 1 + j}/4/1_1.png`;
+    im.src = `${host}${path}/${L}/${z}/${cx - 1 + i}/${cy - 1 + j}/4/${RES}.png`;
     setTimeout(ris, 15000);
   })));
   return { ctx: g, canvas: c, ok, dim: DIM };   // v3.66.0 — serve anche la tela
@@ -4073,12 +4184,18 @@ async function radarCalcola() {
        non c'e'. Qui si vede quello che il radar ha visto. */
     let mapCanvas = m2.canvas, mapPrima = m1.canvas, mapPx = px, mapPy = py, mapDim = R_DIM;
     let mapKmPx = rMpp(lat, z) / 1000;
-    if (mappaVerra && (zMappa !== z || lato !== 256)) try {
+    /* v3.86.0 — la mappa scarica SEMPRE il suo mosaico, quando verra'
+       disegnata. Prima, se lo zoom e la dimensione coincidevano con quelli del
+       calcolo, riciclava i suoi riquadri: da quando il calcolo li chiede netti
+       quel riciclo darebbe una mappa dura e a scalini. Cade anche una
+       condizione, che e' un guadagno a parte: chi mostra e chi misura ora non
+       condividono piu' niente se non le coordinate. */
+    if (mappaVerra) try {
       const pgF = rPixel(lat, lon, zMappa);
       const cxF = Math.floor(pgF.x / 256), cyF = Math.floor(pgF.y / 256);
       const [mF, mP] = await Promise.all([
-        rMosaico(j.host, f2.path, zMappa, cxF, cyF, lato),
-        rMosaico(j.host, f1.path, zMappa, cxF, cyF, lato)]);
+        rMosaico(j.host, f2.path, zMappa, cxF, cyF, lato, R_MORBIDO),
+        rMosaico(j.host, f1.path, zMappa, cxF, cyF, lato, R_MORBIDO)]);
       /* e non basta che i riquadri arrivino: se li' non c'e' un eco da
          nessuna parte il mosaico e' un rettangolo vuoto, e quello largo
          diceva di piu'. Si campiona un pixel ogni sedici. */
