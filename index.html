@@ -1,6 +1,63 @@
 <!DOCTYPE html>
 <!--
   ============================================================
+  VENTAGLIO v3.88.0 — il metro era storto, e la correzione lo copiava
+  File  : ventaglio-v3.html
+  Build : 2026-08-23 CEST
+  v3.88.0: la taratura locale era la promessa principale di quest'app: "impara
+           i difetti della tua citta' e li corregge da sola". Misurata contro i
+           termometri, faceva il contrario.
+           LA MISURA. Ventisei aeroporti in sette paesi, 624 giornate, con
+           taratura mobile che rifa' i conti ogni giorno sui novanta
+           precedenti, esattamente come fa l'app. Errore medio sulla massima:
+             applicando la correzione (fino alla v3.87.0)   1,35 gradi
+             senza applicarla                               0,67 gradi
+           Vinceva in due stazioni su ventisei. A Palermo portava l'errore da
+           1,3 a 3,4; a Fiumicino da 0,4 a 2,0; a Zurigo da 0,7 a 2,2.
+           PERCHE'. Il bias e' la media di (previsione - ERA5-Land), e quella
+           differenza contiene due cose sommate: l'errore vero dei modelli, che
+           si vuole togliere, e lo scarto fra il posto che la rianalisi chiama
+           "qui" e quello che ci chiamano i modelli, che non c'entra nulla. La
+           seconda domina. La cella di ERA5-Land e' larga nove chilometri: a
+           Palermo prende la montagna dietro l'aeroporto ed e' calda di 3,4
+           gradi sul termometro, a Fiumicino prende il mare ed e' fredda di 2,1.
+           La correzione trasferiva quello scarto dentro il numero mostrato.
+           La v3.86.0 aveva gia' scritto nella scheda che il metro ha un errore
+           suo. Dichiararlo non bastava: il difetto non era nella spiegazione,
+           era nel numero.
+           QUINDICI VARIANTI PROVATE PRIMA DI SPEGNERLA. Correggere contro
+           l'altra fonte disponibile (0,78), a meta' (0,68), solo dove le due
+           fonti concordano entro tre decimi (0,69), solo dove il bias supera
+           una soglia (0,72-1,35). Nessuna batte il non correggere (0,667). Non
+           c'e' una versione buona di questa correzione con i dati che si hanno.
+           COSA CAMBIA. Il bias si continua a calcolare e a mostrare, perche'
+           dice qualcosa di vero sul rapporto fra modelli e rianalisi in questo
+           punto. Non entra piu' nelle temperature. Pioggia e raffiche restano
+           corrette: sono rapporti su totali di tre mesi, non differenze giorno
+           per giorno, e non sono state misurate qui - spegnerle per simmetria
+           sarebbe stato agire senza misura, cioe' l'errore appena corretto.
+           E LA PAGELLA LO VERIFICHERA' DA SOLA. Ogni previsione archiviata
+           annota ora il bias davvero applicato (campo bt, come gia' kp e q).
+           Quando l'archivio conterra' abbastanza giorni dei due regimi, la
+           pagella mostrera' i due errori affiancati: la decisione presa su
+           ventisei aeroporti diventa una verifica fatta qui.
+           Il bias si leggeva in cinque punti distinti. Ora passa da uno solo,
+           biasCal(), e il collaudo vieta di scavalcarlo: con cinque letture
+           qualunque decisione va applicata cinque volte, e la sesta che si
+           dimentica e' la piu' probabile.
+           Corretti anche i testi che promettevano la correzione: la scheda
+           della taratura, la presentazione, e la nota dei limiti - che diceva
+           "il bias si applica solo alla temperatura", cioe' l'esatto contrario
+           di quello che accade adesso.
+           La nota dei limiti dice anche una cosa che non aveva mai detto: la
+           taratura e la pagella NON usano lo stesso metro. La pagella si
+           misura sui valori passati dell'API previsioni, piu' vicini alle
+           osservazioni (0,7 gradi contro 2,0 della rianalisi) ma non
+           indipendenti da cio' che devono giudicare.
+           verifica.js v1.16.0: tre regole nuove, tutte provate rosse prima.
+           Una di esse era rotta alla prima scrittura - lo strip dei commenti
+           aveva una barra rovescia di troppo e cancellava mezzo file, cosi'
+           passava a vuoto. Trovata provandola contro la promessa reintrodotta.
   VENTAGLIO v3.87.0 — la minima c'era solo oggi
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
@@ -2141,7 +2198,30 @@
 
   <section class="card full">
     <h2>Limiti dichiarati</h2>
-    <p class="note">La verit&agrave; di riferimento &egrave; ERA5-Land: una <strong>rianalisi</strong>, non una stazione. Affidabile sulla temperatura, mediocre sulla precipitazione &mdash; per questo la correzione di bias si applica solo alla temperatura e le probabilit&agrave; di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave; verificata. Quando usi il pulsante della posizione, le coordinate vengono inviate a un servizio di geocodifica inversa (BigDataCloud, in alternativa OpenStreetMap) al solo scopo di ricavare il nome del comune. La calibrazione usa i deterministici archiviati come proxy della dispersione fra le simulazioni, perch&eacute; l'archivio delle simulazioni non &egrave; gratuito. Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore meno.</p>
+    <p class="note"><b>Le due schede qui sopra non usano lo stesso metro, e la differenza conta.</b>
+      La <b>taratura</b> si misura contro ERA5-Land, una <strong>rianalisi</strong>: un modello che
+      ricostruisce il passato, non un termometro. La <b>pagella</b> si misura contro i valori passati
+      dell&apos;API delle previsioni, che sono l&apos;analisi dei modelli stessi: pi&ugrave; vicina alle
+      osservazioni &mdash; su ventisei aeroporti sbaglia 0,7 gradi contro i 2,0 della rianalisi &mdash;
+      ma <b>non indipendente</b> da ci&ograve; che deve giudicare, perch&eacute; viene in parte dagli
+      stessi centri che l&apos;app media. Nessuna delle due &egrave; una stazione: reti di osservazioni
+      storiche interrogabili da un browser per un punto qualunque non ne esistono di gratuite, e le
+      poche stazioni pubbliche in Italia distano decine di chilometri.</p>
+    <p class="note">Dalla v3.88.0 la correzione di bias <b>non si applica pi&ugrave; alla temperatura</b>:
+      misurata fuori campione contro i termometri di ventisei aeroporti in sette paesi, 624 giornate,
+      raddoppiava l&apos;errore invece di ridurlo, perch&eacute; dentro il bias finiva soprattutto lo
+      scarto fra il punto che la rianalisi chiama &laquo;qui&raquo; e quello dei modelli. Restano corrette
+      <b>pioggia e raffiche</b>, che sono rapporti su totali di tre mesi e non differenze giorno per
+      giorno: non sono state misurate contro le osservazioni e non si sa se aiutino. Le probabilit&agrave;
+      di pioggia restano conteggi grezzi di simulazioni, non probabilit&agrave; con affidabilit&agrave;
+      verificata.</p>
+    <p class="note">Quando usi il pulsante della posizione, le coordinate vengono inviate a un servizio
+      di geocodifica inversa (BigDataCloud, in alternativa OpenStreetMap) al solo scopo di ricavare il
+      nome del comune. La calibrazione usa i deterministici archiviati come proxy della dispersione fra
+      le simulazioni, perch&eacute; l&apos;archivio delle simulazioni non &egrave; gratuito &mdash; ed &egrave;
+      un secondo scarto, perch&eacute; il bias si stima su una popolazione e si applicherebbe a un&apos;altra.
+      Novanta giorni sono un campione modesto: il bias &egrave; stimato bene, la pendenza spread&ndash;errore
+      meno.</p>
   </section>
 
   <section class="card full">
@@ -2200,8 +2280,13 @@
            incollata alla pianura, la conca che d&apos;estate cuoce Firenze, la brezza che sul lungomare
            di Napoli raffredda una previsione tarata sull&apos;entroterra: sono errori che si ripetono
            <b>sempre uguali</b>. Con un tocco l&apos;app si riprende <b>tre mesi di previsioni passate</b>
-           per il tuo punto esatto, le confronta con il tempo che ha fatto davvero, e da l&igrave;
-           corregge da sola: temperatura, pioggia e raffiche.</p>
+           per il tuo punto esatto e le confronta con una ricostruzione del tempo che ha fatto.
+           Da l&igrave; corregge <b>pioggia e raffiche</b>. La temperatura no, e il motivo &egrave;
+           istruttivo: quella correzione &egrave; stata misurata contro i termometri di
+           ventisei aeroporti e <b>raddoppiava l&apos;errore</b> invece di ridurlo, perch&eacute;
+           la casella della ricostruzione non &egrave; mai esattamente il posto dove sei.
+           Il numero si vede lo stesso, nella scheda della taratura: dice qualcosa di vero,
+           ma non abbastanza per entrare nei gradi che leggi.</p>
       </div>
 
       <div class="voce">
@@ -2278,7 +2363,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.87.0 &middot; build 2026-08-17<br>
+v3.88.0 &middot; build 2026-08-23<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -2626,7 +2711,7 @@ function renderGiorni(){
        solo a scegliere, non a confrontare. Con i due numeri si legge la
        settimana a colpo d'occhio, che e' il motivo per cui una fila di
        giorni esiste. */
-    const bs = S.cal ? S.cal.bias : 0;
+    const bs = biasCal();                       // v3.88.0 — da un posto solo
     const mx = (g.tmax && g.tmax.length) ? quantile(g.tmax, .5) - bs : null;
     const mn = (g.tmin && g.tmin.length) ? quantile(g.tmin, .5) - bs : null;
     b.innerHTML='<span class="dayico">'+(cc?iconaSvg(cc.code):"")+'</span>'
@@ -2892,7 +2977,7 @@ function renderVerdetto(){
      E' la lezione della v3.65.0 in un altro punto: se una grandezza si puo'
      calcolare in due modi, prima o poi la si calcola in due modi. */
   const grezza=quantile(g.tmax,.5);
-  const bias=S.cal?S.cal.bias:0;
+  const bias=biasCal();                         // v3.88.0 — da un posto solo
   const corretta=grezza-bias;
   const disp=sd(g.tmax);
 
@@ -3370,7 +3455,6 @@ function renderCal(){
   const entita = Math.abs(c.bias)<0.4 ? "pochissimo"
                : Math.abs(c.bias)<1.5 ? "un po'"
                : Math.abs(c.bias)<2.5 ? "parecchio" : "molto";
-  const segno  = c.bias>=0 ? "\u2212" : "+";          // la correzione ha segno opposto
   const tipico = c.k*Math.max(0.15, c.a);              // ampiezza tipica della fascia
 
   // v3.28.0
@@ -3405,17 +3489,25 @@ function renderCal(){
       + 'una decina di secondi le aggiunge.</p>'
     : '';
 
+  /* v3.88.0 — la frase prometteva "da adesso l'app li corregge da sola".
+     Non e' piu' vero per la temperatura, e prometterlo mentre non accade e'
+     la classe di difetto che questo progetto insegue da sempre. */
   const frase = avviso + '<p class="note" style="margin-bottom:18px">Fatto. Qui i modelli '
     + 'sbagliano <strong>'+entita+'</strong>, quasi sempre '+verso+' di <strong>'
-    + Math.abs(c.bias).toFixed(1)+' gradi</strong>. Da adesso l\'app li corregge da sola.</p>';
+    + Math.abs(c.bias).toFixed(1)+' gradi</strong> rispetto alla rianalisi. '
+    + 'Questo numero l&#39;app <b>non lo sottrae</b> alle temperature: misurato su '
+    + 'ventisei aeroporti, sottrarlo raddoppiava l&#39;errore invece di ridurlo. '
+    + 'Resta scritto qui perch&eacute; dice qualcosa di vero su questo punto, e '
+    + 'perch&eacute; la pagella qui sotto continuer&agrave; a verificarlo.</p>';
 
   const riga = (t,v) => '<div class="calrow"><span>'+t+'</span><b>'+v+'</b></div>';
 
   const chiaro =
     '<div class="pgblock">'
-    + riga("Correzione applicata a ogni temperatura",
-           segno+Math.abs(c.bias).toFixed(1)+" \u00B0C")
-    + riga("Di quanto sbaglia in media, dopo la correzione",
+    + riga("Scarto medio dalla rianalisi",
+           (c.bias>=0?"+":"\u2212")+Math.abs(c.bias).toFixed(1)+" \u00B0C")
+    + riga("Correzione applicata alle temperature", "nessuna")
+    + riga("Di quanto sbagliano in media, tolto lo scarto sistematico",
            "circa "+(c.maeC!=null?c.maeC:c.a).toFixed(1)+" \u00B0C")
     + riga("Su quanti giorni ha imparato", c.n+" giorni")
     + (quandoTxt ? riga("Eseguita il", quandoTxt) : "")
@@ -3454,12 +3546,14 @@ function renderCal(){
     + 'border-top:1px solid var(--linea)">'
 
     + vocenum("Bias del consenso", (c.bias>=0?"+":"")+c.bias.toFixed(2)+" \u00B0C",
-        "La media di tutti gli scarti fra previsto e osservato. Positivo vuol dire che "
-        + "le previsioni stavano <b>sopra</b> la realt&agrave;. &Egrave; l'unica parte "
-        + "dell'errore che si pu&ograve; togliere, perch&eacute; si ripete sempre uguale: "
-        + "l'app la sottrae a ogni temperatura.")
+        "La media di tutti gli scarti fra previsto e rianalisi. Positivo vuol dire che "
+        + "le previsioni stavano <b>sopra</b> la rianalisi. Sembrerebbe l&#39;unica parte "
+        + "dell&#39;errore togliibile, perch&eacute; si ripete uguale. Non lo &egrave;: "
+        + "dentro c&#39;&egrave; anche lo scarto fra il punto che la rianalisi chiama "
+        + "&laquo;qui&raquo; e quello dei modelli, e su ventisei aeroporti quella parte "
+        + "pesava di pi&ugrave; dell&#39;altra. Dalla v3.88.0 non viene sottratta.")
 
-    + vocenum("Errore medio, prima della correzione", c.mae.toFixed(2)+" \u00B0C",
+    + vocenum("Errore medio dei modelli grezzi", c.mae.toFixed(2)+" \u00B0C",
         "Di quanto sbagliavano in media i modelli grezzi, senza guardare il verso.")
 
     + vocenum("Errore medio, dopo la correzione", maeDopo.toFixed(2)+" \u00B0C",
@@ -3549,23 +3643,29 @@ function renderCal(){
      storiche interrogabile per qualunque punto. Ma chi legge un numero corretto
      ha diritto di sapere contro che cosa e' stato corretto. */
   const limite = '<div class="blocco" style="margin-top:16px">'
-    + '<p class="note" style="margin:0"><b>Contro che cosa e&#39; tarata.</b> '
-    + 'Il metro di paragone &egrave; ERA5-Land, una rianalisi: un modello che '
-    + 'ricostruisce il passato, non un termometro. Ha un errore suo, e cambia '
-    + 'da posto a posto: confrontata con le osservazioni degli aeroporti '
-    + '&egrave; esatta a Milano entro un decimo di grado, ma fredda di un grado '
-    + 'e mezzo a Roma e di due e mezzo nei fondovalle alpini, dove appiattisce '
-    + 'il caldo del pomeriggio. Dove il metro &egrave; freddo, questa taratura '
-    + 'impara che i modelli sono caldi e li raffredda: una parte della '
-    + 'correzione qui sopra pu&ograve; essere l&#39;errore della rianalisi, non '
-    + 'quello delle previsioni.</p>'
-    + '<p class="note" style="margin:10px 0 0">E il bias &egrave; misurato sui '
-    + 'modelli deterministici archiviati, mentre il numero grande viene dalla '
-    + 'mediana delle simulazioni. Di solito le due popolazioni si somigliano; '
-    + 'dove non si somigliano &mdash; succede sulle coste, dove le simulazioni '
-    + 'girano a maglia pi&ugrave; larga &mdash; la correzione &egrave; misurata '
-    + 'su una cosa e applicata a un&#39;altra, e non pu&ograve; vedere lo '
-    + 'scarto. Serve saperlo per non fidarsi del decimo di grado.</p></div>';
+    + '<p class="note" style="margin:0"><b>Contro che cosa e&#39; misurata, e perch&eacute; '
+    + 'non viene applicata.</b> Il metro di paragone &egrave; ERA5-Land, una rianalisi: '
+    + 'un modello che ricostruisce il passato, non un termometro. Ha un errore suo, e '
+    + 'cambia da posto a posto: confrontata con i termometri degli aeroporti &egrave; '
+    + 'esatta a Milano entro un decimo di grado, ma calda di tre gradi e mezzo a Palermo '
+    + 'e fredda di due a Fiumicino. Il motivo &egrave; geometrico prima che meteorologico: '
+    + 'la sua cella &egrave; larga nove chilometri, e a Palermo dentro quella cella c&#39;&egrave; '
+    + 'la montagna dietro l&#39;aeroporto, a Fiumicino c&#39;&egrave; il mare.</p>'
+    + '<p class="note" style="margin:10px 0 0">Quindi il numero qui sopra non &egrave; solo '
+    + 'l&#39;errore dei modelli: dentro c&#39;&egrave; anche lo scarto fra il posto che la '
+    + 'rianalisi chiama &laquo;qui&raquo; e quello che ci chiamano i modelli. Fino alla '
+    + 'v3.87.0 l&#39;app lo sottraeva a ogni temperatura. Misurato fuori campione contro i '
+    + 'termometri di ventisei aeroporti in sette paesi, 624 giornate, sottrarlo portava '
+    + 'l&#39;errore medio sulla massima <b>da 0,67 a 1,35 gradi</b>: vinceva in due stazioni '
+    + 'su ventisei. Provate quindici varianti prima di spegnerlo &mdash; correggere a met&agrave;, '
+    + 'correggere solo dove due riferimenti indipendenti concordano, solo dove il bias supera '
+    + 'una soglia &mdash; e nessuna batte il non correggere.</p>'
+    + '<p class="note" style="margin:10px 0 0">C&#39;&egrave; un secondo scarto, e vale la '
+    + 'pena saperlo anche adesso che il numero non si applica: il bias &egrave; misurato sui '
+    + 'modelli deterministici archiviati, mentre il numero grande viene dalla mediana delle '
+    + 'simulazioni. Dove le due popolazioni non si somigliano &mdash; succede sulle coste, '
+    + 'dove le simulazioni girano a maglia pi&ugrave; larga &mdash; sarebbe stato misurato su '
+    + 'una cosa e applicato a un&#39;altra.</p></div>';
 
   $("calOut").innerHTML = frase + chiaro + limite
     + '<div class="azioni" style="margin-top:16px">'
@@ -3627,7 +3727,7 @@ async function registraPrevisione(){
     const oggi = dataLocale();
     let arch=[]; try{ arch=JSON.parse(await store.get(kReg(S.loc))||"[]"); }catch(e){}
     const visti=new Set(arch.map(r=>r.valida+"|"+r.lead));
-    const bias=S.cal?S.cal.bias:0;
+    const bias=biasCal();                       // v3.88.0 — da un posto solo
     S.giorni.forEach((g,d)=>{
       if(d===0) return;                        // oggi non e' una previsione
       const chiave=g.data+"|"+d;
@@ -3647,7 +3747,13 @@ async function registraPrevisione(){
          da oggi la mediana, e senza il marcatore la pagella mescolerebbe due
          stime diverse credendole la stessa cosa. I record senza "q" sono
          quelli vecchi, a media. */
-      arch.push({ emesso:oggi, valida:g.data, lead:d, q:"med",
+      /* v3.88.0 — e si annota il bias di temperatura DAVVERO applicato, per
+         la stessa ragione di kp e di q. Dalla v3.88.0 vale zero: i record
+         piu' vecchi, che non hanno il campo, furono scritti con la
+         correzione attiva. Senza il marcatore la pagella confronterebbe due
+         regimi diversi credendoli lo stesso, e non potrebbe misurare se
+         toglierla sia servito. */
+      arch.push({ emesso:oggi, valida:g.data, lead:d, q:"med", bt:+biasCal().toFixed(2),
                   t:+(grezza-bias).toFixed(2), h:+half.toFixed(2),
                   p1:Math.round(100*g.psum.filter(x=>x*kp>=1).length/g.psum.length),
                   kp:+kp.toFixed(3), n:g.tmax.length });
@@ -3704,9 +3810,18 @@ async function verifica(){
     const tutti=corto.concat(lungo);
     const grezzi=tutti.filter(r=>!(r.kp) || Math.abs(r.kp-1)<0.02);
     const corretti=tutti.filter(r=>r.kp && Math.abs(r.kp-1)>=0.02);
+    /* v3.88.0 — stessa separazione per la temperatura. I record con bt a
+       zero furono emessi SENZA correzione di bias; quelli con bt diverso da
+       zero, e quelli vecchi che il campo non ce l'hanno affatto, con la
+       correzione attiva. Tenerli distinti e' l'unico modo di sapere sui dati
+       di QUESTO posto se toglierla e' servito: la misura che ha portato a
+       toglierla e' stata fatta su ventisei aeroporti, non qui. */
+    const tCorr =tutti.filter(r=>r.bt===undefined || Math.abs(r.bt)>=0.05);
+    const tGrezza=tutti.filter(r=>r.bt!==undefined && Math.abs(r.bt)<0.05);
 
     S.pagella={ corto:calc(corto), lungo:calc(lungo), tot:arch.length,
                 pioggiaPrima:calc(grezzi), pioggiaDopo:calc(corretti),
+                tempConCorr:calc(tCorr), tempSenzaCorr:calc(tGrezza),   // v3.88.0
                 attesa:arch.filter(r=>r.valida>=oggi).length };
   }catch(e){ S.pagella={errore:String(e.message||e)}; }
 }
@@ -3747,6 +3862,26 @@ function renderPagella(){
           ? "La correzione <b>sta migliorando</b> le probabilit&agrave; di pioggia."
           : "La correzione <b>non sta migliorando</b> niente, o peggiora. "
             + "Vale la pena rifare la taratura, o lasciare i conteggi grezzi.")
+      + '</p></div>';
+  }
+
+  /* v3.88.0 — e il confronto che dice se togliere la correzione di
+     temperatura sia servito QUI. Stessa forma di quello sulla pioggia: due
+     popolazioni dall'archivio, nessuna asserzione. Compare solo quando
+     l'archivio contiene abbastanza giorni di entrambi i regimi, cioe' non
+     subito dopo l'aggiornamento. */
+  const T1=P.tempConCorr, T2=P.tempSenzaCorr;
+  if(T1 && T2 && T1.n>=15 && T2.n>=15){
+    const meglio = T2.mae < T1.mae;
+    out += '<div class="pgblock"><div class="pgtit">Togliere la correzione di temperatura e&#39; servito?</div>'
+      + '<div class="calrow"><span>Con la correzione ('+T1.n+' giorni)</span><b>'
+        +T1.mae.toFixed(2)+' °C</b></div>'
+      + '<div class="calrow"><span>Senza ('+T2.n+' giorni)</span><b>'
+        +T2.mae.toFixed(2)+' °C</b></div>'
+      + '<p class="note" style="margin-top:12px">Errore medio sulla massima, nei due regimi. '
+      + (meglio
+          ? 'Qui togliere la correzione <b>ha ridotto</b> l&#39;errore, come sui ventisei aeroporti su cui e&#39; stata presa la decisione.'
+          : 'Qui la correzione <b>faceva meglio</b>. E&#39; un risultato contrario alla misura generale: due popolazioni piccole ed emesse in periodi diversi possono differire per il tempo che ha fatto, non per la correzione.')
       + '</p></div>';
   }
 
@@ -6325,7 +6460,34 @@ function invalidaOre(){ _cacheOre={d:null,mem:null}; }
    correzione. Applicarla solo dove ci si ricorda di farlo e' il modo
    sicuro di ritrovarsi due numeri diversi sulla stessa schermata: ora
    entra qui, dove il dato orario nasce, e da li' vale per tutti. */
-function biasCal(){ return S.cal ? S.cal.bias : 0; }
+/* v3.88.0 — LA CORREZIONE DI BIAS SI MISURA MA NON SI APPLICA PIU'.
+   Misurata fuori campione contro i termometri di ventisei aeroporti in sette
+   paesi, 624 giornate, con taratura mobile che rifa' i conti ogni giorno
+   sui 90 giorni precedenti, esattamente come fa l'app:
+     applicandola (comportamento fino alla v3.87.0)  errore medio 1,35 gradi
+     senza applicarla                                errore medio 0,67 gradi
+   Vinceva in due stazioni su 26. Non e' un peggioramento marginale: e' il
+   doppio dell'errore, e su questa correzione l'app ha costruito la sua
+   promessa principale.
+   PERCHE' FALLISCE, che e' la parte che conta. Il bias si stima come media
+   di (previsione - ERA5-Land). Quella differenza contiene due cose sommate:
+   l'errore vero dei modelli, che vogliamo togliere, e lo scarto fra il
+   posto che ERA5-Land chiama "qui" e quello che ci chiamano i modelli, che
+   non c'entra niente. La seconda domina: la cella di rianalisi e' larga 9 km
+   e a Palermo prende la montagna dietro l'aeroporto (rianalisi calda di 3,4
+   gradi sul termometro), a Fiumicino prende il mare (fredda di 2,1). La
+   correzione trasferiva quello scarto dentro il numero mostrato.
+   Provate quindici varianti prima di spegnerla: correggere contro l'altra
+   fonte disponibile, correggere a meta', correggere solo dove le due fonti
+   concordano, solo dove il bias e' grande. NESSUNA batte il non correggere.
+   Il valore continua a calcolarsi e a mostrarsi, perche' dice qualcosa di
+   vero sul rapporto fra i modelli e la rianalisi in questo punto. Non entra
+   piu' nelle temperature.
+   Pioggia e raffiche restano corrette: sono rapporti su totali di tre mesi,
+   non differenze giorno per giorno, e non sono state misurate qui. Dirlo e'
+   piu' onesto che spegnerle per simmetria. */
+const BIAS_APPLICATO = false;
+function biasCal(){ return (BIAS_APPLICATO && S.cal) ? S.cal.bias : 0; }
 
 function oraStat(d,h){
   const mem=memDelGiorno(d), i=d*24+h;
@@ -6635,7 +6797,7 @@ function renderWidget(){
   const g=G(), d=S.dayIdx;
   const cond = S.ora!==null ? condizioneOra(d,S.ora) : null;
   const P = cond ? PALETTE[cond.code] : PALETTE[condizione().code];
-  const tmax = quantile(g.tmax,.5) - (S.cal?S.cal.bias:0);
+  const tmax = quantile(g.tmax,.5) - biasCal(); // v3.88.0 — da un posto solo
   /* v3.41.0 — la vista compatta era rimasta indietro di due correzioni:
      sommava tutte e 24 le ore anche sul giorno in corso, e ignorava il
      fattore pioggia della taratura. Chi apre l'app direttamente su una

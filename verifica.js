@@ -2,7 +2,7 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.15.0
+   Versione: v1.16.0
    Build   : 2026-08-17 CEST
 
    v1.12.0 — quattro regole sull'arrivo della pioggia. La scheda appaiava il
@@ -814,6 +814,68 @@ prova("guardie del fattore pioggia", () => {
   if (!passa(88, 22, 97, 180)) return "una primavera normale viene rifiutata";
   if (passa(30, 20, 90, 150))  return "pochi giorni utili non vengono rifiutati";
   return true;
+});
+
+
+/* ------------------------------------------------------------
+   v1.16.0 — tre regole sulla correzione di bias della temperatura.
+   Misurata fuori campione contro i termometri di ventisei aeroporti in
+   sette paesi, 624 giornate: applicarla porta l errore medio da 0,67
+   a 1,35 gradi. Vinceva in due stazioni su ventisei. Da v3.88.0 si misura e
+   mostra, ma non si applica. Queste regole tengono ferme le tre condizioni
+   che rendono la cosa verificabile invece che asserita.
+   ------------------------------------------------------------ */
+
+prova("il bias di temperatura si applica da un posto solo", () => {
+  /* v1.16.0 — prima della v3.88.0 lo stesso valore era letto in cinque punti
+     distinti (riquadri dei giorni, verdetto, registro della pagella, vista
+     compatta, dato orario). Con cinque letture qualunque decisione va
+     applicata cinque volte, e la sesta che si dimentica e la piu probabile:
+     e la famiglia di difetti di questo progetto. Ora esiste una sola porta,
+     biasCal(), e questa regola vieta di scavalcarla. */
+  const righe = nudo.split(/\r?\n/);
+  const guai = [];
+  righe.forEach((r, i) => {
+    if (!/S\.cal\s*[?.]/.test(r)) return;
+    if (!/\bbias\b/.test(r)) return;
+    if (/function\s+biasCal/.test(r)) return;      // la porta stessa
+    guai.push("riga " + (i + 1) + ": " + r.trim().slice(0, 60));
+  });
+  return guai.length ? guai.join(" · ") : true;
+});
+
+prova("il registro della pagella annota il bias applicato", () => {
+  /* v1.16.0 — stessa ragione per cui la v3.31.0 annota kp e la v3.77.0
+     annota q: senza marcatore la pagella mescola record emessi con la
+     correzione e record emessi senza, credendoli la stessa popolazione, e
+     non puo misurare se toglierla sia servito. Il marcatore e cio che
+     trasforma una decisione presa altrove in una verifica fatta qui. */
+  const m = nudo.match(/arch\.push\(\s*\{[^}]*\}/);
+  if (!m) return "non trovo la scrittura del registro";
+  if (!/\bbt\s*:/.test(m[0])) return "il record non porta bt: il bias applicato";
+  if (!/biasCal\s*\(\)/.test(m[0])) return "bt non viene da biasCal()";
+  return true;
+});
+
+prova("la scheda non promette una correzione che non avviene", () => {
+  /* v1.16.0 — la scheda diceva "Da adesso l app li corregge da sola" e la
+     presentazione "corregge da sola: temperatura, pioggia e raffiche".
+     Quando la correzione si spegne, quelle due frasi diventano false senza
+     che nulla segnali: e la stessa classe della v3.73.1, testo e numeri che
+     si scollano. Qui il testo e legato alla costante che governa il codice. */
+  /* i commenti non sono promesse: la v1.16.0 usciva rossa sul commento che
+     CITA la frase vecchia per spiegare perche e stata tolta. Un controllo che
+     non distingue il commento dal contenuto sposta il difetto invece di
+     trovarlo. */
+  const testo = html
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+  const spenta = /BIAS_APPLICATO\s*=\s*false/.test(nudo);
+  if (!spenta) return true;                     // se si riaccende, il testo torna lecito
+  const guai = [];
+  if (/li corregge da sola/.test(testo)) guai.push("la scheda promette ancora di correggere");
+  if (/corregge da sola\s*:\s*temperatura/.test(testo)) guai.push("la presentazione elenca ancora la temperatura fra le correzioni");
+  return guai.length ? guai.join(" · ") : true;
 });
 
 /* ============================================================
