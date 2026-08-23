@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <!--
   ============================================================
+  VENTAGLIO v3.87.0 — la minima c'era solo oggi
+  File  : ventaglio-v3.html
+  Build : 2026-08-17 CEST
+  v3.87.0: aprendo un giorno futuro il verdetto mostrava la massima e nessuna
+           minima. Segnalato guardando l'app, non trovato dal collaudo.
+           La minima sta dentro frecce(), che veniva disegnato solo nel ramo
+           con l'ora selezionata: li' il numero grande e' la temperatura del
+           momento e le due frecce danno gli estremi della giornata. Toccando
+           un giorno futuro senza toccare la striscia si finisce nell'altro
+           ramo, dove il numero grande e' gia' la massima — e quel ramo le
+           frecce non le disegnava affatto.
+           Era anche un'incoerenza interna, della famiglia di sempre: i
+           riquadri dei giorni mostrano massima e minima dalla v3.61.0, e la
+           riga sotto la scena pure. Tre posti dicevano la minima e la scheda
+           principale, che e' quella che si guarda, taceva.
+           Qui serve la sola freccia in giu', perche' il numero grande e' gia'
+           la massima e ripeterla sopra sarebbe dirla due volte.
+           Verificato su cinque giorni: la minima ora compare sempre e coincide
+           con quella dei riquadri e della scena, cifra per cifra.
   VENTAGLIO v3.86.0 — quanto lontano si vede, qui
   File  : ventaglio-v3.html
   Build : 2026-08-17 CEST
@@ -2259,7 +2278,7 @@
   <footer>
     <span class="autore">Ventaglio &mdash; un software del Dr. Maurizio Monaco</span>
     <a class="contatto" href="mailto:odontoiatria.monaco@gmail.com">odontoiatria.monaco@gmail.com</a>
-v3.86.0 &middot; build 2026-08-17<br>
+v3.87.0 &middot; build 2026-08-17<br>
     Dati &copy; Open-Meteo.com CC BY 4.0 &middot; ERA5 e ERA5-Land &copy; Copernicus
   </footer>
 
@@ -3151,6 +3170,18 @@ function renderVerdetto(){
             : '')
       : '<div class="metric wide hero"><div class="v">' + corretta.toFixed(1) + '\u00B0'
         + (oltreCal ? '' : '<small> \u00B1' + half.toFixed(1) + '</small>') + '</div>'
+        /* v3.87.0 — LA MINIMA MANCAVA SU TUTTI I GIORNI TRANNE OGGI. Sta dentro
+           frecce(), che veniva disegnato solo nel ramo con l'ora selezionata:
+           li' il numero grande e' la temperatura del momento e le frecce danno
+           gli estremi della giornata. Aprendo un giorno futuro senza toccare la
+           striscia si finisce nell'altro ramo, dove il numero grande e' gia' la
+           massima, e nessuno mostrava la minima.
+           Era anche un'incoerenza interna: i riquadri dei giorni la mostrano
+           dalla v3.61.0 e la riga sotto la scena pure. Tre posti la dicevano,
+           la scheda principale no.
+           Qui serve la sola freccia in giu': il numero grande e' gia' la
+           massima, e ripeterla sopra sarebbe dirla due volte. */
+        + frecce(null, tMin, '\u00B0')
         + '<div class="k">' + GLIFI.termo
         + (oltreCal ? 'massima \u00B7 oltre la calibrazione' : 'massima \u00B7 intervallo 80%')
         + '</div></div>' + normaHtml

@@ -2,7 +2,7 @@
 /* ============================================================
    VENTAGLIO — collaudo automatico
    File    : verifica.js
-   Versione: v1.14.0
+   Versione: v1.15.0
    Build   : 2026-08-17 CEST
 
    v1.12.0 — quattro regole sull'arrivo della pioggia. La scheda appaiava il
@@ -425,6 +425,17 @@ regola("radar: la provenienza si ricava dall'angolo, non dal nome arrotondato",
 regola("radar: la mappa rispetta la stessa portata utile del testo",
   "const mappaUtile = dentroPortata",
   "la mappa si costruiva attorno a echi oltre i 200 km, che il testo dichiara inaffidabili");
+
+/* v1.15.0 — la minima compariva solo sul giorno in corso. Sta dentro frecce(),
+   che veniva disegnato nel solo ramo con l ora selezionata; aprendo un giorno
+   futuro si finiva nell altro ramo e nessuno la mostrava. I riquadri dei giorni
+   e la riga sotto la scena la davano, la scheda principale no: tre posti
+   d accordo e uno muto. Qui si pretende che entrambi i rami la stampino. */
+regola("il verdetto mostra la minima anche sui giorni futuri", "frecce(null, tMin",
+  "senza, aprendo domani si vede la massima e nessuna minima, mentre i riquadri la mostrano");
+
+regola("e la mostra anche sull ora selezionata", "frecce(corretta, tMin",
+  "e il ramo con l ora scelta, dove le frecce danno gli estremi della giornata");
 
 regola("il giorno in corso conta solo le ore che restano", "function psumFinestra",
   "sommare le 24 ore fa annunciare a mezzogiorno la pioggia caduta di notte");
